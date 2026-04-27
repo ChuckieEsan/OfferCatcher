@@ -1,6 +1,7 @@
 package com.zju.offercatcher.interfaces.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 
 import java.util.List;
 
@@ -25,7 +26,7 @@ public interface FavoriteDto {
     ) {}
 
     record CheckRequest(
-        @NotBlank List<String> questionIds
+        @NotEmpty List<String> questionIds
     ) {}
 
     record CheckResponse(

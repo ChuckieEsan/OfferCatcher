@@ -1,6 +1,7 @@
 package com.zju.offercatcher.interfaces.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
 
 import java.util.List;
@@ -49,7 +50,7 @@ public interface QuestionDto {
     ) {}
 
     record BatchAnswersRequest(
-        @NotBlank List<String> questionIds
+        @NotEmpty List<String> questionIds
     ) {}
 
     record BatchAnswersResponse(
