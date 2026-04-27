@@ -60,12 +60,12 @@ public class QuestionJpaEntity {
     @Column(name = "answer", columnDefinition = "TEXT")
     private String answer;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "question_entities", joinColumns = @JoinColumn(name = "question_id"))
     @Column(name = "entity")
     private List<String> coreEntities = new ArrayList<>();
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "question_clusters", joinColumns = @JoinColumn(name = "question_id"))
     @Column(name = "cluster_id")
     private List<String> clusterIds = new ArrayList<>();

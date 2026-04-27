@@ -12,6 +12,7 @@ import io.qdrant.client.VectorsFactory;
 import io.qdrant.client.grpc.Common;
 import io.qdrant.client.grpc.JsonWithInt;
 import io.qdrant.client.grpc.Points;
+import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -37,6 +38,34 @@ public class QdrantVectorStore {
         this.qdrantProperties = qdrantProperties;
         log.info("QdrantVectorStore initialized: questions={}, sessionSummaries={}",
             qdrantProperties.getCollection(), qdrantProperties.getSessionSummaryCollection());
+    }
+
+    @PostConstruct
+    void ensureCollectionsExist() {
+        ensureCollection(qdrantProperties.getCollection());
+        ensureCollection(qdrantProperties.getSessionSummaryCollection());
+    }
+
+    private void ensureCollection(String collectionName) {
+        try {
+            boolean exists = qdrantClient.collectionExistsAsync(collectionName).get();
+            if (!exists) {
+                qdrantClient.createCollectionAsync(
+                    collectionName,
+                    io.qdrant.client.grpc.Collections.VectorParams.newBuilder()
+                        .setSize(qdrantProperties.getVectorSize())
+                        .setDistance(io.qdrant.client.grpc.Collections.Distance.Cosine)
+                        .build(),
+                    null
+                ).get();
+                log.info("Created Qdrant collection: {}", collectionName);
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("Interrupted while ensuring collection: {}", collectionName);
+        } catch (ExecutionException e) {
+            log.error("Failed to ensure collection: {}", collectionName, e.getCause());
+        }
     }
 
     // ==================== Question 向量操作 ====================
@@ -94,6 +123,10 @@ public class QdrantVectorStore {
             Thread.currentThread().interrupt();
             throw new RuntimeException("Qdrant delete interrupted: " + questionId, e);
         } catch (ExecutionException e) {
+            if (isCollectionNotFound(e)) {
+                log.debug("Collection not found, skipping Qdrant delete: {}", questionId);
+                return;
+            }
             throw new RuntimeException("Qdrant delete failed: " + questionId, e.getCause());
         }
     }
@@ -167,6 +200,10 @@ public class QdrantVectorStore {
             Thread.currentThread().interrupt();
             throw new RuntimeException("Qdrant deleteSessionSummary interrupted: " + summaryId, e);
         } catch (ExecutionException e) {
+            if (isCollectionNotFound(e)) {
+                log.debug("Collection not found, skipping Qdrant delete for summary: {}", summaryId);
+                return;
+            }
             throw new RuntimeException("Qdrant deleteSessionSummary failed: " + summaryId, e.getCause());
         }
     }
@@ -227,5 +264,11 @@ public class QdrantVectorStore {
 
     private static String truncate(String s, int maxLen) {
         return s != null && s.length() > maxLen ? s.substring(0, maxLen) : s;
+    }
+
+    private static boolean isCollectionNotFound(ExecutionException e) {
+        return e.getCause() != null
+            && e.getCause().getMessage() != null
+            && e.getCause().getMessage().contains("doesn't exist");
     }
 }

@@ -6,6 +6,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -31,16 +33,16 @@ public class ExtractTaskJpaEntity {
     @Column(name = "source_content", columnDefinition = "TEXT")
     private String sourceContent;
 
-    @Column(name = "source_images", columnDefinition = "JSON")
-    @Convert(converter = StringListConverter.class)
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "source_images", columnDefinition = "jsonb")
     private List<String> sourceImages;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ExtractTaskStatus status;
 
-    @Column(name = "extracted_interview", columnDefinition = "JSON")
-    @Convert(converter = JsonMapConverter.class)
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "extracted_interview", columnDefinition = "jsonb")
     private Map<String, Object> extractedInterview;
 
     @Column(name = "error_message", columnDefinition = "TEXT")

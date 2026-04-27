@@ -6,6 +6,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -44,8 +46,8 @@ public class SessionSummaryJpaEntity {
     @Column(name = "importance_score")
     private double importanceScore;
 
-    @Column(name = "topics", columnDefinition = "JSON")
-    @Convert(converter = StringListConverter.class)
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "topics", columnDefinition = "jsonb")
     private List<String> topics;
 
     @Column(name = "memory_layer", nullable = false)
