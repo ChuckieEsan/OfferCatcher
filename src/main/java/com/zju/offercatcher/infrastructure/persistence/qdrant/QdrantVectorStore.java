@@ -1,101 +1,231 @@
 package com.zju.offercatcher.infrastructure.persistence.qdrant;
 
+import com.zju.offercatcher.domain.memory.entities.SessionSummary;
 import com.zju.offercatcher.domain.question.aggregates.Question;
 import com.zju.offercatcher.domain.shared.enums.Visibility;
 import com.zju.offercatcher.infrastructure.config.QdrantConfig;
+import io.qdrant.client.PointIdFactory;
+import io.qdrant.client.QdrantClient;
+import io.qdrant.client.ValueFactory;
+import io.qdrant.client.VectorFactory;
+import io.qdrant.client.VectorsFactory;
+import io.qdrant.client.grpc.Common;
+import io.qdrant.client.grpc.JsonWithInt;
+import io.qdrant.client.grpc.Points;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Qdrant 向量存储服务
  *
- * 负责与 Qdrant 的交互：向量上传、搜索、删除、payload 更新。
- *
- * 当前版本：接口定义，后续集成时实现真正的 Qdrant API 调用。
+ * 封装与 Qdrant gRPC API 的所有交互：向量上传、搜索、删除、payload 更新。
  */
 @Service
 public class QdrantVectorStore {
 
     private static final Logger log = LoggerFactory.getLogger(QdrantVectorStore.class);
 
+    private final QdrantClient qdrantClient;
     private final QdrantConfig.QdrantProperties properties;
 
-    public QdrantVectorStore(QdrantConfig.QdrantProperties properties) {
+    public QdrantVectorStore(QdrantClient qdrantClient, QdrantConfig.QdrantProperties properties) {
+        this.qdrantClient = qdrantClient;
         this.properties = properties;
-        log.info("QdrantVectorStore initialized for collection: {}", properties.getCollection());
+        log.info("QdrantVectorStore initialized: questions={}, sessionSummaries={}",
+            properties.getCollection(), properties.getSessionSummaryCollection());
     }
 
-    /**
-     * 搜索用户可见的题目（公共 + 用户私有）
-     *
-     * @param queryVector 查询向量
-     * @param userId 用户 ID
-     * @param limit 返回数量
-     * @return 搜索结果列表
-     */
+    // ==================== Question 向量操作 ====================
+
     public List<VectorSearchHit> search(float[] queryVector, String userId, int limit) {
-        // TODO: 实现真正的 Qdrant API 调用
-        // 当前返回空列表，后续集成时实现
-        log.debug("Searching vectors for user: {}, limit: {}", userId, limit);
-        return Collections.emptyList();
+        Common.Filter filter = QdrantFilterBuilder.buildUserVisibleFilter(userId);
+        return doSearch(properties.getCollection(), queryVector, filter, limit);
     }
 
-    /**
-     * 搜索公共题目
-     *
-     * @param queryVector 查询向量
-     * @param limit 返回数量
-     * @return 搜索结果列表
-     */
     public List<VectorSearchHit> searchPublic(float[] queryVector, int limit) {
-        log.debug("Searching public vectors, limit: {}", limit);
-        return Collections.emptyList();
+        Common.Filter filter = Common.Filter.newBuilder()
+            .addMust(io.qdrant.client.ConditionFactory.matchKeyword(
+                QdrantPayloadFields.VISIBILITY, Visibility.PUBLIC.getValue()))
+            .build();
+        return doSearch(properties.getCollection(), queryVector, filter, limit);
     }
 
-    /**
-     * 搜索用户私有题目
-     *
-     * @param userId 用户 ID
-     * @param queryVector 查询向量
-     * @param limit 返回数量
-     * @return 搜索结果列表
-     */
     public List<VectorSearchHit> searchPrivate(String userId, float[] queryVector, int limit) {
-        log.debug("Searching private vectors for user: {}, limit: {}", userId, limit);
-        return Collections.emptyList();
+        Common.Filter filter = QdrantFilterBuilder.buildPrivateOnlyFilter(userId);
+        return doSearch(properties.getCollection(), queryVector, filter, limit);
     }
 
-    /**
-     * 上传向量（带 payload）
-     *
-     * @param question 题目实体（用于生成 payload）
-     * @param embedding 向量
-     */
     public void upsert(Question question, float[] embedding) {
-        // TODO: 实现真正的 Qdrant API 调用
-        log.debug("Upserting vector for question: {}", question.getQuestionId());
+        UUID pointId = uuidFromString(question.getQuestionId());
+        Map<String, JsonWithInt.Value> payload = QdrantPayloadMapper.toPayload(question);
+
+        Points.PointStruct point = Points.PointStruct.newBuilder()
+            .setId(PointIdFactory.id(pointId))
+            .setVectors(VectorsFactory.namedVectors(
+                Map.of("", VectorFactory.vector(embedding))))
+            .putAllPayload(payload)
+            .build();
+
+        try {
+            qdrantClient.upsertAsync(properties.getCollection(), List.of(point), null).get();
+            log.debug("Upserted question vector: {}", question.getQuestionId());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Qdrant upsert interrupted for question: " + question.getQuestionId(), e);
+        } catch (ExecutionException e) {
+            throw new RuntimeException("Qdrant upsert failed for question: " + question.getQuestionId(), e.getCause());
+        }
     }
 
-    /**
-     * 删除向量
-     *
-     * @param questionId 题目 ID
-     */
     public void delete(String questionId) {
-        log.debug("Deleting vector for question: {}", questionId);
+        UUID pointId = uuidFromString(questionId);
+        try {
+            qdrantClient.deleteAsync(
+                properties.getCollection(),
+                List.of(PointIdFactory.id(pointId)),
+                null
+            ).get();
+            log.debug("Deleted question vector: {}", questionId);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Qdrant delete interrupted: " + questionId, e);
+        } catch (ExecutionException e) {
+            throw new RuntimeException("Qdrant delete failed: " + questionId, e.getCause());
+        }
+    }
+
+    public void updateVisibility(String questionId, Visibility visibility) {
+        UUID pointId = uuidFromString(questionId);
+        Map<String, JsonWithInt.Value> payloadUpdate = Map.of(
+            QdrantPayloadFields.VISIBILITY,
+            ValueFactory.value(visibility.getValue())
+        );
+
+        try {
+            qdrantClient.setPayloadAsync(
+                properties.getCollection(),
+                payloadUpdate,
+                PointIdFactory.id(pointId),
+                null, null, null
+            ).get();
+            log.debug("Updated visibility for question: {} to {}", questionId, visibility);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Qdrant setPayload interrupted: " + questionId, e);
+        } catch (ExecutionException e) {
+            throw new RuntimeException("Qdrant setPayload failed: " + questionId, e.getCause());
+        }
+    }
+
+    // ==================== SessionSummary 向量操作 ====================
+
+    public List<VectorSearchHit> searchSessionSummaries(String userId, float[] queryVector, int limit) {
+        Common.Filter filter = QdrantFilterBuilder.buildUserIdFilter(userId);
+        return doSearch(properties.getSessionSummaryCollection(), queryVector, filter, limit);
+    }
+
+    public void upsertSessionSummary(SessionSummary summary) {
+        Map<String, JsonWithInt.Value> payload = Map.of(
+            QdrantPayloadFields.USER_ID, ValueFactory.value(summary.getUserId()),
+            "conversation_id", ValueFactory.value(summary.getConversationId()),
+            "summary", ValueFactory.value(truncate(summary.getSummary(), 500)),
+            "importance_score", ValueFactory.value(summary.getImportanceScore()),
+            "memory_layer", ValueFactory.value(summary.getMemoryLayer().name())
+        );
+
+        Points.PointStruct point = Points.PointStruct.newBuilder()
+            .setId(PointIdFactory.id(summary.getId()))
+            .setVectors(VectorsFactory.namedVectors(
+                Map.of("", VectorFactory.vector(summary.getEmbedding()))))
+            .putAllPayload(payload)
+            .build();
+
+        try {
+            qdrantClient.upsertAsync(properties.getSessionSummaryCollection(), List.of(point), null).get();
+            log.debug("Upserted session summary vector: {}", summary.getId());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Qdrant upsertSessionSummary interrupted: " + summary.getId(), e);
+        } catch (ExecutionException e) {
+            throw new RuntimeException("Qdrant upsertSessionSummary failed: " + summary.getId(), e.getCause());
+        }
+    }
+
+    public void deleteSessionSummary(Long summaryId) {
+        try {
+            qdrantClient.deleteAsync(
+                properties.getSessionSummaryCollection(),
+                List.of(PointIdFactory.id(summaryId)),
+                null
+            ).get();
+            log.debug("Deleted session summary vector: {}", summaryId);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Qdrant deleteSessionSummary interrupted: " + summaryId, e);
+        } catch (ExecutionException e) {
+            throw new RuntimeException("Qdrant deleteSessionSummary failed: " + summaryId, e.getCause());
+        }
+    }
+
+    // ==================== 内部方法 ====================
+
+    private List<VectorSearchHit> doSearch(String collection, float[] queryVector,
+                                           Common.Filter filter, int limit) {
+        Points.SearchPoints request = Points.SearchPoints.newBuilder()
+            .setCollectionName(collection)
+            .addAllVector(floatList(queryVector))
+            .setFilter(filter)
+            .setLimit(limit)
+            .setWithPayload(Points.WithPayloadSelector.newBuilder()
+                .setEnable(true)
+                .build())
+            .build();
+
+        try {
+            List<Points.ScoredPoint> results = qdrantClient.searchAsync(request, null).get();
+            return results.stream()
+                .map(sp -> {
+                    String id = sp.getId().hasUuid()
+                        ? sp.getId().getUuid().replace("-", "")
+                        : sp.getId().getNum() + "";
+                    return new VectorSearchHit(id, sp.getScore());
+                })
+                .toList();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.error("Qdrant search interrupted on collection {}", collection, e);
+            return Collections.emptyList();
+        } catch (ExecutionException e) {
+            log.error("Qdrant search failed on collection {}", collection, e.getCause());
+            return Collections.emptyList();
+        }
+    }
+
+    private static List<Float> floatList(float[] array) {
+        List<Float> list = new ArrayList<>(array.length);
+        for (float v : array) list.add(v);
+        return list;
     }
 
     /**
-     * 更新 payload 中的 visibility
-     *
-     * @param questionId 题目 ID
-     * @param visibility 新可见性
+     * 将 UUID 字符串转为 UUID 对象，兼容有无连字符格式。
      */
-    public void updateVisibility(String questionId, Visibility visibility) {
-        log.debug("Updating visibility for question: {} to {}", questionId, visibility);
+    private static UUID uuidFromString(String id) {
+        if (id.contains("-")) {
+            return UUID.fromString(id);
+        }
+        // 无连字符格式：8-4-4-4-12
+        String dashed = id.replaceFirst(
+            "(\\p{XDigit}{8})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}+)",
+            "$1-$2-$3-$4-$5");
+        return UUID.fromString(dashed);
+    }
+
+    private static String truncate(String s, int maxLen) {
+        return s != null && s.length() > maxLen ? s.substring(0, maxLen) : s;
     }
 }

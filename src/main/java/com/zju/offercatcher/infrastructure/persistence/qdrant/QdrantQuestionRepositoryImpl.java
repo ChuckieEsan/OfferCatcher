@@ -61,7 +61,7 @@ public class QdrantQuestionRepositoryImpl implements QuestionRepository {
 
         // 2. PostgreSQL 批量查询元数据
         List<String> ids = hits.stream()
-            .map(VectorSearchHit::questionId)
+            .map(VectorSearchHit::id)
             .toList();
 
         List<QuestionJpaEntity> entities = jpaRepository.findByQuestionIds(ids);
@@ -72,9 +72,9 @@ public class QdrantQuestionRepositoryImpl implements QuestionRepository {
         // 3. 合并结果（保持向量搜索的相似度顺序）
         return hits.stream()
             .map(hit -> {
-                Question question = questionMap.get(hit.questionId());
+                Question question = questionMap.get(hit.id());
                 if (question == null) {
-                    log.warn("Question not found in PostgreSQL: {}", hit.questionId());
+                    log.warn("Question not found in PostgreSQL: {}", hit.id());
                     return null;
                 }
                 return new QuestionWithScore(question, hit.score());
@@ -92,7 +92,7 @@ public class QdrantQuestionRepositoryImpl implements QuestionRepository {
         }
 
         List<String> ids = hits.stream()
-            .map(VectorSearchHit::questionId)
+            .map(VectorSearchHit::id)
             .toList();
 
         List<QuestionJpaEntity> entities = jpaRepository.findByQuestionIds(ids);
@@ -102,7 +102,7 @@ public class QdrantQuestionRepositoryImpl implements QuestionRepository {
 
         return hits.stream()
             .map(hit -> {
-                Question question = questionMap.get(hit.questionId());
+                Question question = questionMap.get(hit.id());
                 return question != null ? new QuestionWithScore(question, hit.score()) : null;
             })
             .filter(Objects::nonNull)
@@ -118,7 +118,7 @@ public class QdrantQuestionRepositoryImpl implements QuestionRepository {
         }
 
         List<String> ids = hits.stream()
-            .map(VectorSearchHit::questionId)
+            .map(VectorSearchHit::id)
             .toList();
 
         List<QuestionJpaEntity> entities = jpaRepository.findByQuestionIds(ids);
@@ -128,7 +128,7 @@ public class QdrantQuestionRepositoryImpl implements QuestionRepository {
 
         return hits.stream()
             .map(hit -> {
-                Question question = questionMap.get(hit.questionId());
+                Question question = questionMap.get(hit.id());
                 return question != null ? new QuestionWithScore(question, hit.score()) : null;
             })
             .filter(Objects::nonNull)
