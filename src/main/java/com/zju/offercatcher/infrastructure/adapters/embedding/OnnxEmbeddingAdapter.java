@@ -36,11 +36,11 @@ public class OnnxEmbeddingAdapter {
         try {
             String modelPath = properties.getModelPath();
             Path modelFile = Path.of(modelPath, "onnx", "model.onnx");
-            Path tokenizerFile = Path.of(modelPath, "tokenizer.json");
+            Path tokenizerFile = Path.of(modelPath, "onnx", "tokenizer.json");
             env = OrtEnvironment.getEnvironment();
             session = env.createSession(modelFile.toString(),
                 new OrtSession.SessionOptions());
-            tokenizer = HuggingFaceTokenizer.newInstance(tokenizerFile.toString());
+            tokenizer = HuggingFaceTokenizer.newInstance(tokenizerFile);
             initialized = true;
             log.info("ONNX Embedding model loaded: {}, vectorSize={}", modelPath, properties.getVectorSize());
         } catch (Exception e) {

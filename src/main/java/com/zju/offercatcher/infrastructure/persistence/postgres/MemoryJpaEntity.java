@@ -34,7 +34,7 @@ public class MemoryJpaEntity {
     @Enumerated(EnumType.STRING)
     private MemoryStatus status;
 
-    @Column(name = "references", columnDefinition = "JSON")
+    @Column(name = "memory_references", columnDefinition = "JSON")
     @Convert(converter = MemoryReferenceConverter.class)
     private List<MemoryReference> references;
 

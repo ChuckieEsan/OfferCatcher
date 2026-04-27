@@ -36,7 +36,8 @@ public class OnnxRerankerAdapter {
         try {
             String modelPath = properties.getModelPath();
             env = OrtEnvironment.getEnvironment();
-            session = env.createSession(Path.of(modelPath, "model.onnx").toString(),
+            Path onnxFile = Path.of(modelPath, "model.onnx");
+            session = env.createSession(onnxFile.toString(),
                 new OrtSession.SessionOptions());
             tokenizer = HuggingFaceTokenizer.newInstance(Path.of(modelPath, "tokenizer.json"));
             initialized = true;

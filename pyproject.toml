@@ -1,0 +1,19 @@
+[project]
+name = "offercatcher"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "onnx>=1.21.0",
+    "onnxruntime>=1.25.0",
+    "torch>=2.11.0",
+    "transformers>=5.6.2",
+]
+
+[tool.uv.pip]
+index-url = "https://mirrors.aliyun.com/pypi/simple"
+
+[[tool.uv.index]]
+url = "https://mirrors.aliyun.com/pypi/simple"
+default = true
