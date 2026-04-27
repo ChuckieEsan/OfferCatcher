@@ -73,4 +73,16 @@ public interface QuestionJpaRepository extends JpaRepository<QuestionJpaEntity, 
      */
     @Query("SELECT q FROM QuestionJpaEntity q WHERE q.company = :company AND (q.visibility = 'PUBLIC' OR q.userId = :userId) ORDER BY q.createdAt DESC")
     List<QuestionJpaEntity> findByCompanyForUser(@Param("userId") String userId, @Param("company") String company);
+
+    /**
+     * 查找未生成答案的题目（用于后台 Answer Worker 轮询）
+     */
+    @Query("SELECT q FROM QuestionJpaEntity q WHERE q.answer IS NULL OR q.answer = '' ORDER BY q.createdAt ASC LIMIT :limit")
+    List<QuestionJpaEntity> findUnansweredQuestions(@Param("limit") int limit);
+
+    /**
+     * 查找最近更新过的题目（用于 Reembed Worker）
+     */
+    @Query("SELECT q FROM QuestionJpaEntity q WHERE q.updatedAt > :since ORDER BY q.updatedAt ASC LIMIT :limit")
+    List<QuestionJpaEntity> findRecentlyUpdated(@Param("since") java.time.LocalDateTime since, @Param("limit") int limit);
 }
