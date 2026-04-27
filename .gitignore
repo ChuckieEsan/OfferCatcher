@@ -41,3 +41,6 @@ backups/
 app/
 .claude/
 models/
+
+### Environment ###
+.env
