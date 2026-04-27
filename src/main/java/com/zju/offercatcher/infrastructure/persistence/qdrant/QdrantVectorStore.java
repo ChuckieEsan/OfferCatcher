@@ -3,7 +3,7 @@ package com.zju.offercatcher.infrastructure.persistence.qdrant;
 import com.zju.offercatcher.domain.memory.entities.SessionSummary;
 import com.zju.offercatcher.domain.question.aggregates.Question;
 import com.zju.offercatcher.domain.shared.enums.Visibility;
-import com.zju.offercatcher.infrastructure.config.QdrantConfig;
+import com.zju.offercatcher.infrastructure.config.QdrantProperties;
 import io.qdrant.client.PointIdFactory;
 import io.qdrant.client.QdrantClient;
 import io.qdrant.client.ValueFactory;
@@ -30,20 +30,20 @@ public class QdrantVectorStore {
     private static final Logger log = LoggerFactory.getLogger(QdrantVectorStore.class);
 
     private final QdrantClient qdrantClient;
-    private final QdrantConfig.QdrantProperties properties;
+    private final QdrantProperties qdrantProperties;
 
-    public QdrantVectorStore(QdrantClient qdrantClient, QdrantConfig.QdrantProperties properties) {
+    public QdrantVectorStore(QdrantClient qdrantClient, QdrantProperties qdrantProperties) {
         this.qdrantClient = qdrantClient;
-        this.properties = properties;
+        this.qdrantProperties = qdrantProperties;
         log.info("QdrantVectorStore initialized: questions={}, sessionSummaries={}",
-            properties.getCollection(), properties.getSessionSummaryCollection());
+            qdrantProperties.getCollection(), qdrantProperties.getSessionSummaryCollection());
     }
 
     // ==================== Question 向量操作 ====================
 
     public List<VectorSearchHit> search(float[] queryVector, String userId, int limit) {
         Common.Filter filter = QdrantFilterBuilder.buildUserVisibleFilter(userId);
-        return doSearch(properties.getCollection(), queryVector, filter, limit);
+        return doSearch(qdrantProperties.getCollection(), queryVector, filter, limit);
     }
 
     public List<VectorSearchHit> searchPublic(float[] queryVector, int limit) {
@@ -51,12 +51,12 @@ public class QdrantVectorStore {
             .addMust(io.qdrant.client.ConditionFactory.matchKeyword(
                 QdrantPayloadFields.VISIBILITY, Visibility.PUBLIC.getValue()))
             .build();
-        return doSearch(properties.getCollection(), queryVector, filter, limit);
+        return doSearch(qdrantProperties.getCollection(), queryVector, filter, limit);
     }
 
     public List<VectorSearchHit> searchPrivate(String userId, float[] queryVector, int limit) {
         Common.Filter filter = QdrantFilterBuilder.buildPrivateOnlyFilter(userId);
-        return doSearch(properties.getCollection(), queryVector, filter, limit);
+        return doSearch(qdrantProperties.getCollection(), queryVector, filter, limit);
     }
 
     public void upsert(Question question, float[] embedding) {
@@ -71,7 +71,7 @@ public class QdrantVectorStore {
             .build();
 
         try {
-            qdrantClient.upsertAsync(properties.getCollection(), List.of(point), null).get();
+            qdrantClient.upsertAsync(qdrantProperties.getCollection(), List.of(point), null).get();
             log.debug("Upserted question vector: {}", question.getQuestionId());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -85,7 +85,7 @@ public class QdrantVectorStore {
         UUID pointId = uuidFromString(questionId);
         try {
             qdrantClient.deleteAsync(
-                properties.getCollection(),
+                qdrantProperties.getCollection(),
                 List.of(PointIdFactory.id(pointId)),
                 null
             ).get();
@@ -107,7 +107,7 @@ public class QdrantVectorStore {
 
         try {
             qdrantClient.setPayloadAsync(
-                properties.getCollection(),
+                qdrantProperties.getCollection(),
                 payloadUpdate,
                 PointIdFactory.id(pointId),
                 null, null, null
@@ -125,7 +125,7 @@ public class QdrantVectorStore {
 
     public List<VectorSearchHit> searchSessionSummaries(String userId, float[] queryVector, int limit) {
         Common.Filter filter = QdrantFilterBuilder.buildUserIdFilter(userId);
-        return doSearch(properties.getSessionSummaryCollection(), queryVector, filter, limit);
+        return doSearch(qdrantProperties.getSessionSummaryCollection(), queryVector, filter, limit);
     }
 
     public void upsertSessionSummary(SessionSummary summary) {
@@ -145,7 +145,7 @@ public class QdrantVectorStore {
             .build();
 
         try {
-            qdrantClient.upsertAsync(properties.getSessionSummaryCollection(), List.of(point), null).get();
+            qdrantClient.upsertAsync(qdrantProperties.getSessionSummaryCollection(), List.of(point), null).get();
             log.debug("Upserted session summary vector: {}", summary.getId());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -158,7 +158,7 @@ public class QdrantVectorStore {
     public void deleteSessionSummary(Long summaryId) {
         try {
             qdrantClient.deleteAsync(
-                properties.getSessionSummaryCollection(),
+                qdrantProperties.getSessionSummaryCollection(),
                 List.of(PointIdFactory.id(summaryId)),
                 null
             ).get();
