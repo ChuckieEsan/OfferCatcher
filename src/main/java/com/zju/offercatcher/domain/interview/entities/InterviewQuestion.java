@@ -242,13 +242,23 @@ public class InterviewQuestion {
 
     // ==================== 构造函数 ====================
 
-    private InterviewQuestion(String questionId, String questionText, String questionType,
-                               DifficultyLevel difficulty, List<String> knowledgePoints,
-                               String userAnswer, Integer score, String feedback,
-                               Integer masteryBefore, Integer masteryAfter,
-                               List<String> followUps, int currentFollowUpIdx,
-                               List<String> hintsGiven, QuestionStatus status,
-                               LocalDateTime answeredAt) {
+    @com.fasterxml.jackson.annotation.JsonCreator
+    private InterviewQuestion(
+            @com.fasterxml.jackson.annotation.JsonProperty("questionId") String questionId,
+            @com.fasterxml.jackson.annotation.JsonProperty("questionText") String questionText,
+            @com.fasterxml.jackson.annotation.JsonProperty("questionType") String questionType,
+            @com.fasterxml.jackson.annotation.JsonProperty("difficulty") DifficultyLevel difficulty,
+            @com.fasterxml.jackson.annotation.JsonProperty("knowledgePoints") List<String> knowledgePoints,
+            @com.fasterxml.jackson.annotation.JsonProperty("userAnswer") String userAnswer,
+            @com.fasterxml.jackson.annotation.JsonProperty("score") Integer score,
+            @com.fasterxml.jackson.annotation.JsonProperty("feedback") String feedback,
+            @com.fasterxml.jackson.annotation.JsonProperty("masteryBefore") Integer masteryBefore,
+            @com.fasterxml.jackson.annotation.JsonProperty("masteryAfter") Integer masteryAfter,
+            @com.fasterxml.jackson.annotation.JsonProperty("followUps") List<String> followUps,
+            @com.fasterxml.jackson.annotation.JsonProperty("currentFollowUpIdx") int currentFollowUpIdx,
+            @com.fasterxml.jackson.annotation.JsonProperty("hintsGiven") List<String> hintsGiven,
+            @com.fasterxml.jackson.annotation.JsonProperty("status") QuestionStatus status,
+            @com.fasterxml.jackson.annotation.JsonProperty("answeredAt") LocalDateTime answeredAt) {
         this.questionId = questionId;
         this.questionText = questionText;
         this.questionType = questionType != null ? questionType : "knowledge";

@@ -73,7 +73,7 @@ public class InterviewSessionRepositoryImpl implements InterviewSessionRepositor
         if (!entity.get().getUserId().equals(userId)) {
             throw new UnauthorizedOperationException(userId, sessionId.toString(), "delete interview session");
         }
-        jpaRepository.deleteBySessionIdAndUserId(sessionId, userId);
+        jpaRepository.delete(entity.get());
     }
 
     @Override

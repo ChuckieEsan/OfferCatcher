@@ -79,7 +79,7 @@ public class ConversationRepositoryImpl implements ConversationRepository {
         }
 
         messageJpaRepository.deleteByConversationId(conversationId);
-        conversationJpaRepository.deleteByConversationIdAndUserId(conversationId, userId);
+        conversationJpaRepository.delete(entity.get());
     }
 
     @Override

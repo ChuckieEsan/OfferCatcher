@@ -29,6 +29,7 @@ public enum DifficultyLevel {
         this.description = description;
     }
 
+    @com.fasterxml.jackson.annotation.JsonValue
     public String getValue() {
         return value;
     }
@@ -37,6 +38,7 @@ public enum DifficultyLevel {
         return description;
     }
 
+    @com.fasterxml.jackson.annotation.JsonCreator
     public static DifficultyLevel fromValue(String value) {
         for (DifficultyLevel level : values()) {
             if (level.value.equals(value)) {

@@ -34,6 +34,7 @@ public enum QuestionStatus {
         this.description = description;
     }
 
+    @com.fasterxml.jackson.annotation.JsonValue
     public String getValue() {
         return value;
     }
@@ -42,6 +43,7 @@ public enum QuestionStatus {
         return description;
     }
 
+    @com.fasterxml.jackson.annotation.JsonCreator
     public static QuestionStatus fromValue(String value) {
         for (QuestionStatus status : values()) {
             if (status.value.equals(value)) {

@@ -60,7 +60,7 @@ public class FavoriteRepositoryImpl implements FavoriteRepository {
         if (!entity.get().getUserId().equals(userId)) {
             throw new UnauthorizedOperationException(userId, favoriteId.toString(), "delete favorite");
         }
-        jpaRepository.deleteByFavoriteIdAndUserId(favoriteId, userId);
+        jpaRepository.delete(entity.get());
     }
 
     @Override

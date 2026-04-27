@@ -7,6 +7,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -49,8 +51,8 @@ public class InterviewSessionJpaEntity {
     @Enumerated(EnumType.STRING)
     private SessionStatus status;
 
-    @Column(name = "questions", columnDefinition = "JSON")
-    @Convert(converter = InterviewQuestionConverter.class)
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "questions", columnDefinition = "jsonb")
     private List<InterviewQuestion> questions;
 
     @Column(name = "current_question_idx")
