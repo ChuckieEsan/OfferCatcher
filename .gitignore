@@ -31,3 +31,12 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### IDEA ###
+.idea/
+
+### backup
+backups/
+
+app/
+.claude/
