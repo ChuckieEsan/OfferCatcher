@@ -7,6 +7,7 @@ import com.zju.offercatcher.infrastructure.persistence.postgres.QuestionJpaEntit
 import com.zju.offercatcher.infrastructure.persistence.postgres.QuestionJpaRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -20,6 +21,7 @@ import java.util.Optional;
  * 对应 Python: app/application/workers/answer_worker.py
  */
 @Component
+@ConditionalOnProperty(name = "offercatcher.worker.answer.polling", havingValue = "true")
 public class AnswerGenerationWorker {
 
     private static final Logger log = LoggerFactory.getLogger(AnswerGenerationWorker.class);

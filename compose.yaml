@@ -25,6 +25,17 @@ services:
     volumes:
       - redis_data:/data
 
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
   jaeger:
     image: jaegertracing/all-in-one:latest
     ports:
@@ -44,8 +55,17 @@ services:
     volumes:
       - neo4j_data:/data
 
+  ocr-service:
+    build: ./services/ocr-service
+    ports:
+      - "8001:8001"
+    environment:
+      OCR_LANGS: "ch_sim,en"
+      OCR_GPU: "false"
+
 volumes:
   postgres_data:
   qdrant_data:
   redis_data:
+  rabbitmq_data:
   neo4j_data:

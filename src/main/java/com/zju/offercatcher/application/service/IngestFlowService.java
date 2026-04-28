@@ -5,6 +5,8 @@ import com.zju.offercatcher.domain.question.aggregates.Question;
 import com.zju.offercatcher.domain.shared.enums.QuestionType;
 import com.zju.offercatcher.domain.shared.enums.Visibility;
 import com.zju.offercatcher.infrastructure.adapters.embedding.OnnxEmbeddingAdapter;
+import com.zju.offercatcher.infrastructure.messaging.MQTaskMessage;
+import com.zju.offercatcher.infrastructure.messaging.RabbitMQProducer;
 import com.zju.offercatcher.infrastructure.persistence.postgres.QuestionJpaRepository;
 import com.zju.offercatcher.infrastructure.persistence.postgres.QuestionJpaEntity;
 import com.zju.offercatcher.infrastructure.persistence.qdrant.QdrantVectorStore;
@@ -19,10 +21,8 @@ import java.util.*;
 /**
  * 入库应用服务。
  *
- * 编排面经入库用例：提取结果 → 去重/复用答案 → 向量化 → 持久化。
+ * 编排面经入库用例：提取结果 → 去重/复用答案 → 向量化 → 持久化 → MQ推送异步答案生成。
  * 对应 Python: app/application/services/ingestion_service.py
- *
- * 简化点：无 MQ（用 @Async worker 替代），无 Neo4j，无岗位归一化。
  */
 @Service
 public class IngestFlowService {
@@ -32,13 +32,16 @@ public class IngestFlowService {
     private final QuestionJpaRepository questionJpaRepo;
     private final QdrantVectorStore qdrantVectorStore;
     private final OnnxEmbeddingAdapter embeddingAdapter;
+    private final Optional<RabbitMQProducer> mqProducer;
 
     public IngestFlowService(QuestionJpaRepository questionJpaRepo,
                              QdrantVectorStore qdrantVectorStore,
-                             OnnxEmbeddingAdapter embeddingAdapter) {
+                             OnnxEmbeddingAdapter embeddingAdapter,
+                             Optional<RabbitMQProducer> mqProducer) {
         this.questionJpaRepo = questionJpaRepo;
         this.qdrantVectorStore = qdrantVectorStore;
         this.embeddingAdapter = embeddingAdapter;
+        this.mqProducer = mqProducer;
     }
 
     @Transactional
@@ -91,6 +94,15 @@ public class IngestFlowService {
 
                 result.processed++;
                 result.questionIds.add(item.questionId());
+
+                // 5. Publish MQ task for async answer generation (if no answer reused)
+                if (reusedAnswer == null && mqProducer.isPresent()) {
+                    MQTaskMessage taskMsg = new MQTaskMessage(
+                        question.getQuestionId(), question.getQuestionText(),
+                        extracted.company(), extracted.position(), question.getCoreEntities()
+                    );
+                    mqProducer.get().publishTask(taskMsg);
+                }
             } catch (Exception e) {
                 log.error("Failed to ingest question {}: {}", item.questionId(), e.getMessage());
                 result.failed++;
