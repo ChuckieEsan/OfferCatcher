@@ -1,5 +1,6 @@
 package com.zju.offercatcher.application.service;
 
+import com.zju.offercatcher.application.agent.TitleGeneratorAgent;
 import com.zju.offercatcher.domain.chat.aggregates.Conversation;
 import com.zju.offercatcher.domain.chat.entities.Message;
 import com.zju.offercatcher.domain.chat.repositories.ConversationRepository;
@@ -27,9 +28,12 @@ public class ChatApplicationService {
     private static final Logger log = LoggerFactory.getLogger(ChatApplicationService.class);
 
     private final ConversationRepository conversationRepository;
+    private final TitleGeneratorAgent titleGenerator;
 
-    public ChatApplicationService(ConversationRepository conversationRepository) {
+    public ChatApplicationService(ConversationRepository conversationRepository,
+                                   TitleGeneratorAgent titleGenerator) {
         this.conversationRepository = conversationRepository;
+        this.titleGenerator = titleGenerator;
     }
 
     @Transactional
@@ -107,5 +111,27 @@ public class ChatApplicationService {
         conversationRepository.save(conversation);
         log.info("Title generated for conversation {}: {}", conversationId, newTitle);
         return Optional.of(newTitle);
+    }
+
+    @Transactional
+    public Optional<Conversation> generateTitle(String userId, Long conversationId) {
+        Conversation conversation = conversationRepository.findById(conversationId)
+            .filter(c -> c.isOwnedBy(userId))
+            .orElse(null);
+
+        if (conversation == null) {
+            log.warn("Conversation not found: {}", conversationId);
+            return Optional.empty();
+        }
+        if (conversation.getMessages().isEmpty()) {
+            log.warn("Conversation {} has no messages", conversationId);
+            return Optional.empty();
+        }
+
+        String newTitle = titleGenerator.generateTitle(conversation.getMessages());
+        conversation.updateTitle(newTitle);
+        conversationRepository.save(conversation);
+        log.info("Title generated for conversation {}: {}", conversationId, newTitle);
+        return Optional.of(conversation);
     }
 }

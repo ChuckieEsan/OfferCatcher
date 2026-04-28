@@ -80,4 +80,8 @@ public interface ExtractDto {
         List<String> coreEntities,
         Map<String, Object> metadata
     ) {}
+
+    record ImageExtractRequest(
+        List<String> images
+    ) {}
 }

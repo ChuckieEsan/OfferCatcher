@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zju.offercatcher.application.agent.dto.ExtractedQuestionItem;
 import com.zju.offercatcher.domain.question.services.QuestionIdGenerator;
 import com.zju.offercatcher.domain.shared.enums.QuestionType;
+import com.zju.offercatcher.infrastructure.adapters.ocr.OcrAdapter;
 import com.zju.offercatcher.infrastructure.config.LLMProperties;
 import io.agentscope.core.ReActAgent;
 import io.agentscope.core.message.Msg;
@@ -21,7 +22,7 @@ import java.util.Map;
 /**
  * 面经提取 Agent
  *
- * 从文本中提取面经题目信息，返回结构化数据。
+ * 从文本或图片中提取面经题目信息，返回结构化数据。
  * 对应 Python: app/application/agents/vision_extractor/agent.py
  */
 @Service
@@ -32,9 +33,12 @@ public class VisionExtractorAgent {
 
     private final OpenAIChatModel llm;
     private final PromptLoader promptLoader;
+    private final OcrAdapter ocrAdapter;
 
-    public VisionExtractorAgent(LLMProperties llmProperties, PromptLoader promptLoader) {
+    public VisionExtractorAgent(LLMProperties llmProperties, PromptLoader promptLoader,
+                                OcrAdapter ocrAdapter) {
         this.promptLoader = promptLoader;
+        this.ocrAdapter = ocrAdapter;
         LLMProperties.DeepSeek cfg = llmProperties.getDeepseek();
         this.llm = OpenAIChatModel.builder()
             .apiKey(cfg.getApiKey())
@@ -66,6 +70,38 @@ public class VisionExtractorAgent {
         } catch (Exception e) {
             log.error("Vision extraction failed: {}", e.getMessage(), e);
             throw new RuntimeException("面经提取失败: " + e.getMessage(), e);
+        }
+    }
+
+    public ExtractedQuestionItem extractFromImages(List<String> imageSources) {
+        log.info("VisionExtractor: extracting from {} images", imageSources.size());
+
+        String ocrText = ocrAdapter.recognizeBatch(imageSources);
+        if (ocrText == null || ocrText.isBlank()) {
+            throw new RuntimeException("OCR 未能识别出文字");
+        }
+
+        log.info("OCR result ({} chars), forwarding to LLM extraction", ocrText.length());
+
+        String prompt = promptLoader.render("vision_extractor.md", "text", ocrText);
+
+        ReActAgent agent = ReActAgent.builder()
+            .name("vision-extractor")
+            .model(llm)
+            .maxIters(0)
+            .generateOptions(GenerateOptions.builder().temperature(0.1).build())
+            .build();
+
+        try {
+            Msg response = agent.call(List.of(
+                Msg.builder().role(MsgRole.USER).textContent(prompt).build()
+            )).block();
+
+            String content = response != null ? response.getTextContent() : "";
+            return parseResponse(content);
+        } catch (Exception e) {
+            log.error("Vision extraction from images failed: {}", e.getMessage(), e);
+            throw new RuntimeException("图片面经提取失败: " + e.getMessage(), e);
         }
     }
 

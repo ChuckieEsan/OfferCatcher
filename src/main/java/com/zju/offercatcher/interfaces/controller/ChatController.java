@@ -79,6 +79,15 @@ public class ChatController {
         return updated ? ResponseEntity.ok().build() : ResponseEntity.notFound().build();
     }
 
+    @PostMapping("/api/v1/conversations/{id}/generate-title")
+    public ResponseEntity<ConversationResponse> generateTitle(
+        @UserId String userId, @PathVariable Long id) {
+        log.info("Generate title for conversation: {}", id);
+        return chatService.generateTitle(userId, id)
+            .map(c -> ResponseEntity.ok(toConversationResponse(c)))
+            .orElse(ResponseEntity.notFound().build());
+    }
+
     @DeleteMapping("/api/v1/conversations/{id}")
     public ResponseEntity<Void> deleteConversation(@UserId String userId, @PathVariable Long id) {
         boolean deleted = chatService.deleteConversation(userId, id);
