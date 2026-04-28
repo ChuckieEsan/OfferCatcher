@@ -7,6 +7,7 @@ import com.zju.offercatcher.domain.shared.enums.Visibility;
 import com.zju.offercatcher.domain.shared.exception.QuestionNotFoundException;
 import com.zju.offercatcher.domain.shared.exception.UnauthorizedOperationException;
 import com.zju.offercatcher.infrastructure.adapters.embedding.OnnxEmbeddingAdapter;
+import com.zju.offercatcher.infrastructure.persistence.neo4j.Neo4jClient;
 import com.zju.offercatcher.infrastructure.persistence.postgres.QuestionJpaEntity;
 import com.zju.offercatcher.infrastructure.persistence.postgres.QuestionJpaRepository;
 import org.slf4j.Logger;
@@ -20,12 +21,13 @@ import java.util.stream.Collectors;
 /**
  * Question Repository 实现
  *
- * 整合 Qdrant（向量检索）和 PostgreSQL（元数据存储）。
+ * 整合 Qdrant（向量检索）、PostgreSQL（元数据存储）和 Neo4j（知识图谱）。
  *
  * 设计原则：
  * - Qdrant 存 embedding + userId + visibility（用于向量检索和预过滤）
  * - PostgreSQL 存所有元数据
- * - save() 同时写入 PostgreSQL 和 Qdrant（含 embedding 计算）
+ * - Neo4j 只同步 PUBLIC 题目（用户隔离：私有题目的数据不进图数据库）
+ * - save() 同时写入 PostgreSQL、Qdrant（含 embedding 计算）和 Neo4j（仅 PUBLIC）
  */
 @Repository
 public class QdrantQuestionRepositoryImpl implements QuestionRepository {
@@ -35,13 +37,16 @@ public class QdrantQuestionRepositoryImpl implements QuestionRepository {
     private final QuestionJpaRepository jpaRepository;
     private final QdrantVectorStore vectorStore;
     private final OnnxEmbeddingAdapter embeddingAdapter;
+    private final Neo4jClient neo4jClient;
 
     public QdrantQuestionRepositoryImpl(QuestionJpaRepository jpaRepository,
                                         QdrantVectorStore vectorStore,
-                                        OnnxEmbeddingAdapter embeddingAdapter) {
+                                        OnnxEmbeddingAdapter embeddingAdapter,
+                                        Neo4jClient neo4jClient) {
         this.jpaRepository = jpaRepository;
         this.vectorStore = vectorStore;
         this.embeddingAdapter = embeddingAdapter;
+        this.neo4jClient = neo4jClient;
     }
 
     // ==================== 用户隔离查询方法 ====================
@@ -160,6 +165,10 @@ public class QdrantQuestionRepositoryImpl implements QuestionRepository {
             float[] vector = embeddingAdapter.embed(question.toContext());
             vectorStore.upsert(question, vector);
         }
+
+        if (question.getVisibility() == Visibility.PUBLIC) {
+            syncToNeo4j(question);
+        }
     }
 
     @Override
@@ -192,6 +201,11 @@ public class QdrantQuestionRepositoryImpl implements QuestionRepository {
 
         // 2. 更新 Qdrant payload visibility
         vectorStore.updateVisibility(questionId, Visibility.PUBLIC);
+
+        // 3. 同步到 Neo4j 知识图谱
+        jpaRepository.findByQuestionId(questionId)
+            .map(QuestionJpaEntity::toDomain)
+            .ifPresent(this::syncToNeo4j);
     }
 
     // ==================== 批量操作 ====================
@@ -208,6 +222,12 @@ public class QdrantQuestionRepositoryImpl implements QuestionRepository {
             for (Question q : questions) {
                 float[] vector = embeddingAdapter.embed(q.toContext());
                 vectorStore.upsert(q, vector);
+            }
+        }
+
+        for (Question q : questions) {
+            if (q.getVisibility() == Visibility.PUBLIC) {
+                syncToNeo4j(q);
             }
         }
     }
@@ -244,5 +264,21 @@ public class QdrantQuestionRepositoryImpl implements QuestionRepository {
             .stream()
             .map(QuestionJpaEntity::toDomain)
             .toList();
+    }
+
+    // ==================== Neo4j 同步 ====================
+
+    private void syncToNeo4j(Question question) {
+        try {
+            neo4jClient.recordQuestionEntities(
+                question.getCompany(),
+                question.getCoreEntities()
+            );
+            log.debug("Synced to Neo4j: question={}, company={}",
+                question.getQuestionId(), question.getCompany());
+        } catch (Exception e) {
+            log.warn("Failed to sync question {} to Neo4j: {}",
+                question.getQuestionId(), e.getMessage());
+        }
     }
 }

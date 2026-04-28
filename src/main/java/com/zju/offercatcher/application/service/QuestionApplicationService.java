@@ -150,6 +150,24 @@ public class QuestionApplicationService {
         return Optional.of(question);
     }
 
+    @Transactional
+    public Optional<Question> publishQuestion(String questionId, String userId) {
+        Question question = questionRepository.findById(questionId).orElse(null);
+        if (question == null) {
+            log.warn("Question not found for publish: {}", questionId);
+            return Optional.empty();
+        }
+        if (!question.isOwnedBy(userId)) {
+            log.warn("User {} not authorized to publish {}", userId, questionId);
+            return Optional.empty();
+        }
+
+        questionRepository.publishToPublic(questionId, userId);
+        cacheService.invalidateQuestion(questionId);
+        log.info("Published question to public: {}", questionId);
+        return questionRepository.findById(questionId);
+    }
+
     public Map<String, String> getBatchAnswers(List<String> questionIds) {
         Map<String, String> answers = new HashMap<>();
         for (String id : questionIds) {

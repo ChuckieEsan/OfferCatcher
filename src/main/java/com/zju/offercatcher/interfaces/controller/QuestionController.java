@@ -90,6 +90,14 @@ public class QuestionController {
             .orElse(ResponseEntity.notFound().build());
     }
 
+    @PostMapping("/{questionId}/publish")
+    public ResponseEntity<Response> publish(@UserId String userId, @PathVariable String questionId) {
+        log.info("Publish question to public: {}", questionId);
+        return questionService.publishQuestion(questionId, userId)
+            .map(q -> ResponseEntity.ok(toResponse(q)))
+            .orElse(ResponseEntity.notFound().build());
+    }
+
     @PostMapping("/batch/answers")
     public ResponseEntity<BatchAnswersResponse> batchAnswers(@Valid @RequestBody BatchAnswersRequest req) {
         Map<String, String> answers = questionService.getBatchAnswers(req.questionIds());
