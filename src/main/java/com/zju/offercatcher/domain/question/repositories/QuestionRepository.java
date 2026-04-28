@@ -68,11 +68,25 @@ public interface QuestionRepository {
     // ==================== 基本 CRUD ====================
 
     /**
-     * 根据ID查找题目
-     * @param questionId 题目 ID
+     * 根据主键 ID 查找题目
+     * @param id 题目主键 ID (Snowflake)
      * @return 题目实体（Optional）
      */
-    Optional<Question> findById(String questionId);
+    Optional<Question> findById(Long id);
+
+    /**
+     * 根据业务键查找题目
+     * @param questionHash 题目业务去重键 (MD5 hash)
+     * @return 题目实体（Optional）
+     */
+    Optional<Question> findByQuestionHash(String questionHash);
+
+    /**
+     * 批量根据主键 ID 查找题目
+     * @param ids 题目主键 ID 列表
+     * @return 题目列表
+     */
+    List<Question> findByIds(List<Long> ids);
 
     /**
      * 保存题目
@@ -82,19 +96,19 @@ public interface QuestionRepository {
 
     /**
      * 删除题目（需验证所有权）
-     * @param questionId 题目 ID
+     * @param id 题目主键 ID
      * @param userId 请求用户 ID（验证所有权）
      * @throws UnauthorizedOperationException 如果用户不是所有者
      */
-    void deleteById(String questionId, String userId);
+    void deleteById(Long id, String userId);
 
     /**
      * 发布题目到公共题库
-     * @param questionId 题目 ID
+     * @param id 题目主键 ID
      * @param userId 所有者 ID
      * @throws UnauthorizedOperationException 如果用户不是所有者
      */
-    void publishToPublic(String questionId, String userId);
+    void publishToPublic(Long id, String userId);
 
     // ==================== 批量操作 ====================
 

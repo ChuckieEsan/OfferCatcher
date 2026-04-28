@@ -38,26 +38,26 @@ public class QuestionController {
         return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(q));
     }
 
-    @GetMapping("/{questionId}")
-    public ResponseEntity<Response> get(@PathVariable String questionId) {
-        return questionService.getQuestion(questionId)
+    @GetMapping("/{id}")
+    public ResponseEntity<Response> get(@PathVariable Long id) {
+        return questionService.getQuestion(id)
             .map(q -> ResponseEntity.ok(toResponse(q)))
             .orElse(ResponseEntity.notFound().build());
     }
 
-    @PutMapping("/{questionId}")
-    public ResponseEntity<Response> update(@PathVariable String questionId,
+    @PutMapping("/{id}")
+    public ResponseEntity<Response> update(@PathVariable Long id,
                                            @Valid @RequestBody UpdateRequest req) {
         MasteryLevel ml = req.masteryLevel() != null ? MasteryLevel.fromLevel(req.masteryLevel()) : null;
-        return questionService.updateQuestion(questionId, req.answer(), ml,
+        return questionService.updateQuestion(id, req.answer(), ml,
                 req.questionText(), req.coreEntities())
             .map(q -> ResponseEntity.ok(toResponse(q)))
             .orElse(ResponseEntity.notFound().build());
     }
 
-    @DeleteMapping("/{questionId}")
-    public ResponseEntity<Void> delete(@PathVariable String questionId, @UserId String userId) {
-        boolean deleted = questionService.deleteQuestion(questionId, userId);
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id, @UserId String userId) {
+        boolean deleted = questionService.deleteQuestion(id, userId);
         return deleted ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
     }
 
@@ -82,25 +82,25 @@ public class QuestionController {
         return ResponseEntity.ok(new ListResponse(items, items.size(), page, pageSize));
     }
 
-    @PostMapping("/{questionId}/regenerate")
-    public ResponseEntity<Response> regenerate(@PathVariable String questionId) {
-        log.info("Regenerate answer: {}", questionId);
-        return questionService.regenerateAnswer(questionId)
+    @PostMapping("/{id}/regenerate")
+    public ResponseEntity<Response> regenerate(@PathVariable Long id) {
+        log.info("Regenerate answer: {}", id);
+        return questionService.regenerateAnswer(id)
             .map(q -> ResponseEntity.ok(toResponse(q)))
             .orElse(ResponseEntity.notFound().build());
     }
 
-    @PostMapping("/{questionId}/publish")
-    public ResponseEntity<Response> publish(@UserId String userId, @PathVariable String questionId) {
-        log.info("Publish question to public: {}", questionId);
-        return questionService.publishQuestion(questionId, userId)
+    @PostMapping("/{id}/publish")
+    public ResponseEntity<Response> publish(@UserId String userId, @PathVariable Long id) {
+        log.info("Publish question to public: {}", id);
+        return questionService.publishQuestion(id, userId)
             .map(q -> ResponseEntity.ok(toResponse(q)))
             .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping("/batch/answers")
     public ResponseEntity<BatchAnswersResponse> batchAnswers(@Valid @RequestBody BatchAnswersRequest req) {
-        Map<String, String> answers = questionService.getBatchAnswers(req.questionIds());
+        Map<Long, String> answers = questionService.getBatchAnswers(req.questionIds());
         return ResponseEntity.ok(new BatchAnswersResponse(answers));
     }
 
@@ -108,7 +108,7 @@ public class QuestionController {
 
     static Response toResponse(Question q) {
         return new Response(
-            q.getQuestionId(), q.getQuestionText(), q.getCompany(), q.getPosition(),
+            q.getId(), q.getQuestionHash(), q.getQuestionText(), q.getCompany(), q.getPosition(),
             q.getQuestionType().getValue(), q.getMasteryLevel().getLevel(),
             new ArrayList<>(q.getCoreEntities()), q.getAnswer(),
             new ArrayList<>(q.getClusterIds()), q.getMetadata(),

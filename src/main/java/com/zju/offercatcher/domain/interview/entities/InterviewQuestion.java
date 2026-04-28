@@ -22,7 +22,8 @@ import java.util.List;
  */
 public class InterviewQuestion {
 
-    private final String questionId;
+    private final Long questionId;        // Snowflake PK，引用 questions.id
+    private final String questionHash;    // MD5 业务去重键
     private String questionText;
     private final String questionType;
     private final DifficultyLevel difficulty;
@@ -43,12 +44,13 @@ public class InterviewQuestion {
     /**
      * 创建面试题目（工厂方法）
      */
-    public static InterviewQuestion create(String questionId, String questionText,
+    public static InterviewQuestion create(Long questionId, String questionHash, String questionText,
                                             String questionType, DifficultyLevel difficulty,
                                             List<String> knowledgePoints) {
         validateQuestionId(questionId);
+        validateQuestionHash(questionHash);
         validateQuestionText(questionText);
-        return new InterviewQuestion(questionId, questionText, questionType, difficulty,
+        return new InterviewQuestion(questionId, questionHash, questionText, questionType, difficulty,
             knowledgePoints, null, null, null, null, null,
             new ArrayList<>(), 0, new ArrayList<>(), QuestionStatus.PENDING, null);
     }
@@ -56,7 +58,7 @@ public class InterviewQuestion {
     /**
      * 从持久化存储重建（用于 Repository 实现）
      */
-    public static InterviewQuestion rebuild(String questionId, String questionText,
+    public static InterviewQuestion rebuild(Long questionId, String questionHash, String questionText,
                                              String questionType, DifficultyLevel difficulty,
                                              List<String> knowledgePoints,
                                              String userAnswer, Integer score, String feedback,
@@ -64,7 +66,7 @@ public class InterviewQuestion {
                                              List<String> followUps, int currentFollowUpIdx,
                                              List<String> hintsGiven, QuestionStatus status,
                                              LocalDateTime answeredAt) {
-        return new InterviewQuestion(questionId, questionText, questionType, difficulty,
+        return new InterviewQuestion(questionId, questionHash, questionText, questionType, difficulty,
             knowledgePoints, userAnswer, score, feedback, masteryBefore, masteryAfter,
             followUps, currentFollowUpIdx, hintsGiven, status, answeredAt);
     }
@@ -180,8 +182,12 @@ public class InterviewQuestion {
 
     // ==================== Getter 方法 ====================
 
-    public String getQuestionId() {
+    public Long getQuestionId() {
         return questionId;
+    }
+
+    public String getQuestionHash() {
+        return questionHash;
     }
 
     public String getQuestionText() {
@@ -244,7 +250,8 @@ public class InterviewQuestion {
 
     @com.fasterxml.jackson.annotation.JsonCreator
     private InterviewQuestion(
-            @com.fasterxml.jackson.annotation.JsonProperty("questionId") String questionId,
+            @com.fasterxml.jackson.annotation.JsonProperty("questionId") Long questionId,
+            @com.fasterxml.jackson.annotation.JsonProperty("questionHash") String questionHash,
             @com.fasterxml.jackson.annotation.JsonProperty("questionText") String questionText,
             @com.fasterxml.jackson.annotation.JsonProperty("questionType") String questionType,
             @com.fasterxml.jackson.annotation.JsonProperty("difficulty") DifficultyLevel difficulty,
@@ -260,6 +267,7 @@ public class InterviewQuestion {
             @com.fasterxml.jackson.annotation.JsonProperty("status") QuestionStatus status,
             @com.fasterxml.jackson.annotation.JsonProperty("answeredAt") LocalDateTime answeredAt) {
         this.questionId = questionId;
+        this.questionHash = questionHash;
         this.questionText = questionText;
         this.questionType = questionType != null ? questionType : "knowledge";
         this.difficulty = difficulty != null ? difficulty : DifficultyLevel.MEDIUM;
@@ -278,9 +286,15 @@ public class InterviewQuestion {
 
     // ==================== 校验方法 ====================
 
-    private static void validateQuestionId(String questionId) {
-        if (questionId == null || questionId.isBlank()) {
+    private static void validateQuestionId(Long questionId) {
+        if (questionId == null) {
             throw new DomainException("questionId 不能为空", "INVALID_QUESTION_ID");
+        }
+    }
+
+    private static void validateQuestionHash(String questionHash) {
+        if (questionHash == null || questionHash.isBlank()) {
+            throw new DomainException("questionHash 不能为空", "INVALID_QUESTION_HASH");
         }
     }
 

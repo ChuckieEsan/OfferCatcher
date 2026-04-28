@@ -230,7 +230,7 @@ public class InterviewAgentService {
         for (QuestionWithScore qs : selected) {
             Question q = qs.question();
             InterviewQuestion iq = InterviewQuestion.create(
-                q.getQuestionId(), q.getQuestionText(),
+                q.getId(), q.getQuestionHash(), q.getQuestionText(),
                 q.getQuestionType().getValue(), session.getDifficulty(),
                 q.getCoreEntities()
             );

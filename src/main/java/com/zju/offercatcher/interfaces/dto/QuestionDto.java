@@ -28,7 +28,8 @@ public interface QuestionDto {
     ) {}
 
     record Response(
-        String questionId,
+        Long id,
+        String questionHash,
         String questionText,
         String company,
         String position,
@@ -52,10 +53,10 @@ public interface QuestionDto {
     ) {}
 
     record BatchAnswersRequest(
-        @NotEmpty List<String> questionIds
+        @NotEmpty List<Long> questionIds
     ) {}
 
     record BatchAnswersResponse(
-        java.util.Map<String, String> answers
+        java.util.Map<Long, String> answers
     ) {}
 }

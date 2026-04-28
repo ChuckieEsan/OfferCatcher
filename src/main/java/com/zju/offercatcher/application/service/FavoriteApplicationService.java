@@ -28,7 +28,7 @@ public class FavoriteApplicationService {
     }
 
     @Transactional
-    public Favorite addFavorite(String userId, String questionId) {
+    public Favorite addFavorite(String userId, Long questionId) {
         Optional<Favorite> existing = favoriteRepository.findByUserIdAndQuestionId(userId, questionId);
         if (existing.isPresent()) {
             return existing.get();
@@ -48,7 +48,7 @@ public class FavoriteApplicationService {
     }
 
     @Transactional
-    public void removeFavoriteByQuestionId(String userId, String questionId) {
+    public void removeFavoriteByQuestionId(String userId, Long questionId) {
         favoriteRepository.deleteByUserIdAndQuestionId(userId, questionId);
         log.info("Favorite removed: userId={}, questionId={}", userId, questionId);
     }
@@ -57,7 +57,7 @@ public class FavoriteApplicationService {
         return favoriteRepository.findByUserId(userId, page, pageSize);
     }
 
-    public Map<String, Boolean> checkFavorited(String userId, List<String> questionIds) {
+    public Map<Long, Boolean> checkFavorited(String userId, List<Long> questionIds) {
         return questionIds.stream()
             .collect(Collectors.toMap(
                 id -> id,
@@ -65,7 +65,7 @@ public class FavoriteApplicationService {
             ));
     }
 
-    public boolean isFavorited(String userId, String questionId) {
+    public boolean isFavorited(String userId, Long questionId) {
         return favoriteRepository.existsByUserIdAndQuestionId(userId, questionId);
     }
 }

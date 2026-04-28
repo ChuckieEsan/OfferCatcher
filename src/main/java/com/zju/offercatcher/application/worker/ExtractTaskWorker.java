@@ -78,7 +78,7 @@ public class ExtractTaskWorker {
                 "company", extracted.company(),
                 "position", extracted.position(),
                 "questions", extracted.questions().stream().map(q -> Map.<String, Object>of(
-                    "question_id", q.questionId(),
+                    "question_hash", q.questionHash(),
                     "question_text", q.questionText(),
                     "question_type", q.questionType(),
                     "core_entities", q.coreEntities(),

@@ -82,7 +82,7 @@ class QuestionTest {
             Question q2 = Question.createPrivate("user-002", questionText, company,
                 "开发", QuestionType.KNOWLEDGE, List.of());
 
-            assertThat(q1.getQuestionId()).isNotEqualTo(q2.getQuestionId());
+            assertThat(q1.getQuestionHash()).isNotEqualTo(q2.getQuestionHash());
         }
 
         @Test
@@ -97,7 +97,7 @@ class QuestionTest {
             Question q2 = Question.createPrivate(userId, questionText, company,
                 "开发", QuestionType.KNOWLEDGE, List.of());
 
-            assertThat(q1.getQuestionId()).isEqualTo(q2.getQuestionId());
+            assertThat(q1.getQuestionHash()).isEqualTo(q2.getQuestionHash());
         }
     }
 

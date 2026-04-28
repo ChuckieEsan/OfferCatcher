@@ -29,7 +29,7 @@ class OfferCatcherEndToEndTest {
     private String baseUrl;
     private HttpHeaders headers;
 
-    private String createdQuestionId;
+    private Long createdQuestionId;
     private Long createdTaskId;
     private Long createdFavoriteId;
 
@@ -60,8 +60,8 @@ class OfferCatcherEndToEndTest {
             HttpMethod.POST, new HttpEntity<>(body, headers), QuestionDto.Response.class);
         assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(resp.getBody().company()).isEqualTo("阿里巴巴");
-        createdQuestionId = resp.getBody().questionId();
-        assertThat(createdQuestionId).isNotBlank();
+        createdQuestionId = resp.getBody().id();
+        assertThat(createdQuestionId).isNotNull();
 
         // GET by ID
         ResponseEntity<QuestionDto.Response> getResp = rest.exchange(
@@ -114,7 +114,7 @@ class OfferCatcherEndToEndTest {
         ResponseEntity<QuestionDto.Response> recreate = rest.exchange(
             baseUrl + "/api/v1/questions",
             HttpMethod.POST, new HttpEntity<>(body, headers), QuestionDto.Response.class);
-        createdQuestionId = recreate.getBody().questionId();
+        createdQuestionId = recreate.getBody().id();
     }
 
     // ==================== ExtractTask E2E ====================
@@ -194,11 +194,11 @@ class OfferCatcherEndToEndTest {
             baseUrl + "/api/v1/favorites/check",
             HttpMethod.POST,
             new HttpEntity<>(Map.of("questionIds",
-                List.of(createdQuestionId, "no-such-id")), headers),
+                List.of(createdQuestionId, 99999)), headers),
             FavoriteDto.CheckResponse.class);
         assertThat(checkResp.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(checkResp.getBody().favorited().get(createdQuestionId)).isTrue();
-        assertThat(checkResp.getBody().favorited().get("no-such-id")).isFalse();
+        assertThat(checkResp.getBody().favorited().get(99999L)).isFalse();
 
         // DELETE
         ResponseEntity<Void> deleteResp = rest.exchange(

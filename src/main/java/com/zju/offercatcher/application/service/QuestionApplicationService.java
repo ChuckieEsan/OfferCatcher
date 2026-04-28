@@ -43,26 +43,26 @@ public class QuestionApplicationService {
             questionType, coreEntities);
         questionRepository.save(question);
         cacheService.invalidateQuestion(null);
-        log.info("Created question: {}", question.getQuestionId());
+        log.info("Created question: {}", question.getQuestionHash());
         return question;
     }
 
-    public Optional<Question> getQuestion(String questionId) {
-        return questionRepository.findById(questionId);
+    public Optional<Question> getQuestion(Long id) {
+        return questionRepository.findById(id);
     }
 
     @Transactional
-    public Optional<Question> updateQuestion(String questionId, String answer,
+    public Optional<Question> updateQuestion(Long id, String answer,
                                               MasteryLevel masteryLevel,
                                               String questionText,
                                               List<String> coreEntities) {
-        Question question = questionRepository.findById(questionId).orElse(null);
+        Question question = questionRepository.findById(id).orElse(null);
         if (question == null) {
-            log.warn("Question not found: {}", questionId);
+            log.warn("Question not found: {}", id);
             return Optional.empty();
         }
 
-        cacheService.invalidateQuestion(questionId);
+        cacheService.invalidateQuestion(id);
 
         if (answer != null) {
             question.updateAnswer(answer);
@@ -75,20 +75,20 @@ public class QuestionApplicationService {
         }
 
         questionRepository.save(question);
-        cacheService.invalidateQuestionDelayed(questionId);
-        log.info("Updated question: {}", questionId);
+        cacheService.invalidateQuestionDelayed(id);
+        log.info("Updated question: {}", id);
         return Optional.of(question);
     }
 
     @Transactional
-    public boolean deleteQuestion(String questionId, String userId) {
-        if (questionRepository.findById(questionId).isEmpty()) {
-            log.warn("Question not found for deletion: {}", questionId);
+    public boolean deleteQuestion(Long id, String userId) {
+        if (questionRepository.findById(id).isEmpty()) {
+            log.warn("Question not found for deletion: {}", id);
             return false;
         }
-        questionRepository.deleteById(questionId, userId);
-        cacheService.invalidateQuestion(questionId);
-        log.info("Deleted question: {}", questionId);
+        questionRepository.deleteById(id, userId);
+        cacheService.invalidateQuestion(id);
+        log.info("Deleted question: {}", id);
         return true;
     }
 
@@ -133,10 +133,10 @@ public class QuestionApplicationService {
     }
 
     @Transactional
-    public Optional<Question> regenerateAnswer(String questionId) {
-        Question question = questionRepository.findById(questionId).orElse(null);
+    public Optional<Question> regenerateAnswer(Long id) {
+        Question question = questionRepository.findById(id).orElse(null);
         if (question == null) {
-            log.warn("Question not found for regenerate: {}", questionId);
+            log.warn("Question not found for regenerate: {}", id);
             return Optional.empty();
         }
 
@@ -144,33 +144,33 @@ public class QuestionApplicationService {
         if (answer != null && !answer.isBlank()) {
             question.updateAnswer(answer);
             questionRepository.save(question);
-            cacheService.invalidateQuestion(questionId);
-            log.info("Answer regenerated for: {}", questionId);
+            cacheService.invalidateQuestion(id);
+            log.info("Answer regenerated for: {}", id);
         }
         return Optional.of(question);
     }
 
     @Transactional
-    public Optional<Question> publishQuestion(String questionId, String userId) {
-        Question question = questionRepository.findById(questionId).orElse(null);
+    public Optional<Question> publishQuestion(Long id, String userId) {
+        Question question = questionRepository.findById(id).orElse(null);
         if (question == null) {
-            log.warn("Question not found for publish: {}", questionId);
+            log.warn("Question not found for publish: {}", id);
             return Optional.empty();
         }
         if (!question.isOwnedBy(userId)) {
-            log.warn("User {} not authorized to publish {}", userId, questionId);
+            log.warn("User {} not authorized to publish {}", userId, id);
             return Optional.empty();
         }
 
-        questionRepository.publishToPublic(questionId, userId);
-        cacheService.invalidateQuestion(questionId);
-        log.info("Published question to public: {}", questionId);
-        return questionRepository.findById(questionId);
+        questionRepository.publishToPublic(id, userId);
+        cacheService.invalidateQuestion(id);
+        log.info("Published question to public: {}", id);
+        return questionRepository.findById(id);
     }
 
-    public Map<String, String> getBatchAnswers(List<String> questionIds) {
-        Map<String, String> answers = new HashMap<>();
-        for (String id : questionIds) {
+    public Map<Long, String> getBatchAnswers(List<Long> ids) {
+        Map<Long, String> answers = new HashMap<>();
+        for (Long id : ids) {
             questionRepository.findById(id)
                 .ifPresent(q -> answers.put(id, q.getAnswer()));
         }

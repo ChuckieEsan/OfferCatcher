@@ -47,11 +47,11 @@ public class ScorerAgent {
             .build();
     }
 
-    public ScoreResult score(String questionId, String userAnswer) {
-        Question question = questionRepository.findById(questionId)
-            .orElseThrow(() -> new NoSuchElementException("Question not found: " + questionId));
+    public ScoreResult score(Long id, String userAnswer) {
+        Question question = questionRepository.findById(id)
+            .orElseThrow(() -> new NoSuchElementException("Question not found: " + id));
 
-        log.info("Scoring answer for question: {}", questionId);
+        log.info("Scoring answer for question: {}", id);
 
         String prompt = promptLoader.render("scorer.md",
             "question_text", question.getQuestionText(),
@@ -78,7 +78,7 @@ public class ScorerAgent {
             )).block();
 
             String content = response != null ? response.getTextContent() : "";
-            ScoreResult result = parseResponse(content, questionId, question.getQuestionText(),
+            ScoreResult result = parseResponse(content, id, question.getQuestionText(),
                 question.getAnswer(), userAnswer);
 
             MasteryLevel currentLevel = question.getMasteryLevel();
@@ -95,11 +95,11 @@ public class ScorerAgent {
             if (finalLevel != currentLevel) {
                 question.updateMastery(finalLevel);
                 questionRepository.save(question);
-                log.info("Updated mastery: {} -> {} for question {}", currentLevel, finalLevel, questionId);
+                log.info("Updated mastery: {} -> {} for question {}", currentLevel, finalLevel, id);
             }
 
             log.info("Scoring completed: score={}, level={}", result.score(), finalLevel);
-            return new ScoreResult(questionId, question.getQuestionText(),
+            return new ScoreResult(id, question.getQuestionText(),
                 question.getAnswer(), userAnswer,
                 result.score(), finalLevel.name(),
                 result.strengths(), result.improvements(), result.feedback());
@@ -109,7 +109,7 @@ public class ScorerAgent {
         }
     }
 
-    private ScoreResult parseResponse(String content, String questionId, String questionText,
+    private ScoreResult parseResponse(String content, Long id, String questionText,
                                        String standardAnswer, String userAnswer) {
         try {
             int jsonStart = content.indexOf("{");
@@ -131,11 +131,11 @@ public class ScorerAgent {
             List<String> improvements = (List<String>) data.getOrDefault("improvements", List.of());
             String feedback = (String) data.getOrDefault("feedback", "");
 
-            return new ScoreResult(questionId, questionText, standardAnswer, userAnswer,
+            return new ScoreResult(id, questionText, standardAnswer, userAnswer,
                 score, masteryLevel, strengths, improvements, feedback);
         } catch (Exception e) {
             log.error("Failed to parse scorer response: {}", e.getMessage());
-            return new ScoreResult(questionId, questionText, standardAnswer, userAnswer,
+            return new ScoreResult(id, questionText, standardAnswer, userAnswer,
                 0, "LEVEL_0", List.of(), List.of(), "评分失败: " + e.getMessage());
         }
     }

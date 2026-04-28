@@ -52,7 +52,7 @@ public class AnswerGenerationWorker {
         for (QuestionJpaEntity entity : unanswered) {
             try {
                 Question question = entity.toDomain();
-                Optional<Question> existing = questionRepository.findById(question.getQuestionId());
+                Optional<Question> existing = questionRepository.findById(question.getId());
                 if (existing.isPresent() && existing.get().getAnswer() != null
                     && !existing.get().getAnswer().isBlank()) {
                     continue; // 幂等性：答案已生成
@@ -62,10 +62,10 @@ public class AnswerGenerationWorker {
                 if (answer != null && !answer.isBlank()) {
                     question.updateAnswer(answer);
                     questionRepository.save(question);
-                    log.info("Answer generated for question: {}", question.getQuestionId());
+                    log.info("Answer generated for question: {}", question.getQuestionHash());
                 }
             } catch (Exception e) {
-                log.error("Answer generation failed for question {}: {}", entity.getQuestionId(), e.getMessage());
+                log.error("Answer generation failed for question {}: {}", entity.getQuestionHash(), e.getMessage());
             }
         }
     }

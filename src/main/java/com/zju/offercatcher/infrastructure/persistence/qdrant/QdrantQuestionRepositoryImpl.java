@@ -59,29 +59,27 @@ public class QdrantQuestionRepositoryImpl implements QuestionRepository {
     @Override
     public List<QuestionWithScore> searchUserVisible(String userId, float[] queryVector,
                                                       Map<String, Object> filters, int limit) {
-        // 1. Qdrant 向量搜索（带预过滤）
         List<VectorSearchHit> hits = vectorStore.search(queryVector, userId, limit);
 
         if (hits.isEmpty()) {
             return Collections.emptyList();
         }
 
-        // 2. PostgreSQL 批量查询元数据
-        List<String> ids = hits.stream()
-            .map(VectorSearchHit::id)
+        List<Long> ids = hits.stream()
+            .map(hit -> Long.parseLong(hit.id()))
             .toList();
 
-        List<QuestionJpaEntity> entities = jpaRepository.findByQuestionIds(ids);
-        Map<String, Question> questionMap = entities.stream()
+        List<QuestionJpaEntity> entities = jpaRepository.findByIds(ids);
+        Map<Long, Question> questionMap = entities.stream()
             .map(QuestionJpaEntity::toDomain)
-            .collect(Collectors.toMap(Question::getQuestionId, q -> q));
+            .collect(Collectors.toMap(Question::getId, q -> q));
 
-        // 3. 合并结果（保持向量搜索的相似度顺序）
         return hits.stream()
             .map(hit -> {
-                Question question = questionMap.get(hit.id());
+                Long id = Long.parseLong(hit.id());
+                Question question = questionMap.get(id);
                 if (question == null) {
-                    log.warn("Question not found in PostgreSQL: {}", hit.id());
+                    log.warn("Question not found in PostgreSQL: id={}", id);
                     return null;
                 }
                 return new QuestionWithScore(question, hit.score());
@@ -98,18 +96,19 @@ public class QdrantQuestionRepositoryImpl implements QuestionRepository {
             return Collections.emptyList();
         }
 
-        List<String> ids = hits.stream()
-            .map(VectorSearchHit::id)
+        List<Long> ids = hits.stream()
+            .map(hit -> Long.parseLong(hit.id()))
             .toList();
 
-        List<QuestionJpaEntity> entities = jpaRepository.findByQuestionIds(ids);
-        Map<String, Question> questionMap = entities.stream()
+        List<QuestionJpaEntity> entities = jpaRepository.findByIds(ids);
+        Map<Long, Question> questionMap = entities.stream()
             .map(QuestionJpaEntity::toDomain)
-            .collect(Collectors.toMap(Question::getQuestionId, q -> q));
+            .collect(Collectors.toMap(Question::getId, q -> q));
 
         return hits.stream()
             .map(hit -> {
-                Question question = questionMap.get(hit.id());
+                Long id = Long.parseLong(hit.id());
+                Question question = questionMap.get(id);
                 return question != null ? new QuestionWithScore(question, hit.score()) : null;
             })
             .filter(Objects::nonNull)
@@ -124,18 +123,19 @@ public class QdrantQuestionRepositoryImpl implements QuestionRepository {
             return Collections.emptyList();
         }
 
-        List<String> ids = hits.stream()
-            .map(VectorSearchHit::id)
+        List<Long> ids = hits.stream()
+            .map(hit -> Long.parseLong(hit.id()))
             .toList();
 
-        List<QuestionJpaEntity> entities = jpaRepository.findByQuestionIds(ids);
-        Map<String, Question> questionMap = entities.stream()
+        List<QuestionJpaEntity> entities = jpaRepository.findByIds(ids);
+        Map<Long, Question> questionMap = entities.stream()
             .map(QuestionJpaEntity::toDomain)
-            .collect(Collectors.toMap(Question::getQuestionId, q -> q));
+            .collect(Collectors.toMap(Question::getId, q -> q));
 
         return hits.stream()
             .map(hit -> {
-                Question question = questionMap.get(hit.id());
+                Long id = Long.parseLong(hit.id());
+                Question question = questionMap.get(id);
                 return question != null ? new QuestionWithScore(question, hit.score()) : null;
             })
             .filter(Objects::nonNull)
@@ -150,9 +150,23 @@ public class QdrantQuestionRepositoryImpl implements QuestionRepository {
     // ==================== 基本 CRUD ====================
 
     @Override
-    public Optional<Question> findById(String questionId) {
-        return jpaRepository.findByQuestionId(questionId)
+    public Optional<Question> findById(Long id) {
+        return jpaRepository.findById(id)
             .map(QuestionJpaEntity::toDomain);
+    }
+
+    @Override
+    public Optional<Question> findByQuestionHash(String questionHash) {
+        return jpaRepository.findByQuestionHash(questionHash)
+            .map(QuestionJpaEntity::toDomain);
+    }
+
+    @Override
+    public List<Question> findByIds(List<Long> ids) {
+        return jpaRepository.findByIds(ids)
+            .stream()
+            .map(QuestionJpaEntity::toDomain)
+            .toList();
     }
 
     @Override
@@ -173,37 +187,30 @@ public class QdrantQuestionRepositoryImpl implements QuestionRepository {
 
     @Override
     @Transactional
-    public void deleteById(String questionId, String userId) {
-        // 1. 验证所有权
-        Optional<QuestionJpaEntity> entity = jpaRepository.findByQuestionId(questionId);
+    public void deleteById(Long id, String userId) {
+        Optional<QuestionJpaEntity> entity = jpaRepository.findById(id);
         if (entity.isEmpty()) {
-            throw new QuestionNotFoundException(questionId);
+            throw new QuestionNotFoundException(id);
         }
         if (!entity.get().getUserId().equals(userId)) {
-            throw new UnauthorizedOperationException(userId, questionId, "delete");
+            throw new UnauthorizedOperationException(userId, id.toString(), "delete");
         }
 
-        // 2. 删除 PostgreSQL 记录
-        jpaRepository.deleteByQuestionIdAndUserId(questionId, userId);
-
-        // 3. 删除 Qdrant 点
-        vectorStore.delete(questionId);
+        jpaRepository.deleteByIdAndUserId(id, userId);
+        vectorStore.delete(id);
     }
 
     @Override
     @Transactional
-    public void publishToPublic(String questionId, String userId) {
-        // 1. 更新 PostgreSQL visibility
-        int updated = jpaRepository.updateVisibilityToPublic(questionId, userId);
+    public void publishToPublic(Long id, String userId) {
+        int updated = jpaRepository.updateVisibilityToPublic(id, userId);
         if (updated == 0) {
-            throw new UnauthorizedOperationException(userId, questionId, "publish");
+            throw new UnauthorizedOperationException(userId, id.toString(), "publish");
         }
 
-        // 2. 更新 Qdrant payload visibility
-        vectorStore.updateVisibility(questionId, Visibility.PUBLIC);
+        vectorStore.updateVisibility(id, Visibility.PUBLIC);
 
-        // 3. 同步到 Neo4j 知识图谱
-        jpaRepository.findByQuestionId(questionId)
+        jpaRepository.findById(id)
             .map(QuestionJpaEntity::toDomain)
             .ifPresent(this::syncToNeo4j);
     }
@@ -275,10 +282,10 @@ public class QdrantQuestionRepositoryImpl implements QuestionRepository {
                 question.getCoreEntities()
             );
             log.debug("Synced to Neo4j: question={}, company={}",
-                question.getQuestionId(), question.getCompany());
+                question.getId(), question.getCompany());
         } catch (Exception e) {
             log.warn("Failed to sync question {} to Neo4j: {}",
-                question.getQuestionId(), e.getMessage());
+                question.getId(), e.getMessage());
         }
     }
 }

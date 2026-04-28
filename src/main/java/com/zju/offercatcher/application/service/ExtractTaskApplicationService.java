@@ -67,7 +67,7 @@ public class ExtractTaskApplicationService {
                 "company", extracted.company(),
                 "position", extracted.position(),
                 "questions", extracted.questions().stream().map(q -> Map.<String, Object>of(
-                    "question_id", q.questionId(),
+                    "question_hash", q.questionHash(),
                     "question_text", q.questionText(),
                     "question_type", q.questionType(),
                     "core_entities", q.coreEntities(),
@@ -191,7 +191,7 @@ public class ExtractTaskApplicationService {
         List<ExtractedQuestionItem.QuestionItem> questions = List.of();
         if (rawQuestions != null) {
             questions = rawQuestions.stream().map(q -> new ExtractedQuestionItem.QuestionItem(
-                (String) q.getOrDefault("question_id", ""),
+                (String) q.getOrDefault("question_hash", ""),
                 (String) q.getOrDefault("question_text", ""),
                 (String) q.getOrDefault("question_type", "knowledge"),
                 (List<String>) q.getOrDefault("core_entities", List.of()),

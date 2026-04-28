@@ -284,19 +284,19 @@ public class Neo4jClient {
         }
     }
 
-    public boolean createBelongsToRelationship(String questionId, String clusterId) {
+    public boolean createBelongsToRelationship(String questionHash, String clusterId) {
         if (!ensureConnected()) return false;
 
-        createQuestionNodeIfNotExists(questionId);
+        createQuestionNodeIfNotExists(questionHash);
 
         try (var s = session()) {
             s.run("""
-                MATCH (q:Question {question_id: $question_id})
+                MATCH (q:Question {question_hash: $question_hash})
                 MATCH (c:Cluster {cluster_id: $cluster_id})
                 MERGE (q)-[r:BELONGS_TO]->(c)
                 RETURN r
                 """,
-                Map.of("question_id", questionId, "cluster_id", clusterId));
+                Map.of("question_hash", questionHash, "cluster_id", clusterId));
             return true;
         } catch (Exception e) {
             log.error("Failed to create BELONGS_TO relationship: {}", e.getMessage());
@@ -304,10 +304,10 @@ public class Neo4jClient {
         }
     }
 
-    private boolean createQuestionNodeIfNotExists(String questionId) {
+    private boolean createQuestionNodeIfNotExists(String questionHash) {
         try (var s = session()) {
-            s.run("MERGE (q:Question {question_id: $question_id}) RETURN q",
-                  Map.of("question_id", questionId));
+            s.run("MERGE (q:Question {question_hash: $question_hash}) RETURN q",
+                  Map.of("question_hash", questionHash));
             return true;
         } catch (Exception e) {
             log.error("Failed to create question node: {}", e.getMessage());
@@ -326,7 +326,7 @@ public class Neo4jClient {
                 RETURN c.cluster_id as cluster_id,
                        c.cluster_name as cluster_name,
                        c.summary as summary,
-                       collect(DISTINCT q.question_id) as question_ids,
+                       collect(DISTINCT q.question_hash) as question_ids,
                        collect(DISTINCT e.name) as knowledge_points,
                        count(DISTINCT q) as frequency
                 """, Map.of("cluster_id", clusterId));

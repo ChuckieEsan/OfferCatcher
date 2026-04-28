@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -29,7 +29,7 @@ class ScoreControllerTest {
     @MockitoBean ScorerAgent scorerAgent;
 
     private final ScoreResult sampleResult = new ScoreResult(
-        "q1", "HashMap 实现原理？", "基于数组+链表", "数组+链表",
+        1L, "HashMap 实现原理？", "基于数组+链表", "数组+链表",
         85, "LEVEL_2",
         List.of("概念准确"), List.of("缺少扩容说明"),
         "回答较完整，建议补充扩容机制");
@@ -41,10 +41,10 @@ class ScoreControllerTest {
         @Test
         @DisplayName("评分成功返回 200")
         void scoreSuccess() throws Exception {
-            when(scorerAgent.score("q1", "数组+链表")).thenReturn(sampleResult);
+            when(scorerAgent.score(1L, "数组+链表")).thenReturn(sampleResult);
 
             String body = mapper.writeValueAsString(Map.of(
-                "questionId", "q1",
+                "questionId", 1,
                 "userAnswer", "数组+链表"));
 
             mvc.perform(post("/api/v1/score")
@@ -60,11 +60,11 @@ class ScoreControllerTest {
         @Test
         @DisplayName("题目不存在返回 404")
         void questionNotFound() throws Exception {
-            when(scorerAgent.score(anyString(), anyString()))
+            when(scorerAgent.score(anyLong(), anyString()))
                 .thenThrow(new NoSuchElementException("Question not found: nonexistent"));
 
             String body = mapper.writeValueAsString(Map.of(
-                "questionId", "nonexistent",
+                "questionId", 999,
                 "userAnswer", "test"));
 
             mvc.perform(post("/api/v1/score")
@@ -77,7 +77,7 @@ class ScoreControllerTest {
         @DisplayName("缺少必填字段返回 400")
         void missingFields() throws Exception {
             String body = mapper.writeValueAsString(Map.of(
-                "questionId", "q1"));
+                "questionId", 1));
 
             mvc.perform(post("/api/v1/score")
                     .contentType(MediaType.APPLICATION_JSON)

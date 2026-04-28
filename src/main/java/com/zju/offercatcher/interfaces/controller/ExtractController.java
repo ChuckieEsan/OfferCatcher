@@ -171,7 +171,7 @@ public class ExtractController {
 
     private ExtractResponse toExtractResponse(ExtractedQuestionItem item) {
         List<ExtractedQuestionDto> questions = item.questions().stream()
-            .map(q -> new ExtractedQuestionDto(q.questionId(), q.questionText(),
+            .map(q -> new ExtractedQuestionDto(q.questionHash(), q.questionText(),
                 q.questionType(), q.coreEntities(), q.metadata()))
             .toList();
         return new ExtractResponse(item.company(), item.position(), questions);

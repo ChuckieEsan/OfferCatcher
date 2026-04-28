@@ -34,7 +34,7 @@ public class MQMessageHelper {
      * 将失败消息重新发布到队尾（带 x-retry-count 计数）
      */
     public boolean republishToBack(Channel channel, long deliveryTag, byte[] body,
-                                   int retryCount, String questionId) throws IOException {
+                                   int retryCount, Long questionId) throws IOException {
         int newRetryCount = retryCount + 1;
 
         if (newRetryCount >= maxRetries) {

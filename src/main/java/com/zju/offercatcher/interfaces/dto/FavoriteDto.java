@@ -11,13 +11,13 @@ import java.util.List;
 public interface FavoriteDto {
 
     record CreateRequest(
-        @NotBlank String questionId
+        @jakarta.validation.constraints.NotNull Long questionId
     ) {}
 
     record Response(
         Long favoriteId,
         String userId,
-        String questionId,
+        Long questionId,
         String createdAt
     ) {}
 
@@ -26,10 +26,10 @@ public interface FavoriteDto {
     ) {}
 
     record CheckRequest(
-        @NotEmpty List<String> questionIds
+        @NotEmpty List<Long> questionIds
     ) {}
 
     record CheckResponse(
-        java.util.Map<String, Boolean> favorited
+        java.util.Map<Long, Boolean> favorited
     ) {}
 }

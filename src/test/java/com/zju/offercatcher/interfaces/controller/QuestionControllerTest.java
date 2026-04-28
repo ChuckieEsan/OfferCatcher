@@ -3,7 +3,6 @@ package com.zju.offercatcher.interfaces.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zju.offercatcher.application.service.QuestionApplicationService;
 import com.zju.offercatcher.domain.question.aggregates.Question;
-import com.zju.offercatcher.domain.shared.enums.MasteryLevel;
 import com.zju.offercatcher.domain.shared.enums.QuestionType;
 import com.zju.offercatcher.interfaces.config.GlobalExceptionHandler;
 import com.zju.offercatcher.interfaces.config.UserIdResolver;
@@ -58,7 +57,7 @@ class QuestionControllerTest {
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(body))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.questionId").exists())
+                .andExpect(jsonPath("$.questionHash").exists())
                 .andExpect(jsonPath("$.company").value("阿里巴巴"));
         }
 
@@ -82,19 +81,19 @@ class QuestionControllerTest {
         @Test
         @DisplayName("题目存在返回 200")
         void getSuccess() throws Exception {
-            when(questionService.getQuestion("q1")).thenReturn(Optional.of(sampleQuestion));
+            when(questionService.getQuestion(1L)).thenReturn(Optional.of(sampleQuestion));
 
-            mvc.perform(get("/api/v1/questions/q1"))
+            mvc.perform(get("/api/v1/questions/1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.questionId").exists());
+                .andExpect(jsonPath("$.questionHash").exists());
         }
 
         @Test
         @DisplayName("题目不存在返回 404")
         void notFound() throws Exception {
-            when(questionService.getQuestion("nonexistent")).thenReturn(Optional.empty());
+            when(questionService.getQuestion(999L)).thenReturn(Optional.empty());
 
-            mvc.perform(get("/api/v1/questions/nonexistent"))
+            mvc.perform(get("/api/v1/questions/999"))
                 .andExpect(status().isNotFound());
         }
     }
@@ -106,12 +105,12 @@ class QuestionControllerTest {
         @Test
         @DisplayName("更新成功返回 200")
         void updateSuccess() throws Exception {
-            when(questionService.updateQuestion(eq("q1"), anyString(), any(), any(), any()))
+            when(questionService.updateQuestion(eq(1L), anyString(), any(), any(), any()))
                 .thenReturn(Optional.of(sampleQuestion));
 
             String body = mapper.writeValueAsString(Map.of("answer", "新答案"));
 
-            mvc.perform(put("/api/v1/questions/q1")
+            mvc.perform(put("/api/v1/questions/1")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(body))
                 .andExpect(status().isOk());
@@ -142,15 +141,15 @@ class QuestionControllerTest {
         @Test
         @DisplayName("批量查询答案返回 200")
         void batchSuccess() throws Exception {
-            when(questionService.getBatchAnswers(anyList())).thenReturn(Map.of("q1", "答案1"));
+            when(questionService.getBatchAnswers(anyList())).thenReturn(Map.of(1L, "答案1"));
 
-            String body = mapper.writeValueAsString(Map.of("questionIds", List.of("q1", "q2")));
+            String body = mapper.writeValueAsString(Map.of("questionIds", List.of(1, 2)));
 
             mvc.perform(post("/api/v1/questions/batch/answers")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(body))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.answers.q1").value("答案1"));
+                .andExpect(jsonPath("$.answers['1']").value("答案1"));
         }
     }
 }

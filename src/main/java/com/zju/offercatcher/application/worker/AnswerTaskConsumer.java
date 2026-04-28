@@ -52,7 +52,7 @@ public class AnswerTaskConsumer {
         throws IOException {
 
         MQTaskMessage task = null;
-        String questionId = "unknown";
+        Long questionId = null;
         try {
             task = objectMapper.readValue(body, MQTaskMessage.class);
             questionId = task.questionId();
@@ -82,7 +82,7 @@ public class AnswerTaskConsumer {
 
         } catch (Exception e) {
             log.error("Failed to process answer task {}: {}", questionId, e.getMessage());
-            String qid = task != null ? task.questionId() : questionId;
+            Long qid = task != null ? task.questionId() : questionId;
             messageHelper.republishToBack(channel, deliveryTag, body, retryCount, qid);
         }
     }

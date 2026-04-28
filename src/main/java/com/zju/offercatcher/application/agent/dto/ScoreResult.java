@@ -8,7 +8,7 @@ import java.util.List;
  * 对应 Python: app/domain/interview/aggregates.py ScoreResult
  */
 public record ScoreResult(
-    String questionId,
+    Long questionId,
     String questionText,
     String standardAnswer,
     String userAnswer,

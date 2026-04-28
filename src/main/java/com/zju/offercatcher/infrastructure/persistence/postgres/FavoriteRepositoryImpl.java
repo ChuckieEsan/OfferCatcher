@@ -32,7 +32,7 @@ public class FavoriteRepositoryImpl implements FavoriteRepository {
     }
 
     @Override
-    public Optional<Favorite> findByUserIdAndQuestionId(String userId, String questionId) {
+    public Optional<Favorite> findByUserIdAndQuestionId(String userId, Long questionId) {
         return jpaRepository.findByUserIdAndQuestionId(userId, questionId)
             .map(FavoriteJpaEntity::toDomain);
     }
@@ -69,13 +69,13 @@ public class FavoriteRepositoryImpl implements FavoriteRepository {
     }
 
     @Override
-    public boolean existsByUserIdAndQuestionId(String userId, String questionId) {
+    public boolean existsByUserIdAndQuestionId(String userId, Long questionId) {
         return jpaRepository.existsByUserIdAndQuestionId(userId, questionId);
     }
 
     @Override
     @Transactional
-    public void deleteByUserIdAndQuestionId(String userId, String questionId) {
+    public void deleteByUserIdAndQuestionId(String userId, Long questionId) {
         jpaRepository.deleteByUserIdAndQuestionId(userId, questionId);
     }
 }

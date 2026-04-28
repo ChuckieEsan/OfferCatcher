@@ -9,7 +9,7 @@ import java.util.List;
  * 对应 Python: app/infrastructure/messaging/messages.py MQTaskMessage
  */
 public record MQTaskMessage(
-    String questionId,
+    Long questionId,
     String questionText,
     String company,
     String position,

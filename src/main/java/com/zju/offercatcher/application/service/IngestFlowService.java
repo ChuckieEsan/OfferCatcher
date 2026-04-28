@@ -54,10 +54,10 @@ public class IngestFlowService {
         for (ExtractedQuestionItem.QuestionItem item : extracted.questions()) {
             try {
                 // 1. 检查是否已存在
-                Optional<QuestionJpaEntity> existing = questionJpaRepo.findByQuestionId(item.questionId());
+                Optional<QuestionJpaEntity> existing = questionJpaRepo.findByQuestionHash(item.questionHash());
                 if (existing.isPresent()) {
-                    log.info("Question {} already exists, skip", item.questionId());
-                    result.questionIds.add(item.questionId());
+                    log.info("Question {} already exists, skip", item.questionHash());
+                    result.questionIds.add(item.questionHash());
                     continue;
                 }
 
@@ -70,7 +70,7 @@ public class IngestFlowService {
                     List<VectorSearchHit> similar = qdrantVectorStore.search(
                         vector, userId, 1);
                     if (!similar.isEmpty()) {
-                        reusedAnswer = tryReuseAnswer(similar.getFirst().id());
+                        reusedAnswer = tryReuseAnswer(Long.parseLong(similar.getFirst().id()));
                     }
                 }
 
@@ -93,18 +93,18 @@ public class IngestFlowService {
                 }
 
                 result.processed++;
-                result.questionIds.add(item.questionId());
+                result.questionIds.add(item.questionHash());
 
                 // 5. Publish MQ task for async answer generation (if no answer reused)
                 if (reusedAnswer == null && mqProducer.isPresent()) {
                     MQTaskMessage taskMsg = new MQTaskMessage(
-                        question.getQuestionId(), question.getQuestionText(),
+                        question.getId(), question.getQuestionText(),
                         extracted.company(), extracted.position(), question.getCoreEntities()
                     );
                     mqProducer.get().publishTask(taskMsg);
                 }
             } catch (Exception e) {
-                log.error("Failed to ingest question {}: {}", item.questionId(), e.getMessage());
+                log.error("Failed to ingest question {}: {}", item.questionHash(), e.getMessage());
                 result.failed++;
             }
         }
@@ -113,8 +113,8 @@ public class IngestFlowService {
         return result;
     }
 
-    private String tryReuseAnswer(String similarQuestionId) {
-        return questionJpaRepo.findByQuestionId(similarQuestionId)
+    private String tryReuseAnswer(Long similarQuestionId) {
+        return questionJpaRepo.findById(similarQuestionId)
             .map(QuestionJpaEntity::getAnswer)
             .filter(a -> a != null && !a.isBlank())
             .orElse(null);

@@ -133,7 +133,7 @@ public class RetrievalApplicationService {
 
     private static SearchResult toSearchResult(Question q, float score) {
         return new SearchResult(
-            q.getQuestionId(), q.getQuestionText(), q.getCompany(), q.getPosition(),
+            q.getQuestionHash(), q.getQuestionText(), q.getCompany(), q.getPosition(),
             q.getMasteryLevel() != null ? q.getMasteryLevel().name() : null,
             q.getQuestionType() != null ? q.getQuestionType().name() : null,
             q.getCoreEntities(), q.getClusterIds(), q.getAnswer(), q.getMetadata(), score

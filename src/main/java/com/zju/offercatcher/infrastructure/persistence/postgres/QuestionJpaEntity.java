@@ -26,8 +26,11 @@ import java.util.Map;
 public class QuestionJpaEntity {
 
     @Id
-    @Column(name = "question_id", length = 32)
-    private String questionId;
+    @Column(name = "id")
+    private Long id;
+
+    @Column(name = "question_hash", length = 32, unique = true)
+    private String questionHash;
 
     @Column(name = "user_id", nullable = false)
     private String userId;
@@ -81,7 +84,8 @@ public class QuestionJpaEntity {
      */
     public static QuestionJpaEntity fromDomain(com.zju.offercatcher.domain.question.aggregates.Question question) {
         QuestionJpaEntity entity = new QuestionJpaEntity();
-        entity.setQuestionId(question.getQuestionId());
+        entity.setId(question.getId());
+        entity.setQuestionHash(question.getQuestionHash());
         entity.setUserId(question.getUserId());
         entity.setQuestionText(question.getQuestionText());
         entity.setQuestionType(question.getQuestionType());
@@ -103,7 +107,8 @@ public class QuestionJpaEntity {
      */
     public com.zju.offercatcher.domain.question.aggregates.Question toDomain() {
         return com.zju.offercatcher.domain.question.aggregates.Question.rebuild(
-            questionId,
+            id,
+            questionHash,
             userId,
             questionText,
             questionType,

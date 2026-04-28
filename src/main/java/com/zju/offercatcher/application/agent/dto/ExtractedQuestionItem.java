@@ -14,7 +14,7 @@ public record ExtractedQuestionItem(
     List<QuestionItem> questions
 ) {
     public record QuestionItem(
-        String questionId,
+        String questionHash,
         String questionText,
         String questionType,
         List<String> coreEntities,

@@ -6,6 +6,7 @@ import com.zju.offercatcher.domain.shared.enums.SourceType;
 import com.zju.offercatcher.domain.shared.enums.Visibility;
 import com.zju.offercatcher.domain.shared.exception.DomainException;
 import com.zju.offercatcher.domain.question.services.QuestionIdGenerator;
+import com.zju.offercatcher.infrastructure.common.SnowflakeIdGenerator;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -25,7 +26,8 @@ import java.util.Map;
 public class Question {
 
     // ==================== 标识字段 ====================
-    private final String questionId;      // MD5(userId|company|questionText)
+    private final Long id;                // Snowflake 主键 (数据库 PK)
+    private final String questionHash;    // MD5(userId|company|questionText) 业务去重键
     private final String userId;          // 题目所有者（用户隔离）
 
     // ==================== 内容字段 ====================
@@ -62,8 +64,9 @@ public class Question {
     public static Question createPrivate(String userId, String questionText,
                                           String company, String position,
                                           QuestionType questionType, List<String> coreEntities) {
-        String id = QuestionIdGenerator.generate(userId, company, questionText);
-        return new Question(id, userId, questionText, questionType, company, position,
+        Long id = SnowflakeIdGenerator.generate();
+        String hash = QuestionIdGenerator.generate(userId, company, questionText);
+        return new Question(id, hash, userId, questionText, questionType, company, position,
                             coreEntities, Visibility.PRIVATE, SourceType.USER_UPLOAD);
     }
 
@@ -80,8 +83,9 @@ public class Question {
     public static Question createPublic(String userId, String questionText,
                                           String company, String position,
                                           QuestionType questionType, List<String> coreEntities) {
-        String id = QuestionIdGenerator.generate(userId, company, questionText);
-        return new Question(id, userId, questionText, questionType, company, position,
+        Long id = SnowflakeIdGenerator.generate();
+        String hash = QuestionIdGenerator.generate(userId, company, questionText);
+        return new Question(id, hash, userId, questionText, questionType, company, position,
                             coreEntities, Visibility.PUBLIC, SourceType.USER_UPLOAD);
     }
 
@@ -97,21 +101,22 @@ public class Question {
     public static Question createSystemImport(String questionText,
                                                String company, String position,
                                                QuestionType questionType, List<String> coreEntities) {
-        String id = QuestionIdGenerator.generateSystemId(company, questionText);
-        return new Question(id, "system", questionText, questionType, company, position,
+        Long id = SnowflakeIdGenerator.generate();
+        String hash = QuestionIdGenerator.generateSystemId(company, questionText);
+        return new Question(id, hash, "system", questionText, questionType, company, position,
                             coreEntities, Visibility.PUBLIC, SourceType.SYSTEM_IMPORT);
     }
 
     /**
      * 从持久化存储重建题目（用于 Repository 实现）
      */
-    public static Question rebuild(String questionId, String userId, String questionText,
+    public static Question rebuild(Long id, String questionHash, String userId, String questionText,
                                     QuestionType questionType, String company, String position,
                                     List<String> coreEntities, String answer, MasteryLevel masteryLevel,
                                     List<String> clusterIds, Map<String, Object> metadata,
                                     Visibility visibility, SourceType sourceType,
                                     LocalDateTime createdAt, LocalDateTime updatedAt) {
-        return new Question(questionId, userId, questionText, questionType, company, position,
+        return new Question(id, questionHash, userId, questionText, questionType, company, position,
                             coreEntities, answer, masteryLevel, clusterIds, metadata,
                             visibility, sourceType, createdAt, updatedAt);
     }
@@ -213,8 +218,12 @@ public class Question {
 
     // ==================== Getter 方法 ====================
 
-    public String getQuestionId() {
-        return questionId;
+    public Long getId() {
+        return id;
+    }
+
+    public String getQuestionHash() {
+        return questionHash;
     }
 
     public String getUserId() {
@@ -275,10 +284,11 @@ public class Question {
 
     // ==================== 构造函数 ====================
 
-    private Question(String questionId, String userId, String questionText,
+    private Question(Long id, String questionHash, String userId, String questionText,
                       QuestionType questionType, String company, String position,
                       List<String> coreEntities, Visibility visibility, SourceType sourceType) {
-        this.questionId = questionId;
+        this.id = id;
+        this.questionHash = questionHash;
         this.userId = userId;
         this.questionText = questionText;
         this.questionType = questionType;
@@ -295,13 +305,14 @@ public class Question {
         this.updatedAt = LocalDateTime.now();
     }
 
-    private Question(String questionId, String userId, String questionText,
+    private Question(Long id, String questionHash, String userId, String questionText,
                       QuestionType questionType, String company, String position,
                       List<String> coreEntities, String answer, MasteryLevel masteryLevel,
                       List<String> clusterIds, Map<String, Object> metadata,
                       Visibility visibility, SourceType sourceType,
                       LocalDateTime createdAt, LocalDateTime updatedAt) {
-        this.questionId = questionId;
+        this.id = id;
+        this.questionHash = questionHash;
         this.userId = userId;
         this.questionText = questionText;
         this.questionType = questionType;

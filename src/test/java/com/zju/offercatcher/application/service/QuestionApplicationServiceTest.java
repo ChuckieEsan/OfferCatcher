@@ -54,15 +54,15 @@ class QuestionApplicationServiceTest {
         @Test
         @DisplayName("找到题目返回 Optional")
         void found() {
-            when(questionRepository.findById("q1")).thenReturn(Optional.of(sample));
-            assertThat(service.getQuestion("q1")).isPresent();
+            when(questionRepository.findById(1L)).thenReturn(Optional.of(sample));
+            assertThat(service.getQuestion(1L)).isPresent();
         }
 
         @Test
         @DisplayName("未找到返回空 Optional")
         void notFound() {
-            when(questionRepository.findById("none")).thenReturn(Optional.empty());
-            assertThat(service.getQuestion("none")).isEmpty();
+            when(questionRepository.findById(999L)).thenReturn(Optional.empty());
+            assertThat(service.getQuestion(999L)).isEmpty();
         }
     }
 
@@ -73,8 +73,8 @@ class QuestionApplicationServiceTest {
         @Test
         @DisplayName("更新答案并保存")
         void updateAnswer() {
-            when(questionRepository.findById("q1")).thenReturn(Optional.of(sample));
-            Optional<Question> result = service.updateQuestion("q1", "新答案", null, null, null);
+            when(questionRepository.findById(1L)).thenReturn(Optional.of(sample));
+            Optional<Question> result = service.updateQuestion(1L, "新答案", null, null, null);
             assertThat(result).isPresent();
             assertThat(result.get().getAnswer()).isEqualTo("新答案");
             verify(questionRepository).save(any(Question.class));
@@ -83,8 +83,8 @@ class QuestionApplicationServiceTest {
         @Test
         @DisplayName("题目不存在返回空")
         void notFound() {
-            when(questionRepository.findById("none")).thenReturn(Optional.empty());
-            assertThat(service.updateQuestion("none", "ans", null, null, null)).isEmpty();
+            when(questionRepository.findById(999L)).thenReturn(Optional.empty());
+            assertThat(service.updateQuestion(999L, "ans", null, null, null)).isEmpty();
         }
     }
 
@@ -95,16 +95,16 @@ class QuestionApplicationServiceTest {
         @Test
         @DisplayName("删除成功返回 true")
         void deleteSuccess() {
-            when(questionRepository.findById("q1")).thenReturn(Optional.of(sample));
-            assertThat(service.deleteQuestion("q1", "user-1")).isTrue();
-            verify(questionRepository).deleteById("q1", "user-1");
+            when(questionRepository.findById(1L)).thenReturn(Optional.of(sample));
+            assertThat(service.deleteQuestion(1L, "user-1")).isTrue();
+            verify(questionRepository).deleteById(1L, "user-1");
         }
 
         @Test
         @DisplayName("题目不存在返回 false")
         void notFound() {
-            when(questionRepository.findById("none")).thenReturn(Optional.empty());
-            assertThat(service.deleteQuestion("none", "user-1")).isFalse();
+            when(questionRepository.findById(999L)).thenReturn(Optional.empty());
+            assertThat(service.deleteQuestion(999L, "user-1")).isFalse();
         }
     }
 

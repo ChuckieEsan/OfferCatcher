@@ -16,19 +16,19 @@ import java.util.Optional;
  * 用于 PostgreSQL 元数据存储。
  */
 @Repository
-public interface QuestionJpaRepository extends JpaRepository<QuestionJpaEntity, String> {
+public interface QuestionJpaRepository extends JpaRepository<QuestionJpaEntity, Long> {
 
     /**
-     * 根据题目 ID 查找
+     * 根据业务键查找
      */
-    @Query("SELECT q FROM QuestionJpaEntity q WHERE q.questionId = :questionId")
-    Optional<QuestionJpaEntity> findByQuestionId(@Param("questionId") String questionId);
+    @Query("SELECT q FROM QuestionJpaEntity q WHERE q.questionHash = :questionHash")
+    Optional<QuestionJpaEntity> findByQuestionHash(@Param("questionHash") String questionHash);
 
     /**
-     * 批量根据题目 ID 查找
+     * 批量根据主键 ID 查找
      */
-    @Query("SELECT q FROM QuestionJpaEntity q WHERE q.questionId IN :ids")
-    List<QuestionJpaEntity> findByQuestionIds(@Param("ids") List<String> ids);
+    @Query("SELECT q FROM QuestionJpaEntity q WHERE q.id IN :ids")
+    List<QuestionJpaEntity> findByIds(@Param("ids") List<Long> ids);
 
     /**
      * 查找用户的题目（分页）
@@ -58,15 +58,15 @@ public interface QuestionJpaRepository extends JpaRepository<QuestionJpaEntity, 
      * 更新可见性为公共（发布到公共题库）
      */
     @Modifying
-    @Query("UPDATE QuestionJpaEntity q SET q.visibility = 'PUBLIC', q.updatedAt = CURRENT_TIMESTAMP WHERE q.questionId = :questionId AND q.userId = :userId")
-    int updateVisibilityToPublic(@Param("questionId") String questionId, @Param("userId") String userId);
+    @Query("UPDATE QuestionJpaEntity q SET q.visibility = 'PUBLIC', q.updatedAt = CURRENT_TIMESTAMP WHERE q.id = :id AND q.userId = :userId")
+    int updateVisibilityToPublic(@Param("id") Long id, @Param("userId") String userId);
 
     /**
      * 删除题目（验证所有权）
      */
     @Modifying
-    @Query("DELETE FROM QuestionJpaEntity q WHERE q.questionId = :questionId AND q.userId = :userId")
-    int deleteByQuestionIdAndUserId(@Param("questionId") String questionId, @Param("userId") String userId);
+    @Query("DELETE FROM QuestionJpaEntity q WHERE q.id = :id AND q.userId = :userId")
+    int deleteByIdAndUserId(@Param("id") Long id, @Param("userId") String userId);
 
     /**
      * 查找用户可见的指定公司题目

@@ -141,10 +141,10 @@ public class VisionExtractorAgent {
                     @SuppressWarnings("unchecked")
                     Map<String, Object> metadata = (Map<String, Object>) q.getOrDefault("metadata", Map.of());
 
-                    String questionId = QuestionIdGenerator.generateSystemId(company, questionText);
+                    String questionHash = QuestionIdGenerator.generateSystemId(company, questionText);
 
                     questions.add(new ExtractedQuestionItem.QuestionItem(
-                        questionId, questionText, questionType.getValue(),
+                        questionHash, questionText, questionType.getValue(),
                         coreEntities != null ? coreEntities : List.of(),
                         metadata != null ? metadata : Map.of()
                     ));

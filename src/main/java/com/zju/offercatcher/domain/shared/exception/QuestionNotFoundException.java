@@ -5,14 +5,14 @@ package com.zju.offercatcher.domain.shared.exception;
  */
 public class QuestionNotFoundException extends DomainException {
 
-    private final String questionId;
+    private final Long questionId;
 
-    public QuestionNotFoundException(String questionId) {
-        super(String.format("题目不存在: %s", questionId), "QUESTION_NOT_FOUND");
+    public QuestionNotFoundException(Long questionId) {
+        super(String.format("题目不存在: %d", questionId), "QUESTION_NOT_FOUND");
         this.questionId = questionId;
     }
 
-    public String getQuestionId() {
+    public Long getQuestionId() {
         return questionId;
     }
 }

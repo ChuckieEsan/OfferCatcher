@@ -37,7 +37,7 @@ public class RabbitMQProducer {
                 MessageProperties props = msg.getMessageProperties();
                 props.setDeliveryMode(MessageDeliveryMode.PERSISTENT);
                 props.setContentType(MessageProperties.CONTENT_TYPE_JSON);
-                props.setMessageId(task.questionId());
+                props.setMessageId(String.valueOf(task.questionId()));
                 return msg;
             });
             log.info("Published task: questionId={}, company={}", task.questionId(), task.company());

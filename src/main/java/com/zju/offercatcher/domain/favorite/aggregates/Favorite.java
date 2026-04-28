@@ -20,17 +20,17 @@ public class Favorite {
 
     private final Long favoriteId;
     private final String userId;
-    private final String questionId;
+    private final Long questionId;
     private final LocalDateTime createdAt;
 
     /**
      * 创建收藏（工厂方法）
      *
      * @param userId 用户 ID
-     * @param questionId 题目 ID
+     * @param questionId 题目 ID (Snowflake BIGINT)
      * @return 新创建的 Favorite 聚合根
      */
-    public static Favorite create(String userId, String questionId) {
+    public static Favorite create(String userId, Long questionId) {
         validateUserId(userId);
         validateQuestionId(questionId);
         Long favoriteId = SnowflakeIdGenerator.generate();
@@ -42,10 +42,10 @@ public class Favorite {
      *
      * @param favoriteId 收藏 ID
      * @param userId 用户 ID
-     * @param questionId 题目 ID
+     * @param questionId 题目 ID (Snowflake BIGINT)
      * @return 新创建的 Favorite 聚合根
      */
-    public static Favorite createWithId(Long favoriteId, String userId, String questionId) {
+    public static Favorite createWithId(Long favoriteId, String userId, Long questionId) {
         validateUserId(userId);
         validateQuestionId(questionId);
         if (favoriteId == null) {
@@ -57,7 +57,7 @@ public class Favorite {
     /**
      * 从持久化存储重建收藏（用于 Repository 实现）
      */
-    public static Favorite rebuild(Long favoriteId, String userId, String questionId, LocalDateTime createdAt) {
+    public static Favorite rebuild(Long favoriteId, String userId, Long questionId, LocalDateTime createdAt) {
         return new Favorite(favoriteId, userId, questionId, createdAt);
     }
 
@@ -78,7 +78,7 @@ public class Favorite {
         return userId;
     }
 
-    public String getQuestionId() {
+    public Long getQuestionId() {
         return questionId;
     }
 
@@ -88,7 +88,7 @@ public class Favorite {
 
     // ==================== 构造函数 ====================
 
-    private Favorite(Long favoriteId, String userId, String questionId, LocalDateTime createdAt) {
+    private Favorite(Long favoriteId, String userId, Long questionId, LocalDateTime createdAt) {
         this.favoriteId = favoriteId;
         this.userId = userId;
         this.questionId = questionId;
@@ -103,8 +103,8 @@ public class Favorite {
         }
     }
 
-    private static void validateQuestionId(String questionId) {
-        if (questionId == null || questionId.isBlank()) {
+    private static void validateQuestionId(Long questionId) {
+        if (questionId == null) {
             throw new DomainException("questionId 不能为空", "INVALID_QUESTION_ID");
         }
     }

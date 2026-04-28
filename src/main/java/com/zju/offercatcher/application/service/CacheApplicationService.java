@@ -38,7 +38,7 @@ public class CacheApplicationService {
         return getWithLock(key, fetchFn, 3600);
     }
 
-    public void invalidateQuestion(String questionId) {
+    public void invalidateQuestion(Long id) {
         try {
             cacheAdapter.deletePattern(CacheKeys.questionsListPattern());
             cacheAdapter.deletePattern(CacheKeys.questionsCountPattern());
@@ -48,11 +48,11 @@ public class CacheApplicationService {
                 CacheKeys.statsClusters(),
                 CacheKeys.statsCompanies()
             );
-            if (questionId != null) {
-                cacheAdapter.delete(CacheKeys.questionsItem(questionId));
+            if (id != null) {
+                cacheAdapter.delete(CacheKeys.questionsItem(id));
             }
             cacheAdapter.deletePattern(CacheKeys.toolSearchPattern());
-            log.info("Cache invalidated for question: {}", questionId);
+            log.info("Cache invalidated for question: {}", id);
         } catch (Exception e) {
             log.warn("Cache invalidation failed: {}", e.getMessage());
         }
@@ -69,14 +69,14 @@ public class CacheApplicationService {
     }
 
     @Async
-    public void invalidateQuestionDelayed(String questionId) {
-        invalidateQuestion(questionId);
+    public void invalidateQuestionDelayed(Long id) {
+        invalidateQuestion(id);
         try {
             Thread.sleep(1000);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
-        invalidateQuestion(questionId);
+        invalidateQuestion(id);
     }
 
     @SuppressWarnings("unchecked")

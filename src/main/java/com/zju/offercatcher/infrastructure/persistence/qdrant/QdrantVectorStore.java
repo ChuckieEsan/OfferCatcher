@@ -89,11 +89,10 @@ public class QdrantVectorStore {
     }
 
     public void upsert(Question question, float[] embedding) {
-        UUID pointId = uuidFromString(question.getQuestionId());
         Map<String, JsonWithInt.Value> payload = QdrantPayloadMapper.toPayload(question);
 
         Points.PointStruct point = Points.PointStruct.newBuilder()
-            .setId(PointIdFactory.id(pointId))
+            .setId(PointIdFactory.id(question.getId()))
             .setVectors(VectorsFactory.namedVectors(
                 Map.of("", VectorFactory.vector(embedding))))
             .putAllPayload(payload)
@@ -101,38 +100,36 @@ public class QdrantVectorStore {
 
         try {
             qdrantClient.upsertAsync(qdrantProperties.getCollection(), List.of(point), null).get();
-            log.debug("Upserted question vector: {}", question.getQuestionId());
+            log.debug("Upserted question vector: id={}", question.getId());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new RuntimeException("Qdrant upsert interrupted for question: " + question.getQuestionId(), e);
+            throw new RuntimeException("Qdrant upsert interrupted for question: " + question.getId(), e);
         } catch (ExecutionException e) {
-            throw new RuntimeException("Qdrant upsert failed for question: " + question.getQuestionId(), e.getCause());
+            throw new RuntimeException("Qdrant upsert failed for question: " + question.getId(), e.getCause());
         }
     }
 
-    public void delete(String questionId) {
-        UUID pointId = uuidFromString(questionId);
+    public void delete(Long id) {
         try {
             qdrantClient.deleteAsync(
                 qdrantProperties.getCollection(),
-                List.of(PointIdFactory.id(pointId)),
+                List.of(PointIdFactory.id(id)),
                 null
             ).get();
-            log.debug("Deleted question vector: {}", questionId);
+            log.debug("Deleted question vector: id={}", id);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new RuntimeException("Qdrant delete interrupted: " + questionId, e);
+            throw new RuntimeException("Qdrant delete interrupted: " + id, e);
         } catch (ExecutionException e) {
             if (isCollectionNotFound(e)) {
-                log.debug("Collection not found, skipping Qdrant delete: {}", questionId);
+                log.debug("Collection not found, skipping Qdrant delete: {}", id);
                 return;
             }
-            throw new RuntimeException("Qdrant delete failed: " + questionId, e.getCause());
+            throw new RuntimeException("Qdrant delete failed: " + id, e.getCause());
         }
     }
 
-    public void updateVisibility(String questionId, Visibility visibility) {
-        UUID pointId = uuidFromString(questionId);
+    public void updateVisibility(Long id, Visibility visibility) {
         Map<String, JsonWithInt.Value> payloadUpdate = Map.of(
             QdrantPayloadFields.VISIBILITY,
             ValueFactory.value(visibility.getValue())
@@ -142,15 +139,15 @@ public class QdrantVectorStore {
             qdrantClient.setPayloadAsync(
                 qdrantProperties.getCollection(),
                 payloadUpdate,
-                PointIdFactory.id(pointId),
+                PointIdFactory.id(id),
                 null, null, null
             ).get();
-            log.debug("Updated visibility for question: {} to {}", questionId, visibility);
+            log.debug("Updated visibility for question: id={} to {}", id, visibility);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new RuntimeException("Qdrant setPayload interrupted: " + questionId, e);
+            throw new RuntimeException("Qdrant setPayload interrupted: " + id, e);
         } catch (ExecutionException e) {
-            throw new RuntimeException("Qdrant setPayload failed: " + questionId, e.getCause());
+            throw new RuntimeException("Qdrant setPayload failed: " + id, e.getCause());
         }
     }
 
@@ -226,9 +223,9 @@ public class QdrantVectorStore {
             List<Points.ScoredPoint> results = qdrantClient.searchAsync(request, null).get();
             return results.stream()
                 .map(sp -> {
-                    String id = sp.getId().hasUuid()
-                        ? sp.getId().getUuid().replace("-", "")
-                        : sp.getId().getNum() + "";
+                    String id = sp.getId().hasNum()
+                        ? String.valueOf(sp.getId().getNum())
+                        : sp.getId().getUuid().replace("-", "");
                     return new VectorSearchHit(id, sp.getScore());
                 })
                 .toList();
@@ -246,20 +243,6 @@ public class QdrantVectorStore {
         List<Float> list = new ArrayList<>(array.length);
         for (float v : array) list.add(v);
         return list;
-    }
-
-    /**
-     * 将 UUID 字符串转为 UUID 对象，兼容有无连字符格式。
-     */
-    private static UUID uuidFromString(String id) {
-        if (id.contains("-")) {
-            return UUID.fromString(id);
-        }
-        // 无连字符格式：8-4-4-4-12
-        String dashed = id.replaceFirst(
-            "(\\p{XDigit}{8})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}{4})(\\p{XDigit}+)",
-            "$1-$2-$3-$4-$5");
-        return UUID.fromString(dashed);
     }
 
     private static String truncate(String s, int maxLen) {

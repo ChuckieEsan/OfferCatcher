@@ -12,7 +12,7 @@ public interface FavoriteRepository {
 
     List<Favorite> findByUserId(String userId, int page, int size);
 
-    Optional<Favorite> findByUserIdAndQuestionId(String userId, String questionId);
+    Optional<Favorite> findByUserIdAndQuestionId(String userId, Long questionId);
 
     Optional<Favorite> findById(Long favoriteId);
 
@@ -25,7 +25,7 @@ public interface FavoriteRepository {
 
     long countByUserId(String userId);
 
-    boolean existsByUserIdAndQuestionId(String userId, String questionId);
+    boolean existsByUserIdAndQuestionId(String userId, Long questionId);
 
-    void deleteByUserIdAndQuestionId(String userId, String questionId);
+    void deleteByUserIdAndQuestionId(String userId, Long questionId);
 }

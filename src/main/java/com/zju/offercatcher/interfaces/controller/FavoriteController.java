@@ -39,7 +39,7 @@ public class FavoriteController {
     }
 
     @DeleteMapping("/by-question/{questionId}")
-    public ResponseEntity<Void> removeByQuestionId(@UserId String userId, @PathVariable String questionId) {
+    public ResponseEntity<Void> removeByQuestionId(@UserId String userId, @PathVariable Long questionId) {
         favoriteService.removeFavoriteByQuestionId(userId, questionId);
         return ResponseEntity.noContent().build();
     }
@@ -56,7 +56,7 @@ public class FavoriteController {
     @PostMapping("/check")
     public ResponseEntity<CheckResponse> checkFavorited(
         @UserId String userId, @Valid @RequestBody CheckRequest req) {
-        Map<String, Boolean> result = favoriteService.checkFavorited(userId, req.questionIds());
+        Map<Long, Boolean> result = favoriteService.checkFavorited(userId, req.questionIds());
         return ResponseEntity.ok(new CheckResponse(result));
     }
 

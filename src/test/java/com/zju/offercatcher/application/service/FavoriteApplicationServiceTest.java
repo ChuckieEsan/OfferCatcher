@@ -32,8 +32,8 @@ class FavoriteApplicationServiceTest {
         @Test
         @DisplayName("新收藏创建成功")
         void newFavorite() {
-            when(favoriteRepository.findByUserIdAndQuestionId("user-1", "q1")).thenReturn(Optional.empty());
-            Favorite result = service.addFavorite("user-1", "q1");
+            when(favoriteRepository.findByUserIdAndQuestionId("user-1", 1L)).thenReturn(Optional.empty());
+            Favorite result = service.addFavorite("user-1", 1L);
             assertThat(result).isNotNull();
             verify(favoriteRepository).save(any(Favorite.class));
         }
@@ -41,9 +41,9 @@ class FavoriteApplicationServiceTest {
         @Test
         @DisplayName("已收藏返回已有记录")
         void existingFavorite() {
-            Favorite existing = Favorite.create("user-1", "q1");
-            when(favoriteRepository.findByUserIdAndQuestionId("user-1", "q1")).thenReturn(Optional.of(existing));
-            assertThat(service.addFavorite("user-1", "q1")).isSameAs(existing);
+            Favorite existing = Favorite.create("user-1", 1L);
+            when(favoriteRepository.findByUserIdAndQuestionId("user-1", 1L)).thenReturn(Optional.of(existing));
+            assertThat(service.addFavorite("user-1", 1L)).isSameAs(existing);
             verify(favoriteRepository, never()).save(any());
         }
     }
@@ -55,7 +55,7 @@ class FavoriteApplicationServiceTest {
         @Test
         @DisplayName("删除成功")
         void removeSuccess() {
-            Favorite f = Favorite.create("user-1", "q1");
+            Favorite f = Favorite.create("user-1", 1L);
             when(favoriteRepository.findById(1L)).thenReturn(Optional.of(f));
             service.removeFavorite(1L, "user-1");
             verify(favoriteRepository).deleteById(1L, "user-1");
@@ -77,11 +77,11 @@ class FavoriteApplicationServiceTest {
         @Test
         @DisplayName("批量检查收藏状态")
         void batchCheck() {
-            when(favoriteRepository.existsByUserIdAndQuestionId("user-1", "q1")).thenReturn(true);
-            when(favoriteRepository.existsByUserIdAndQuestionId("user-1", "q2")).thenReturn(false);
+            when(favoriteRepository.existsByUserIdAndQuestionId("user-1", 1L)).thenReturn(true);
+            when(favoriteRepository.existsByUserIdAndQuestionId("user-1", 2L)).thenReturn(false);
 
-            Map<String, Boolean> result = service.checkFavorited("user-1", List.of("q1", "q2"));
-            assertThat(result).containsEntry("q1", true).containsEntry("q2", false);
+            Map<Long, Boolean> result = service.checkFavorited("user-1", List.of(1L, 2L));
+            assertThat(result).containsEntry(1L, true).containsEntry(2L, false);
         }
     }
 }

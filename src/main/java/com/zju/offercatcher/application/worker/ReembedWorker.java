@@ -68,7 +68,7 @@ public class ReembedWorker {
                 succeeded++;
             } catch (Exception e) {
                 failed++;
-                log.error("Reembed failed for question {}: {}", entity.getQuestionId(), e.getMessage());
+                log.error("Reembed failed for question {}: {}", entity.getQuestionHash(), e.getMessage());
             }
         }
 

@@ -25,8 +25,8 @@ public record QuestionWithScore(Question question, float score) {
     /**
      * 获取题目 ID
      */
-    public String getQuestionId() {
-        return question.getQuestionId();
+    public String getQuestionHash() {
+        return question.getQuestionHash();
     }
 
     /**

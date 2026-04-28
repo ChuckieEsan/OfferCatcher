@@ -18,7 +18,8 @@ import static org.assertj.core.api.Assertions.*;
 @DisplayName("InterviewQuestion 实体测试")
 class InterviewQuestionTest {
 
-    private static final String QUESTION_ID = "q-001";
+    private static final Long QUESTION_ID = 1L;
+    private static final String QUESTION_HASH = "q-001";
     private static final String QUESTION_TEXT = "什么是 Java 的多态？";
 
     @Nested
@@ -29,11 +30,12 @@ class InterviewQuestionTest {
         @DisplayName("应成功创建面试题目")
         void shouldCreateQuestionSuccessfully() {
             InterviewQuestion question = InterviewQuestion.create(
-                QUESTION_ID, QUESTION_TEXT, "knowledge", DifficultyLevel.MEDIUM,
+                QUESTION_ID, QUESTION_HASH, QUESTION_TEXT, "knowledge", DifficultyLevel.MEDIUM,
                 List.of("Java", "多态", "继承")
             );
 
             assertThat(question.getQuestionId()).isEqualTo(QUESTION_ID);
+            assertThat(question.getQuestionHash()).isEqualTo(QUESTION_HASH);
             assertThat(question.getQuestionText()).isEqualTo(QUESTION_TEXT);
             assertThat(question.getDifficulty()).isEqualTo(DifficultyLevel.MEDIUM);
             assertThat(question.getStatus()).isEqualTo(QuestionStatus.PENDING);
@@ -43,15 +45,23 @@ class InterviewQuestionTest {
         @Test
         @DisplayName("questionId 为空应抛出异常")
         void shouldThrowExceptionWhenQuestionIdIsNull() {
-            assertThatThrownBy(() -> InterviewQuestion.create(null, QUESTION_TEXT, "knowledge", DifficultyLevel.MEDIUM, List.of()))
+            assertThatThrownBy(() -> InterviewQuestion.create(null, QUESTION_HASH, QUESTION_TEXT, "knowledge", DifficultyLevel.MEDIUM, List.of()))
                 .isInstanceOf(DomainException.class)
                 .hasMessageContaining("questionId");
         }
 
         @Test
+        @DisplayName("questionHash 为空应抛出异常")
+        void shouldThrowExceptionWhenQuestionHashIsBlank() {
+            assertThatThrownBy(() -> InterviewQuestion.create(QUESTION_ID, null, QUESTION_TEXT, "knowledge", DifficultyLevel.MEDIUM, List.of()))
+                .isInstanceOf(DomainException.class)
+                .hasMessageContaining("questionHash");
+        }
+
+        @Test
         @DisplayName("questionText 为空应抛出异常")
         void shouldThrowExceptionWhenQuestionTextIsNull() {
-            assertThatThrownBy(() -> InterviewQuestion.create(QUESTION_ID, null, "knowledge", DifficultyLevel.MEDIUM, List.of()))
+            assertThatThrownBy(() -> InterviewQuestion.create(QUESTION_ID, QUESTION_HASH, null, "knowledge", DifficultyLevel.MEDIUM, List.of()))
                 .isInstanceOf(DomainException.class)
                 .hasMessageContaining("questionText");
         }
@@ -64,7 +74,7 @@ class InterviewQuestionTest {
         @Test
         @DisplayName("应成功回答题目")
         void shouldAnswerQuestionSuccessfully() {
-            InterviewQuestion question = InterviewQuestion.create(QUESTION_ID, QUESTION_TEXT, "knowledge", DifficultyLevel.MEDIUM, List.of());
+            InterviewQuestion question = InterviewQuestion.create(QUESTION_ID, QUESTION_HASH, QUESTION_TEXT, "knowledge", DifficultyLevel.MEDIUM, List.of());
 
             question.answer("多态是指...", 85, "回答正确");
 
@@ -78,7 +88,7 @@ class InterviewQuestionTest {
         @Test
         @DisplayName("评分过低应不通过")
         void shouldNotPassWhenScoreIsLow() {
-            InterviewQuestion question = InterviewQuestion.create(QUESTION_ID, QUESTION_TEXT, "knowledge", DifficultyLevel.MEDIUM, List.of());
+            InterviewQuestion question = InterviewQuestion.create(QUESTION_ID, QUESTION_HASH, QUESTION_TEXT, "knowledge", DifficultyLevel.MEDIUM, List.of());
 
             question.answer("不太清楚", 45, "需要加强学习");
 
@@ -88,7 +98,7 @@ class InterviewQuestionTest {
         @Test
         @DisplayName("评分超出范围应抛出异常")
         void shouldThrowExceptionWhenScoreIsOutOfRange() {
-            InterviewQuestion question = InterviewQuestion.create(QUESTION_ID, QUESTION_TEXT, "knowledge", DifficultyLevel.MEDIUM, List.of());
+            InterviewQuestion question = InterviewQuestion.create(QUESTION_ID, QUESTION_HASH, QUESTION_TEXT, "knowledge", DifficultyLevel.MEDIUM, List.of());
 
             assertThatThrownBy(() -> question.answer("答案", 101, "反馈"))
                 .isInstanceOf(DomainException.class)
@@ -98,7 +108,7 @@ class InterviewQuestionTest {
         @Test
         @DisplayName("重复回答应抛出异常")
         void shouldThrowExceptionWhenAnsweringAlreadyAnsweredQuestion() {
-            InterviewQuestion question = InterviewQuestion.create(QUESTION_ID, QUESTION_TEXT, "knowledge", DifficultyLevel.MEDIUM, List.of());
+            InterviewQuestion question = InterviewQuestion.create(QUESTION_ID, QUESTION_HASH, QUESTION_TEXT, "knowledge", DifficultyLevel.MEDIUM, List.of());
             question.answer("答案1", 80, "反馈1");
 
             assertThatThrownBy(() -> question.answer("答案2", 90, "反馈2"))
@@ -114,7 +124,7 @@ class InterviewQuestionTest {
         @Test
         @DisplayName("应成功跳过题目")
         void shouldSkipQuestionSuccessfully() {
-            InterviewQuestion question = InterviewQuestion.create(QUESTION_ID, QUESTION_TEXT, "knowledge", DifficultyLevel.MEDIUM, List.of());
+            InterviewQuestion question = InterviewQuestion.create(QUESTION_ID, QUESTION_HASH, QUESTION_TEXT, "knowledge", DifficultyLevel.MEDIUM, List.of());
 
             question.skip();
 
@@ -125,7 +135,7 @@ class InterviewQuestionTest {
         @Test
         @DisplayName("已回答题目不能跳过")
         void shouldThrowExceptionWhenSkippingAnsweredQuestion() {
-            InterviewQuestion question = InterviewQuestion.create(QUESTION_ID, QUESTION_TEXT, "knowledge", DifficultyLevel.MEDIUM, List.of());
+            InterviewQuestion question = InterviewQuestion.create(QUESTION_ID, QUESTION_HASH, QUESTION_TEXT, "knowledge", DifficultyLevel.MEDIUM, List.of());
             question.answer("答案", 80, "反馈");
 
             assertThatThrownBy(() -> question.skip())
@@ -140,7 +150,7 @@ class InterviewQuestionTest {
         @Test
         @DisplayName("应成功添加提示")
         void shouldAddHintSuccessfully() {
-            InterviewQuestion question = InterviewQuestion.create(QUESTION_ID, QUESTION_TEXT, "knowledge", DifficultyLevel.MEDIUM, List.of());
+            InterviewQuestion question = InterviewQuestion.create(QUESTION_ID, QUESTION_HASH, QUESTION_TEXT, "knowledge", DifficultyLevel.MEDIUM, List.of());
 
             question.addHint("提示1：多态涉及继承");
             question.addHint("提示2：方法重写");
@@ -151,7 +161,7 @@ class InterviewQuestionTest {
         @Test
         @DisplayName("应成功添加追问")
         void shouldAddFollowUpSuccessfully() {
-            InterviewQuestion question = InterviewQuestion.create(QUESTION_ID, QUESTION_TEXT, "knowledge", DifficultyLevel.MEDIUM, List.of());
+            InterviewQuestion question = InterviewQuestion.create(QUESTION_ID, QUESTION_HASH, QUESTION_TEXT, "knowledge", DifficultyLevel.MEDIUM, List.of());
 
             question.addFollowUp("追问1：接口和抽象类有什么区别？");
             question.addFollowUp("追问2：什么是向上转型？");
@@ -162,7 +172,7 @@ class InterviewQuestionTest {
         @Test
         @DisplayName("应正确获取当前追问")
         void shouldGetCurrentFollowUp() {
-            InterviewQuestion question = InterviewQuestion.create(QUESTION_ID, QUESTION_TEXT, "knowledge", DifficultyLevel.MEDIUM, List.of());
+            InterviewQuestion question = InterviewQuestion.create(QUESTION_ID, QUESTION_HASH, QUESTION_TEXT, "knowledge", DifficultyLevel.MEDIUM, List.of());
             question.addFollowUp("追问1");
             question.addFollowUp("追问2");
 

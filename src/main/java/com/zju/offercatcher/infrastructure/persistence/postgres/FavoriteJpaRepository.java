@@ -22,13 +22,13 @@ public interface FavoriteJpaRepository extends JpaRepository<FavoriteJpaEntity, 
     List<FavoriteJpaEntity> findByUserIdPaginated(@Param("userId") String userId, @Param("limit") int limit, @Param("offset") int offset);
 
     @Query("SELECT f FROM FavoriteJpaEntity f WHERE f.userId = :userId AND f.questionId = :questionId")
-    Optional<FavoriteJpaEntity> findByUserIdAndQuestionId(@Param("userId") String userId, @Param("questionId") String questionId);
+    Optional<FavoriteJpaEntity> findByUserIdAndQuestionId(@Param("userId") String userId, @Param("questionId") Long questionId);
 
     @Query("SELECT COUNT(f) FROM FavoriteJpaEntity f WHERE f.userId = :userId")
     long countByUserId(@Param("userId") String userId);
 
     @Query("SELECT CASE WHEN COUNT(f) > 0 THEN true ELSE false END FROM FavoriteJpaEntity f WHERE f.userId = :userId AND f.questionId = :questionId")
-    boolean existsByUserIdAndQuestionId(@Param("userId") String userId, @Param("questionId") String questionId);
+    boolean existsByUserIdAndQuestionId(@Param("userId") String userId, @Param("questionId") Long questionId);
 
     @Modifying
     @Query("DELETE FROM FavoriteJpaEntity f WHERE f.favoriteId = :favoriteId AND f.userId = :userId")
@@ -36,5 +36,5 @@ public interface FavoriteJpaRepository extends JpaRepository<FavoriteJpaEntity, 
 
     @Modifying
     @Query("DELETE FROM FavoriteJpaEntity f WHERE f.userId = :userId AND f.questionId = :questionId")
-    int deleteByUserIdAndQuestionId(@Param("userId") String userId, @Param("questionId") String questionId);
+    int deleteByUserIdAndQuestionId(@Param("userId") String userId, @Param("questionId") Long questionId);
 }

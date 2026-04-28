@@ -129,7 +129,7 @@ public class ClusteringApplicationService {
                 entity.setClusterIds(currentClusters);
             }
 
-            neo4jClient.createBelongsToRelationship(entity.getQuestionId(), clusterId);
+            neo4jClient.createBelongsToRelationship(entity.getQuestionHash(), clusterId);
             clusteredCount++;
         }
 

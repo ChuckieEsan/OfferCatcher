@@ -27,7 +27,7 @@ class FavoriteControllerTest {
     @Autowired ObjectMapper mapper;
     @MockitoBean FavoriteApplicationService favoriteService;
 
-    Favorite sampleFavorite = Favorite.create("user-1", "q1");
+    Favorite sampleFavorite = Favorite.create("user-1", 1L);
 
     @Nested
     @DisplayName("POST /api/v1/favorites")
@@ -36,9 +36,9 @@ class FavoriteControllerTest {
         @Test
         @DisplayName("添加收藏成功返回 201")
         void addSuccess() throws Exception {
-            when(favoriteService.addFavorite(anyString(), anyString())).thenReturn(sampleFavorite);
+            when(favoriteService.addFavorite(anyString(), anyLong())).thenReturn(sampleFavorite);
 
-            String body = mapper.writeValueAsString(Map.of("questionId", "q1"));
+            String body = mapper.writeValueAsString(Map.of("questionId", 1));
 
             mvc.perform(post("/api/v1/favorites")
                     .header("X-User-Id", "user-1")
@@ -87,17 +87,17 @@ class FavoriteControllerTest {
         @DisplayName("检查收藏状态返回 200")
         void checkSuccess() throws Exception {
             when(favoriteService.checkFavorited(anyString(), anyList()))
-                .thenReturn(Map.of("q1", true, "q2", false));
+                .thenReturn(Map.of(1L, true, 2L, false));
 
-            String body = mapper.writeValueAsString(Map.of("questionIds", List.of("q1", "q2")));
+            String body = mapper.writeValueAsString(Map.of("questionIds", List.of(1, 2)));
 
             mvc.perform(post("/api/v1/favorites/check")
                     .header("X-User-Id", "user-1")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(body))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.favorited.q1").value(true))
-                .andExpect(jsonPath("$.favorited.q2").value(false));
+                .andExpect(jsonPath("$.favorited['1']").value(true))
+                .andExpect(jsonPath("$.favorited['2']").value(false));
         }
     }
 }

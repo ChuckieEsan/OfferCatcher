@@ -69,7 +69,7 @@ class InterviewSessionTest {
         @DisplayName("应成功添加题目")
         void shouldAddQuestionSuccessfully() {
             InterviewSession session = InterviewSession.create(USER_ID, COMPANY, POSITION, DifficultyLevel.MEDIUM, 3);
-            InterviewQuestion question = InterviewQuestion.create("q-001", "题目1", "knowledge", DifficultyLevel.MEDIUM, List.of());
+            InterviewQuestion question = InterviewQuestion.create(1L, "q-001", "题目1", "knowledge", DifficultyLevel.MEDIUM, List.of());
 
             session.addQuestion(question);
 
@@ -80,8 +80,8 @@ class InterviewSessionTest {
         @DisplayName("题目超出上限应抛出异常")
         void shouldThrowExceptionWhenExceedingMaxQuestions() {
             InterviewSession session = InterviewSession.create(USER_ID, COMPANY, POSITION, DifficultyLevel.MEDIUM, 1);
-            InterviewQuestion q1 = InterviewQuestion.create("q-001", "题目1", "knowledge", DifficultyLevel.MEDIUM, List.of());
-            InterviewQuestion q2 = InterviewQuestion.create("q-002", "题目2", "knowledge", DifficultyLevel.MEDIUM, List.of());
+            InterviewQuestion q1 = InterviewQuestion.create(1L, "q-001", "题目1", "knowledge", DifficultyLevel.MEDIUM, List.of());
+            InterviewQuestion q2 = InterviewQuestion.create(2L, "q-002", "题目2", "knowledge", DifficultyLevel.MEDIUM, List.of());
 
             session.addQuestion(q1);
 
@@ -94,22 +94,22 @@ class InterviewSessionTest {
         @DisplayName("应正确获取当前题目")
         void shouldGetCurrentQuestion() {
             InterviewSession session = InterviewSession.create(USER_ID, COMPANY, POSITION, DifficultyLevel.MEDIUM, 3);
-            InterviewQuestion q1 = InterviewQuestion.create("q-001", "题目1", "knowledge", DifficultyLevel.MEDIUM, List.of());
-            InterviewQuestion q2 = InterviewQuestion.create("q-002", "题目2", "knowledge", DifficultyLevel.MEDIUM, List.of());
+            InterviewQuestion q1 = InterviewQuestion.create(1L, "q-001", "题目1", "knowledge", DifficultyLevel.MEDIUM, List.of());
+            InterviewQuestion q2 = InterviewQuestion.create(2L, "q-002", "题目2", "knowledge", DifficultyLevel.MEDIUM, List.of());
 
             session.addQuestion(q1);
             session.addQuestion(q2);
 
             assertThat(session.getCurrentQuestion()).isPresent();
-            assertThat(session.getCurrentQuestion().get().getQuestionId()).isEqualTo("q-001");
+            assertThat(session.getCurrentQuestion().get().getQuestionId()).isEqualTo(1L);
         }
 
         @Test
         @DisplayName("应正确进入下一题")
         void shouldGoToNextQuestion() {
             InterviewSession session = InterviewSession.create(USER_ID, COMPANY, POSITION, DifficultyLevel.MEDIUM, 3);
-            InterviewQuestion q1 = InterviewQuestion.create("q-001", "题目1", "knowledge", DifficultyLevel.MEDIUM, List.of());
-            InterviewQuestion q2 = InterviewQuestion.create("q-002", "题目2", "knowledge", DifficultyLevel.MEDIUM, List.of());
+            InterviewQuestion q1 = InterviewQuestion.create(1L, "q-001", "题目1", "knowledge", DifficultyLevel.MEDIUM, List.of());
+            InterviewQuestion q2 = InterviewQuestion.create(2L, "q-002", "题目2", "knowledge", DifficultyLevel.MEDIUM, List.of());
 
             session.addQuestion(q1);
             session.addQuestion(q2);
@@ -117,7 +117,7 @@ class InterviewSessionTest {
             session.nextQuestion();
 
             assertThat(session.getCurrentQuestion()).isPresent();
-            assertThat(session.getCurrentQuestion().get().getQuestionId()).isEqualTo("q-002");
+            assertThat(session.getCurrentQuestion().get().getQuestionId()).isEqualTo(2L);
         }
     }
 
@@ -129,7 +129,7 @@ class InterviewSessionTest {
         @DisplayName("应正确回答并累加分数")
         void shouldAnswerAndAccumulateScore() {
             InterviewSession session = InterviewSession.create(USER_ID, COMPANY, POSITION, DifficultyLevel.MEDIUM, 3);
-            InterviewQuestion q1 = InterviewQuestion.create("q-001", "题目1", "knowledge", DifficultyLevel.MEDIUM, List.of());
+            InterviewQuestion q1 = InterviewQuestion.create(1L, "q-001", "题目1", "knowledge", DifficultyLevel.MEDIUM, List.of());
 
             session.addQuestion(q1);
             session.answerCurrentQuestion("答案", 85, "反馈");
@@ -142,7 +142,7 @@ class InterviewSessionTest {
         @DisplayName("低分不应增加正确数")
         void shouldNotIncreaseCorrectCountForLowScore() {
             InterviewSession session = InterviewSession.create(USER_ID, COMPANY, POSITION, DifficultyLevel.MEDIUM, 3);
-            InterviewQuestion q1 = InterviewQuestion.create("q-001", "题目1", "knowledge", DifficultyLevel.MEDIUM, List.of());
+            InterviewQuestion q1 = InterviewQuestion.create(1L, "q-001", "题目1", "knowledge", DifficultyLevel.MEDIUM, List.of());
 
             session.addQuestion(q1);
             session.answerCurrentQuestion("答案", 55, "需要加强");
@@ -155,7 +155,7 @@ class InterviewSessionTest {
         @DisplayName("应正确跳过题目")
         void shouldSkipQuestionSuccessfully() {
             InterviewSession session = InterviewSession.create(USER_ID, COMPANY, POSITION, DifficultyLevel.MEDIUM, 3);
-            InterviewQuestion q1 = InterviewQuestion.create("q-001", "题目1", "knowledge", DifficultyLevel.MEDIUM, List.of());
+            InterviewQuestion q1 = InterviewQuestion.create(1L, "q-001", "题目1", "knowledge", DifficultyLevel.MEDIUM, List.of());
 
             session.addQuestion(q1);
             session.skipCurrentQuestion();
@@ -172,7 +172,7 @@ class InterviewSessionTest {
         @DisplayName("应成功完成面试")
         void shouldCompleteSessionSuccessfully() {
             InterviewSession session = InterviewSession.create(USER_ID, COMPANY, POSITION, DifficultyLevel.MEDIUM, 1);
-            InterviewQuestion q1 = InterviewQuestion.create("q-001", "题目1", "knowledge", DifficultyLevel.MEDIUM, List.of());
+            InterviewQuestion q1 = InterviewQuestion.create(1L, "q-001", "题目1", "knowledge", DifficultyLevel.MEDIUM, List.of());
 
             session.addQuestion(q1);
             session.answerCurrentQuestion("答案", 80, "反馈");
@@ -187,7 +187,7 @@ class InterviewSessionTest {
         @DisplayName("已完成的面试不能继续")
         void shouldNotContinueCompletedSession() {
             InterviewSession session = InterviewSession.create(USER_ID, COMPANY, POSITION, DifficultyLevel.MEDIUM, 1);
-            InterviewQuestion q1 = InterviewQuestion.create("q-001", "题目1", "knowledge", DifficultyLevel.MEDIUM, List.of());
+            InterviewQuestion q1 = InterviewQuestion.create(1L, "q-001", "题目1", "knowledge", DifficultyLevel.MEDIUM, List.of());
 
             session.addQuestion(q1);
             session.complete();
@@ -219,8 +219,8 @@ class InterviewSessionTest {
         @DisplayName("应正确计算平均分")
         void shouldCalculateAverageScore() {
             InterviewSession session = InterviewSession.create(USER_ID, COMPANY, POSITION, DifficultyLevel.MEDIUM, 3);
-            InterviewQuestion q1 = InterviewQuestion.create("q-001", "题目1", "knowledge", DifficultyLevel.MEDIUM, List.of());
-            InterviewQuestion q2 = InterviewQuestion.create("q-002", "题目2", "knowledge", DifficultyLevel.MEDIUM, List.of());
+            InterviewQuestion q1 = InterviewQuestion.create(1L, "q-001", "题目1", "knowledge", DifficultyLevel.MEDIUM, List.of());
+            InterviewQuestion q2 = InterviewQuestion.create(2L, "q-002", "题目2", "knowledge", DifficultyLevel.MEDIUM, List.of());
 
             session.addQuestion(q1);
             session.addQuestion(q2);

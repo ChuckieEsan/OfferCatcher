@@ -36,8 +36,8 @@ public final class CacheKeys {
     public static String questionsCount(String filterHash) {
         return PREFIX + ":questions:count:" + filterHash;
     }
-    public static String questionsItem(String questionId) {
-        return PREFIX + ":questions:item:" + questionId;
+    public static String questionsItem(Long id) {
+        return PREFIX + ":questions:item:" + id;
     }
     public static String questionsListPattern() { return PREFIX + ":questions:list:*"; }
     public static String questionsCountPattern() { return PREFIX + ":questions:count:*"; }

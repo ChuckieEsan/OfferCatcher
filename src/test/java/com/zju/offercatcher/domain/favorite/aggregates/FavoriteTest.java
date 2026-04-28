@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.*;
 class FavoriteTest {
 
     private static final String USER_ID = "user-001";
-    private static final String QUESTION_ID = "q-abc123def456";
+    private static final Long QUESTION_ID = 1L;
 
     // ==================== 工厂方法测试 ====================
 
@@ -78,7 +78,7 @@ class FavoriteTest {
         @Test
         @DisplayName("questionId 为空白应抛出异常")
         void shouldThrowExceptionWhenQuestionIdIsBlank() {
-            assertThatThrownBy(() -> Favorite.create(USER_ID, "   "))
+            assertThatThrownBy(() -> Favorite.create(USER_ID, (Long) null))
                 .isInstanceOf(DomainException.class)
                 .hasMessageContaining("questionId");
         }

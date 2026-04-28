@@ -38,7 +38,7 @@ public interface InterviewDto {
     ) {}
 
     record QuestionItemResponse(
-        String questionId,
+        Long questionId,
         String questionText,
         String questionType,
         String difficulty,

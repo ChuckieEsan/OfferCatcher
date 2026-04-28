@@ -28,8 +28,8 @@ public class FavoriteJpaEntity {
     @Column(name = "user_id", nullable = false)
     private String userId;
 
-    @Column(name = "question_id", nullable = false, length = 32)
-    private String questionId;
+    @Column(name = "question_id", nullable = false)
+    private Long questionId;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
