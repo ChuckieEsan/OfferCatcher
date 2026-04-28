@@ -33,7 +33,7 @@ public class SessionSummaryRepositoryImpl implements SessionSummaryRepository {
 
     @Override
     public List<SessionSummary> findByUserId(String userId, int page, int size) {
-        int offset = page * size;
+        int offset = (page - 1) * size;
         return jpaRepository.findByUserIdPaginated(userId, size, offset)
             .stream()
             .map(SessionSummaryJpaEntity::toDomain)
@@ -42,7 +42,7 @@ public class SessionSummaryRepositoryImpl implements SessionSummaryRepository {
 
     @Override
     public List<SessionSummary> findByUserIdAndMemoryLayer(String userId, MemoryLayer memoryLayer, int page, int size) {
-        int offset = page * size;
+        int offset = (page - 1) * size;
         return jpaRepository.findByUserIdAndMemoryLayerPaginated(userId, memoryLayer, size, offset)
             .stream()
             .map(SessionSummaryJpaEntity::toDomain)

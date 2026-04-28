@@ -47,7 +47,7 @@ public class FavoriteController {
     @GetMapping
     public ResponseEntity<ListResponse> listFavorites(
         @UserId String userId,
-        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "1") int page,
         @RequestParam(defaultValue = "50") int pageSize) {
         List<Favorite> favorites = favoriteService.listFavorites(userId, page, pageSize);
         return ResponseEntity.ok(new ListResponse(favorites.stream().map(FavoriteController::toResponse).toList()));

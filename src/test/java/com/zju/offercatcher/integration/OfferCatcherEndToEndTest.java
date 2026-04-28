@@ -183,7 +183,7 @@ class OfferCatcherEndToEndTest {
 
         // LIST
         ResponseEntity<FavoriteDto.ListResponse> listResp = rest.exchange(
-            baseUrl + "/api/v1/favorites?page=0&pageSize=50",
+            baseUrl + "/api/v1/favorites?page=1&pageSize=50",
             HttpMethod.GET, new HttpEntity<>(headers), FavoriteDto.ListResponse.class);
         assertThat(listResp.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(listResp.getBody().favorites().stream()

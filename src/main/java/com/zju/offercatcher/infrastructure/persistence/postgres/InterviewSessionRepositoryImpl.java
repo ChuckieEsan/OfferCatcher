@@ -25,7 +25,7 @@ public class InterviewSessionRepositoryImpl implements InterviewSessionRepositor
 
     @Override
     public List<InterviewSession> findByUserId(String userId, int page, int size) {
-        int offset = page * size;
+        int offset = (page - 1) * size;
         return jpaRepository.findByUserIdPaginated(userId, size, offset)
             .stream()
             .map(InterviewSessionJpaEntity::toDomain)
@@ -40,7 +40,7 @@ public class InterviewSessionRepositoryImpl implements InterviewSessionRepositor
 
     @Override
     public List<InterviewSession> findByUserIdAndStatus(String userId, SessionStatus status, int page, int size) {
-        int offset = page * size;
+        int offset = (page - 1) * size;
         return jpaRepository.findByUserIdAndStatusPaginated(userId, status, size, offset)
             .stream()
             .map(InterviewSessionJpaEntity::toDomain)
@@ -49,7 +49,7 @@ public class InterviewSessionRepositoryImpl implements InterviewSessionRepositor
 
     @Override
     public List<InterviewSession> findByUserIdAndCompany(String userId, String company, int page, int size) {
-        int offset = page * size;
+        int offset = (page - 1) * size;
         return jpaRepository.findByUserIdAndCompanyPaginated(userId, company, size, offset)
             .stream()
             .map(InterviewSessionJpaEntity::toDomain)
