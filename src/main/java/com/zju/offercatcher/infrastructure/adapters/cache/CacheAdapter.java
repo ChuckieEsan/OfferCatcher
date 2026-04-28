@@ -80,35 +80,49 @@ public class CacheAdapter {
 
     // ==================== 带锁的缓存读取 ====================
 
+    private static final int MAX_RETRIES = 3;
+
     public String getWithLock(String key, Supplier<String> fetchFn, int ttlSeconds) {
+        // 1. Check cache
         String cached = get(key);
         if (cached != null) {
             return cached;
         }
 
-        String lockValue = acquireLock(key, 30);
-        if (lockValue == null) {
+        // 2. Retry with lock
+        for (int attempt = 0; attempt < MAX_RETRIES; attempt++) {
+            String lockValue = acquireLock(key, 10);
+            if (lockValue != null) {
+                try {
+                    // Double-check cache
+                    cached = get(key);
+                    if (cached != null) {
+                        return cached;
+                    }
+
+                    // Fetch from source
+                    String value = fetchFn.get();
+                    if (value != null) {
+                        set(key, value, ttlSeconds);
+                    }
+                    return value;
+                } finally {
+                    releaseLock(key, lockValue);
+                }
+            }
+
+            // Lock held by another thread — wait with exponential backoff
+            long waitMs = 100L * (1L << attempt); // 100 / 200 / 400 ms
             try {
-                Thread.sleep(200);
+                Thread.sleep(waitMs);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
+                return fetchFn.get(); // Interrupted — fetch directly
             }
-            return get(key);
         }
 
-        try {
-            cached = get(key);
-            if (cached != null) {
-                return cached;
-            }
-
-            String value = fetchFn.get();
-            if (value != null) {
-                set(key, value, ttlSeconds);
-            }
-            return value;
-        } finally {
-            releaseLock(key, lockValue);
-        }
+        // 3. All retries exhausted — fallback to direct fetch without caching
+        log.warn("Lock acquisition failed after {} retries: {}, fetching without cache", MAX_RETRIES, key);
+        return fetchFn.get();
     }
 }

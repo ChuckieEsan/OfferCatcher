@@ -6,6 +6,7 @@ import com.zju.offercatcher.domain.question.valueobjects.QuestionWithScore;
 import com.zju.offercatcher.domain.shared.enums.Visibility;
 import com.zju.offercatcher.domain.shared.exception.QuestionNotFoundException;
 import com.zju.offercatcher.domain.shared.exception.UnauthorizedOperationException;
+import com.zju.offercatcher.infrastructure.adapters.embedding.OnnxEmbeddingAdapter;
 import com.zju.offercatcher.infrastructure.persistence.postgres.QuestionJpaEntity;
 import com.zju.offercatcher.infrastructure.persistence.postgres.QuestionJpaRepository;
 import org.slf4j.Logger;
@@ -21,12 +22,10 @@ import java.util.stream.Collectors;
  *
  * 整合 Qdrant（向量检索）和 PostgreSQL（元数据存储）。
  *
- * 当前版本：仅实现 PostgreSQL 部分，Qdrant 部分后续集成。
- *
  * 设计原则：
- * - Qdrant 只存 userId 和 visibility（用于预过滤）
+ * - Qdrant 存 embedding + userId + visibility（用于向量检索和预过滤）
  * - PostgreSQL 存所有元数据
- * - 向量搜索带 Filter，在可见范围内计算相似度
+ * - save() 同时写入 PostgreSQL 和 Qdrant（含 embedding 计算）
  */
 @Repository
 public class QdrantQuestionRepositoryImpl implements QuestionRepository {
@@ -35,11 +34,14 @@ public class QdrantQuestionRepositoryImpl implements QuestionRepository {
 
     private final QuestionJpaRepository jpaRepository;
     private final QdrantVectorStore vectorStore;
+    private final OnnxEmbeddingAdapter embeddingAdapter;
 
     public QdrantQuestionRepositoryImpl(QuestionJpaRepository jpaRepository,
-                                        QdrantVectorStore vectorStore) {
+                                        QdrantVectorStore vectorStore,
+                                        OnnxEmbeddingAdapter embeddingAdapter) {
         this.jpaRepository = jpaRepository;
         this.vectorStore = vectorStore;
+        this.embeddingAdapter = embeddingAdapter;
     }
 
     // ==================== 用户隔离查询方法 ====================
@@ -151,11 +153,13 @@ public class QdrantQuestionRepositoryImpl implements QuestionRepository {
     @Override
     @Transactional
     public void save(Question question) {
-        // 保存到 PostgreSQL
         QuestionJpaEntity entity = QuestionJpaEntity.fromDomain(question);
         jpaRepository.save(entity);
 
-        // 注意：向量需要在调用方单独上传（参见 QuestionService.createQuestion）
+        if (embeddingAdapter.isInitialized()) {
+            float[] vector = embeddingAdapter.embed(question.toContext());
+            vectorStore.upsert(question, vector);
+        }
     }
 
     @Override
@@ -199,6 +203,13 @@ public class QdrantQuestionRepositoryImpl implements QuestionRepository {
             .map(QuestionJpaEntity::fromDomain)
             .toList();
         jpaRepository.saveAll(entities);
+
+        if (embeddingAdapter.isInitialized()) {
+            for (Question q : questions) {
+                float[] vector = embeddingAdapter.embed(q.toContext());
+                vectorStore.upsert(q, vector);
+            }
+        }
     }
 
     @Override
