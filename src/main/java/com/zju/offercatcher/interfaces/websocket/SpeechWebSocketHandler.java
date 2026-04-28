@@ -62,7 +62,6 @@ public class SpeechWebSocketHandler extends TextWebSocketHandler {
                     String language = (String) data.getOrDefault("language", "zh_cn");
                     rs.language = language;
                     rs.audioBuffer = new ByteArrayOutputStream();
-                    rs.receivedAudio = false;
 
                     sendJson(session, Map.of("type", "started"));
                     log.info("Speech recognition started: lang={}", language);
@@ -72,7 +71,6 @@ public class SpeechWebSocketHandler extends TextWebSocketHandler {
                     if (audioBase64 != null && !audioBase64.isEmpty()) {
                         byte[] chunk = Base64.getDecoder().decode(audioBase64);
                         rs.audioBuffer.write(chunk);
-                        rs.receivedAudio = true;
                     }
                 }
                 case "end" -> {
@@ -96,8 +94,9 @@ public class SpeechWebSocketHandler extends TextWebSocketHandler {
                     }
                     rs.audioBuffer = null;
                 }
+                default -> log.debug("Unknown speech message type: {}", type);
             }
-        } catch (Exception e) {
+        } catch (IOException | IllegalArgumentException e) {
             log.error("Error handling speech message: {}", e.getMessage());
             sendJsonQuiet(session, Map.of("type", "error", "message", e.getMessage()));
         }
@@ -134,7 +133,6 @@ public class SpeechWebSocketHandler extends TextWebSocketHandler {
     private static class RecognitionSession {
         String language = "zh_cn";
         ByteArrayOutputStream audioBuffer;
-        boolean receivedAudio;
     }
 
     private static class ByteArrayOutputStream extends java.io.ByteArrayOutputStream {

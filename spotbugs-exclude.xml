@@ -1,0 +1,36 @@
+<FindBugsFilter>
+    <!-- ==================== Spring DI: storing injected beans ==================== -->
+    <!-- All @Service/@Component classes storing PromptLoader, repositories, properties, etc. -->
+    <Match>
+        <Or>
+            <Package name="com.zju.offercatcher.application.agent"/>
+            <Package name="com.zju.offercatcher.application.service"/>
+            <Package name="com.zju.offercatcher.application.worker"/>
+            <Package name="com.zju.offercatcher.infrastructure.adapters"/>
+            <Package name="com.zju.offercatcher.infrastructure.persistence"/>
+            <Package name="com.zju.offercatcher.infrastructure.tools"/>
+            <Package name="com.zju.offercatcher.infrastructure.messaging"/>
+            <Package name="com.zju.offercatcher.infrastructure.observability"/>
+            <Package name="com.zju.offercatcher.interfaces.controller"/>
+        </Or>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+
+    <!-- ==================== DTO Records: mutable collections ==================== -->
+    <!-- Jackson/Spring creates fresh instances; no caller retains references -->
+    <Match>
+        <Package name="com.zju.offercatcher.interfaces.dto"/>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+    </Match>
+    <Match>
+        <Package name="com.zju.offercatcher.application.agent.dto"/>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+    </Match>
+
+    <!-- ==================== Intentional broad catch for JSON parsing ==================== -->
+    <Match>
+        <Class name="com.zju.offercatcher.application.agent.VisionExtractorAgent"/>
+        <Method name="parseResponse"/>
+        <Bug pattern="REC_CATCH_EXCEPTION"/>
+    </Match>
+</FindBugsFilter>

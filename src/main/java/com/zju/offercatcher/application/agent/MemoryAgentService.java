@@ -92,7 +92,7 @@ public class MemoryAgentService {
                 Msg.builder().role(MsgRole.USER).textContent(prompt).build()
             );
 
-            Msg result = agent.call(input).block();
+            agent.call(input).block();
             log.info("Memory extraction completed for conversation {}", conversationId);
 
         } catch (Exception e) {
