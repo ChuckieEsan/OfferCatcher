@@ -57,7 +57,7 @@ public class ChatAgentService {
     // Tools
     private final SearchQuestionsTool searchQuestionsTool;
     private final WebSearchTool webSearchTool;
-    private final KnowledgeGraphStubTools knowledgeGraphStubTools;
+    private final KnowledgeGraphTools knowledgeGraphTools;
     private final MemoryTools memoryTools;
 
     public ChatAgentService(ChatApplicationService chatService,
@@ -68,7 +68,7 @@ public class ChatAgentService {
                              LLMProperties llmProperties,
                              SearchQuestionsTool searchQuestionsTool,
                              WebSearchTool webSearchTool,
-                             KnowledgeGraphStubTools knowledgeGraphStubTools,
+                             KnowledgeGraphTools knowledgeGraphTools,
                              MemoryTools memoryTools) {
         this.chatService = chatService;
         this.memoryService = memoryService;
@@ -78,7 +78,7 @@ public class ChatAgentService {
         this.llmProperties = llmProperties;
         this.searchQuestionsTool = searchQuestionsTool;
         this.webSearchTool = webSearchTool;
-        this.knowledgeGraphStubTools = knowledgeGraphStubTools;
+        this.knowledgeGraphTools = knowledgeGraphTools;
         this.memoryTools = memoryTools;
     }
 
@@ -171,7 +171,7 @@ public class ChatAgentService {
         Toolkit toolkit = new Toolkit(ToolkitConfig.defaultConfig());
         toolkit.registerTool(searchQuestionsTool);
         toolkit.registerTool(webSearchTool);
-        toolkit.registerTool(knowledgeGraphStubTools);
+        toolkit.registerTool(knowledgeGraphTools);
         toolkit.registerTool(memoryTools);
 
         ToolExecutionContext toolContext = ToolExecutionContext.builder()

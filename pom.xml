@@ -169,6 +169,13 @@
             <version>${qdrant.version}</version>
         </dependency>
 
+        <!-- Neo4j Java Driver -->
+        <dependency>
+            <groupId>org.neo4j.driver</groupId>
+            <artifactId>neo4j-java-driver</artifactId>
+            <version>5.28.5</version>
+        </dependency>
+
         <!-- Testing (TDD) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
