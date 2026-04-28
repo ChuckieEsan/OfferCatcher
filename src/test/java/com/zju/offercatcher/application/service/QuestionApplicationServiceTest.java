@@ -1,5 +1,6 @@
 package com.zju.offercatcher.application.service;
 
+import com.zju.offercatcher.application.agent.AnswerSpecialistAgent;
 import com.zju.offercatcher.domain.question.aggregates.Question;
 import com.zju.offercatcher.domain.question.repositories.QuestionRepository;
 import com.zju.offercatcher.domain.shared.enums.MasteryLevel;
@@ -25,6 +26,7 @@ class QuestionApplicationServiceTest {
 
     @Mock QuestionRepository questionRepository;
     @Mock CacheApplicationService cacheService;
+    @Mock AnswerSpecialistAgent answerAgent;
     @InjectMocks QuestionApplicationService service;
 
     Question sample = Question.createPrivate("user-1", "HashMap 原理？", "阿里", "Java",

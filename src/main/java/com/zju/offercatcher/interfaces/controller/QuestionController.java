@@ -82,6 +82,14 @@ public class QuestionController {
         return ResponseEntity.ok(new ListResponse(items, items.size(), page, pageSize));
     }
 
+    @PostMapping("/{questionId}/regenerate")
+    public ResponseEntity<Response> regenerate(@PathVariable String questionId) {
+        log.info("Regenerate answer: {}", questionId);
+        return questionService.regenerateAnswer(questionId)
+            .map(q -> ResponseEntity.ok(toResponse(q)))
+            .orElse(ResponseEntity.notFound().build());
+    }
+
     @PostMapping("/batch/answers")
     public ResponseEntity<BatchAnswersResponse> batchAnswers(@Valid @RequestBody BatchAnswersRequest req) {
         Map<String, String> answers = questionService.getBatchAnswers(req.questionIds());

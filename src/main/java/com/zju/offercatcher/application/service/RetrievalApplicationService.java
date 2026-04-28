@@ -39,11 +39,14 @@ public class RetrievalApplicationService {
      * 基础向量检索（用户隔离）
      */
     public List<SearchResult> search(String userId, String query, String company, String position,
-                                      int k, float scoreThreshold) {
+                                      int k, float scoreThreshold,
+                                      Integer masteryLevel, String questionType,
+                                      List<String> coreEntities, List<String> clusterIds) {
         String context = buildQueryContext(query, company, position);
         float[] queryVector = embeddingAdapter.embed(context);
 
-        Map<String, Object> filters = buildFilters(company, position, null, null, null, null);
+        Map<String, Object> filters = buildFilters(company, position, masteryLevel, questionType,
+            coreEntities, clusterIds);
 
         List<QuestionWithScore> results = questionRepository.searchUserVisible(
             userId, queryVector, filters, k);
@@ -59,12 +62,23 @@ public class RetrievalApplicationService {
      */
     public List<SearchResult> searchWithRerank(String userId, String query, String company,
                                                 String position, int k, int recallMultiplier) {
+        return searchWithRerank(userId, query, company, position, k, recallMultiplier,
+            null, null, null, null);
+    }
+
+    public List<SearchResult> searchWithRerank(String userId, String query, String company,
+                                                String position, int k, int recallMultiplier,
+                                                Integer masteryLevel, String questionType,
+                                                List<String> coreEntities, List<String> clusterIds) {
         String context = buildQueryContext(query, company, position);
         float[] queryVector = embeddingAdapter.embed(context);
 
+        Map<String, Object> filters = buildFilters(company, position, masteryLevel, questionType,
+            coreEntities, clusterIds);
+
         int recallLimit = k * recallMultiplier;
         List<QuestionWithScore> recalled = questionRepository.searchUserVisible(
-            userId, queryVector, recallLimit);
+            userId, queryVector, filters, recallLimit);
 
         if (recalled.isEmpty()) {
             return Collections.emptyList();

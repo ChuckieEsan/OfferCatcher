@@ -38,7 +38,7 @@ class SearchControllerTest {
                 "LEVEL_1", "knowledge", List.of("HashMap"), List.of("c1"),
                 "HashMap 基于数组+链表...", Map.of(), 0.92f
             );
-            when(retrievalService.searchWithRerank(anyString(), anyString(), any(), any(), anyInt(), anyInt()))
+            when(retrievalService.searchWithRerank(anyString(), anyString(), any(), any(), anyInt(), anyInt(), any(), any(), any(), any()))
                 .thenReturn(List.of(result));
 
             String body = mapper.writeValueAsString(Map.of(
@@ -62,7 +62,7 @@ class SearchControllerTest {
         @Test
         @DisplayName("空结果返回 200")
         void emptyResult() throws Exception {
-            when(retrievalService.searchWithRerank(anyString(), anyString(), any(), any(), anyInt(), anyInt()))
+            when(retrievalService.searchWithRerank(anyString(), anyString(), any(), any(), anyInt(), anyInt(), any(), any(), any(), any()))
                 .thenReturn(List.of());
 
             String body = mapper.writeValueAsString(Map.of(

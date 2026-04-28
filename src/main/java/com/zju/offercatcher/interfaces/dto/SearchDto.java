@@ -15,7 +15,11 @@ public interface SearchDto {
         String company,
         String position,
         @Min(1) int k,
-        float scoreThreshold
+        float scoreThreshold,
+        Integer masteryLevel,
+        String questionType,
+        List<String> coreEntities,
+        List<String> clusterIds
     ) {}
 
     record SearchResponse(

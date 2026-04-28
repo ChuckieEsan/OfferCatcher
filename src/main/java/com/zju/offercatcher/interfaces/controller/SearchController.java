@@ -26,10 +26,10 @@ public class SearchController {
     @PostMapping
     public ResponseEntity<SearchResponse> search(@UserId String userId, @Valid @RequestBody SearchRequest req) {
         int k = req.k() > 0 ? req.k() : 10;
-        float threshold = req.scoreThreshold() > 0 ? req.scoreThreshold() : 0.3f;
 
         List<RetrievalApplicationService.SearchResult> results = retrievalService.searchWithRerank(
-            userId, req.query(), req.company(), req.position(), k, 3);
+            userId, req.query(), req.company(), req.position(), k, 3,
+            req.masteryLevel(), req.questionType(), req.coreEntities(), req.clusterIds());
 
         List<SearchResultItem> items = results.stream()
             .map(r -> new SearchResultItem(

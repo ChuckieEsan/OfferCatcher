@@ -1,5 +1,6 @@
 package com.zju.offercatcher.application.service;
 
+import com.zju.offercatcher.application.agent.AnswerSpecialistAgent;
 import com.zju.offercatcher.domain.question.aggregates.Question;
 import com.zju.offercatcher.domain.question.repositories.QuestionRepository;
 import com.zju.offercatcher.domain.shared.enums.MasteryLevel;
@@ -24,11 +25,14 @@ public class QuestionApplicationService {
 
     private final QuestionRepository questionRepository;
     private final CacheApplicationService cacheService;
+    private final AnswerSpecialistAgent answerAgent;
 
     public QuestionApplicationService(QuestionRepository questionRepository,
-                                       CacheApplicationService cacheService) {
+                                       CacheApplicationService cacheService,
+                                       AnswerSpecialistAgent answerAgent) {
         this.questionRepository = questionRepository;
         this.cacheService = cacheService;
+        this.answerAgent = answerAgent;
     }
 
     @Transactional
@@ -126,6 +130,24 @@ public class QuestionApplicationService {
                 .toList();
         }
         return questions;
+    }
+
+    @Transactional
+    public Optional<Question> regenerateAnswer(String questionId) {
+        Question question = questionRepository.findById(questionId).orElse(null);
+        if (question == null) {
+            log.warn("Question not found for regenerate: {}", questionId);
+            return Optional.empty();
+        }
+
+        String answer = answerAgent.generateAnswer(question);
+        if (answer != null && !answer.isBlank()) {
+            question.updateAnswer(answer);
+            questionRepository.save(question);
+            cacheService.invalidateQuestion(questionId);
+            log.info("Answer regenerated for: {}", questionId);
+        }
+        return Optional.of(question);
     }
 
     public Map<String, String> getBatchAnswers(List<String> questionIds) {
