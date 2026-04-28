@@ -49,7 +49,8 @@ public class QuestionController {
     public ResponseEntity<Response> update(@PathVariable String questionId,
                                            @Valid @RequestBody UpdateRequest req) {
         MasteryLevel ml = req.masteryLevel() != null ? MasteryLevel.fromLevel(req.masteryLevel()) : null;
-        return questionService.updateQuestion(questionId, req.answer(), ml)
+        return questionService.updateQuestion(questionId, req.answer(), ml,
+                req.questionText(), req.coreEntities())
             .map(q -> ResponseEntity.ok(toResponse(q)))
             .orElse(ResponseEntity.notFound().build());
     }
@@ -67,13 +68,16 @@ public class QuestionController {
         @RequestParam(required = false) String position,
         @RequestParam(required = false) String questionType,
         @RequestParam(required = false) Integer masteryLevel,
+        @RequestParam(required = false) String keyword,
+        @RequestParam(required = false) String clusterId,
         @RequestParam(defaultValue = "1") int page,
         @RequestParam(defaultValue = "20") int pageSize) {
 
         QuestionType qt = questionType != null ? QuestionType.fromValue(questionType) : null;
         MasteryLevel ml = masteryLevel != null ? MasteryLevel.fromLevel(masteryLevel) : null;
 
-        List<Question> questions = questionService.listQuestions(userId, company, position, qt, ml, page, pageSize);
+        List<Question> questions = questionService.listQuestions(userId, company, position,
+            qt, ml, keyword, clusterId, page, pageSize);
         List<Response> items = questions.stream().map(QuestionController::toResponse).toList();
         return ResponseEntity.ok(new ListResponse(items, items.size(), page, pageSize));
     }

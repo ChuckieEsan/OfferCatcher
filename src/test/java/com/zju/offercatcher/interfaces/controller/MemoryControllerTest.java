@@ -26,7 +26,7 @@ class MemoryControllerTest {
     @MockitoBean MemoryApplicationService memoryService;
 
     @Nested
-    @DisplayName("GET /api/v1/memory/{userId}")
+    @DisplayName("GET /api/v1/memory/me")
     class GetMemory {
 
         @Test
@@ -36,7 +36,8 @@ class MemoryControllerTest {
             when(memoryService.getPreferences(anyString())).thenReturn("语言：中文");
             when(memoryService.getBehaviors(anyString())).thenReturn("喜欢详细解释");
 
-            mvc.perform(get("/api/v1/memory/user-1"))
+            mvc.perform(get("/api/v1/memory/me")
+                    .header("X-User-Id", "user-1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.userId").value("user-1"))
                 .andExpect(jsonPath("$.content").exists())
@@ -46,7 +47,7 @@ class MemoryControllerTest {
     }
 
     @Nested
-    @DisplayName("GET /api/v1/memory/{userId}/preferences")
+    @DisplayName("GET /api/v1/memory/me/preferences")
     class GetPreferences {
 
         @Test
@@ -54,13 +55,14 @@ class MemoryControllerTest {
         void getSuccess() throws Exception {
             when(memoryService.getPreferences("user-1")).thenReturn("语言：中文\n解释深度：详细");
 
-            mvc.perform(get("/api/v1/memory/user-1/preferences"))
+            mvc.perform(get("/api/v1/memory/me/preferences")
+                    .header("X-User-Id", "user-1"))
                 .andExpect(status().isOk());
         }
     }
 
     @Nested
-    @DisplayName("PUT /api/v1/memory/{userId}/preferences")
+    @DisplayName("PUT /api/v1/memory/me/preferences")
     class UpdatePreferences {
 
         @Test
@@ -68,7 +70,8 @@ class MemoryControllerTest {
         void updateSuccess() throws Exception {
             String body = mapper.writeValueAsString(Map.of("content", "语言：中文\n解释深度：适中"));
 
-            mvc.perform(put("/api/v1/memory/user-1/preferences")
+            mvc.perform(put("/api/v1/memory/me/preferences")
+                    .header("X-User-Id", "user-1")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(body))
                 .andExpect(status().isOk());
@@ -76,7 +79,7 @@ class MemoryControllerTest {
     }
 
     @Nested
-    @DisplayName("GET /api/v1/memory/{userId}/behaviors")
+    @DisplayName("GET /api/v1/memory/me/behaviors")
     class GetBehaviors {
 
         @Test
@@ -84,13 +87,14 @@ class MemoryControllerTest {
         void getSuccess() throws Exception {
             when(memoryService.getBehaviors("user-1")).thenReturn("频繁提问系统设计");
 
-            mvc.perform(get("/api/v1/memory/user-1/behaviors"))
+            mvc.perform(get("/api/v1/memory/me/behaviors")
+                    .header("X-User-Id", "user-1"))
                 .andExpect(status().isOk());
         }
     }
 
     @Nested
-    @DisplayName("PUT /api/v1/memory/{userId}/behaviors")
+    @DisplayName("PUT /api/v1/memory/me/behaviors")
     class UpdateBehaviors {
 
         @Test
@@ -98,7 +102,8 @@ class MemoryControllerTest {
         void updateSuccess() throws Exception {
             String body = mapper.writeValueAsString(Map.of("content", "偏好系统设计题型"));
 
-            mvc.perform(put("/api/v1/memory/user-1/behaviors")
+            mvc.perform(put("/api/v1/memory/me/behaviors")
+                    .header("X-User-Id", "user-1")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(body))
                 .andExpect(status().isOk());

@@ -22,7 +22,9 @@ public interface QuestionDto {
 
     record UpdateRequest(
         String answer,
-        Integer masteryLevel
+        Integer masteryLevel,
+        String questionText,
+        List<String> coreEntities
     ) {}
 
     record Response(

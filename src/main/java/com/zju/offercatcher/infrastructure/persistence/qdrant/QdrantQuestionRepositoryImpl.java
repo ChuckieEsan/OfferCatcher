@@ -231,6 +231,14 @@ public class QdrantQuestionRepositoryImpl implements QuestionRepository {
     }
 
     @Override
+    public List<Question> findByKeyword(String userId, String keyword, int page, int size) {
+        return jpaRepository.searchPrivateByKeyword(userId, keyword)
+            .stream()
+            .map(QuestionJpaEntity::toDomain)
+            .toList();
+    }
+
+    @Override
     public List<Question> findByCompanyForUser(String userId, String company, int page, int size) {
         return jpaRepository.findByCompanyForUser(userId, company)
             .stream()

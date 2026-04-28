@@ -106,7 +106,7 @@ class QuestionControllerTest {
         @Test
         @DisplayName("更新成功返回 200")
         void updateSuccess() throws Exception {
-            when(questionService.updateQuestion(eq("q1"), anyString(), any()))
+            when(questionService.updateQuestion(eq("q1"), anyString(), any(), any(), any()))
                 .thenReturn(Optional.of(sampleQuestion));
 
             String body = mapper.writeValueAsString(Map.of("answer", "新答案"));
@@ -125,7 +125,7 @@ class QuestionControllerTest {
         @Test
         @DisplayName("列表查询返回 200")
         void listSuccess() throws Exception {
-            when(questionService.listQuestions(anyString(), any(), any(), any(), any(), anyInt(), anyInt()))
+            when(questionService.listQuestions(anyString(), any(), any(), any(), any(), any(), any(), anyInt(), anyInt()))
                 .thenReturn(List.of(sampleQuestion));
 
             mvc.perform(get("/api/v1/questions")

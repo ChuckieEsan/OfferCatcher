@@ -128,6 +128,21 @@ public class Question {
     }
 
     /**
+     * 更新题目内容和知识点
+     * @param newQuestionText 新题目文本
+     * @param newCoreEntities 新知识点列表
+     */
+    public void updateContent(String newQuestionText, List<String> newCoreEntities) {
+        if (newQuestionText != null && !newQuestionText.isBlank()) {
+            this.questionText = newQuestionText;
+        }
+        if (newCoreEntities != null) {
+            this.coreEntities = new ArrayList<>(newCoreEntities);
+        }
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    /**
      * 添加考点簇
      * @param clusterId 考点簇 ID
      */

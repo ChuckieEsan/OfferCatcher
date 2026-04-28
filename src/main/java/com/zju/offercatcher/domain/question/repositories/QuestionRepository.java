@@ -122,6 +122,16 @@ public interface QuestionRepository {
     List<Question> findPublicQuestions(int page, int size);
 
     /**
+     * 关键词搜索用户私有题目
+     * @param userId 用户 ID
+     * @param keyword 搜索关键词
+     * @param page 页码（从 0 开始）
+     * @param size 每页数量
+     * @return 匹配的题目列表
+     */
+    List<Question> findByKeyword(String userId, String keyword, int page, int size);
+
+    /**
      * 按公司和用户查询题目
      * @param userId 用户 ID
      * @param company 公司名称

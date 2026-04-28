@@ -49,7 +49,9 @@ public class QuestionApplicationService {
 
     @Transactional
     public Optional<Question> updateQuestion(String questionId, String answer,
-                                              MasteryLevel masteryLevel) {
+                                              MasteryLevel masteryLevel,
+                                              String questionText,
+                                              List<String> coreEntities) {
         Question question = questionRepository.findById(questionId).orElse(null);
         if (question == null) {
             log.warn("Question not found: {}", questionId);
@@ -63,6 +65,9 @@ public class QuestionApplicationService {
         }
         if (masteryLevel != null) {
             question.updateMastery(masteryLevel);
+        }
+        if (questionText != null || coreEntities != null) {
+            question.updateContent(questionText, coreEntities);
         }
 
         questionRepository.save(question);
@@ -85,8 +90,15 @@ public class QuestionApplicationService {
 
     public List<Question> listQuestions(String userId, String company, String position,
                                          QuestionType questionType, MasteryLevel masteryLevel,
+                                         String keyword, String clusterId,
                                          int page, int pageSize) {
-        List<Question> questions = questionRepository.findByUserId(userId, page, pageSize);
+        List<Question> questions;
+
+        if (keyword != null && !keyword.isBlank()) {
+            questions = questionRepository.findByKeyword(userId, keyword, page, pageSize);
+        } else {
+            questions = questionRepository.findByUserId(userId, page, pageSize);
+        }
 
         if (company != null && !company.isBlank()) {
             questions = questions.stream()
@@ -106,6 +118,11 @@ public class QuestionApplicationService {
         if (masteryLevel != null) {
             questions = questions.stream()
                 .filter(q -> q.getMasteryLevel() == masteryLevel)
+                .toList();
+        }
+        if (clusterId != null && !clusterId.isBlank()) {
+            questions = questions.stream()
+                .filter(q -> q.getClusterIds().contains(clusterId))
                 .toList();
         }
         return questions;

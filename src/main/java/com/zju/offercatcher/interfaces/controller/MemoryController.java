@@ -21,36 +21,36 @@ public class MemoryController {
         this.memoryService = memoryService;
     }
 
-    @GetMapping("/{userId}")
-    public ResponseEntity<Response> getMemory(@PathVariable String userId) {
+    @GetMapping("/me")
+    public ResponseEntity<Response> getMemory(@UserId String userId) {
         return ResponseEntity.ok(toResponse(userId));
     }
 
-    @GetMapping("/{userId}/content")
-    public ResponseEntity<String> getContent(@PathVariable String userId) {
+    @GetMapping("/me/content")
+    public ResponseEntity<String> getContent(@UserId String userId) {
         return ResponseEntity.ok(memoryService.getMemoryContent(userId));
     }
 
-    @GetMapping("/{userId}/preferences")
-    public ResponseEntity<String> getPreferences(@PathVariable String userId) {
+    @GetMapping("/me/preferences")
+    public ResponseEntity<String> getPreferences(@UserId String userId) {
         return ResponseEntity.ok(memoryService.getPreferences(userId));
     }
 
-    @PutMapping("/{userId}/preferences")
+    @PutMapping("/me/preferences")
     public ResponseEntity<Void> updatePreferences(
-        @PathVariable String userId, @Valid @RequestBody UpdatePreferencesRequest req) {
+        @UserId String userId, @Valid @RequestBody UpdatePreferencesRequest req) {
         memoryService.updatePreferences(userId, req.content());
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/{userId}/behaviors")
-    public ResponseEntity<String> getBehaviors(@PathVariable String userId) {
+    @GetMapping("/me/behaviors")
+    public ResponseEntity<String> getBehaviors(@UserId String userId) {
         return ResponseEntity.ok(memoryService.getBehaviors(userId));
     }
 
-    @PutMapping("/{userId}/behaviors")
+    @PutMapping("/me/behaviors")
     public ResponseEntity<Void> updateBehaviors(
-        @PathVariable String userId, @Valid @RequestBody UpdateBehaviorsRequest req) {
+        @UserId String userId, @Valid @RequestBody UpdateBehaviorsRequest req) {
         memoryService.updateBehaviors(userId, req.content());
         return ResponseEntity.ok().build();
     }

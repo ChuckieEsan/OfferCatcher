@@ -72,7 +72,7 @@ class QuestionApplicationServiceTest {
         @DisplayName("更新答案并保存")
         void updateAnswer() {
             when(questionRepository.findById("q1")).thenReturn(Optional.of(sample));
-            Optional<Question> result = service.updateQuestion("q1", "新答案", null);
+            Optional<Question> result = service.updateQuestion("q1", "新答案", null, null, null);
             assertThat(result).isPresent();
             assertThat(result.get().getAnswer()).isEqualTo("新答案");
             verify(questionRepository).save(any(Question.class));
@@ -82,7 +82,7 @@ class QuestionApplicationServiceTest {
         @DisplayName("题目不存在返回空")
         void notFound() {
             when(questionRepository.findById("none")).thenReturn(Optional.empty());
-            assertThat(service.updateQuestion("none", "ans", null)).isEmpty();
+            assertThat(service.updateQuestion("none", "ans", null, null, null)).isEmpty();
         }
     }
 
@@ -115,7 +115,7 @@ class QuestionApplicationServiceTest {
         void noFilters() {
             java.util.List<Question> mockList = java.util.List.of(sample);
             when(questionRepository.findByUserId("user-1", 1, 20)).thenReturn(mockList);
-            java.util.List<Question> result = service.listQuestions("user-1", null, null, null, null, 1, 20);
+            java.util.List<Question> result = service.listQuestions("user-1", null, null, null, null, null, null, 1, 20);
             assertThat(result).hasSize(1);
         }
 
@@ -127,7 +127,7 @@ class QuestionApplicationServiceTest {
             java.util.List<Question> mockList = java.util.List.of(ali, bytedance);
             when(questionRepository.findByUserId("user-1", 1, 20)).thenReturn(mockList);
 
-            java.util.List<Question> result = service.listQuestions("user-1", "阿里", null, null, null, 1, 20);
+            java.util.List<Question> result = service.listQuestions("user-1", "阿里", null, null, null, null, null, 1, 20);
             assertThat(result).hasSize(1);
             assertThat(result.getFirst().getCompany()).isEqualTo("阿里");
         }
