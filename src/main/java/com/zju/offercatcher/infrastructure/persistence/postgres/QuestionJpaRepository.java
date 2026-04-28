@@ -33,7 +33,7 @@ public interface QuestionJpaRepository extends JpaRepository<QuestionJpaEntity, 
     /**
      * 查找用户的题目（分页）
      */
-    @Query("SELECT q FROM QuestionJpaEntity q WHERE q.userId = :userId ORDER BY q.createdAt DESC LIMIT :limit OFFSET :offset")
+    @Query("SELECT q FROM QuestionJpaEntity q WHERE (q.userId = :userId OR q.visibility = 'PUBLIC') ORDER BY q.createdAt DESC LIMIT :limit OFFSET :offset")
     List<QuestionJpaEntity> findByUserIdPaginated(@Param("userId") String userId, @Param("limit") int limit, @Param("offset") int offset);
 
     /**
@@ -51,7 +51,7 @@ public interface QuestionJpaRepository extends JpaRepository<QuestionJpaEntity, 
     /**
      * 查找用户的私有题目（用于模糊搜索）
      */
-    @Query("SELECT q FROM QuestionJpaEntity q WHERE q.userId = :userId AND q.visibility = 'PRIVATE' AND LOWER(q.questionText) LIKE LOWER(CONCAT('%', :keyword, '%')) ORDER BY q.createdAt DESC")
+    @Query("SELECT q FROM QuestionJpaEntity q WHERE (q.userId = :userId OR q.visibility = 'PUBLIC') AND LOWER(q.questionText) LIKE LOWER(CONCAT('%', :keyword, '%')) ORDER BY q.createdAt DESC")
     List<QuestionJpaEntity> searchPrivateByKeyword(@Param("userId") String userId, @Param("keyword") String keyword);
 
     /**
@@ -85,4 +85,7 @@ public interface QuestionJpaRepository extends JpaRepository<QuestionJpaEntity, 
      */
     @Query("SELECT q FROM QuestionJpaEntity q WHERE q.updatedAt > :since ORDER BY q.updatedAt ASC LIMIT :limit")
     List<QuestionJpaEntity> findRecentlyUpdated(@Param("since") java.time.LocalDateTime since, @Param("limit") int limit);
+
+    @Query("SELECT COUNT(q) FROM QuestionJpaEntity q WHERE (q.userId = :userId OR q.visibility = 'PUBLIC')")
+    long countUserVisible(@Param("userId") String userId);
 }

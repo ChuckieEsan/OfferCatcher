@@ -44,8 +44,12 @@ public class ChatApplicationService {
         return conversation;
     }
 
-    public List<Conversation> listConversations(String userId, int limit) {
-        return conversationRepository.findByUserId(userId, 0, limit);
+    public List<Conversation> listConversations(String userId, int page, int pageSize) {
+        return conversationRepository.findByUserId(userId, page, pageSize);
+    }
+
+    public long countConversations(String userId) {
+        return conversationRepository.countByUserId(userId);
     }
 
     public Optional<Conversation> getConversation(String userId, Long conversationId) {

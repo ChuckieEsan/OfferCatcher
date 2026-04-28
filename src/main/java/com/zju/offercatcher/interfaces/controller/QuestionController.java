@@ -79,7 +79,8 @@ public class QuestionController {
         List<Question> questions = questionService.listQuestions(userId, company, position,
             qt, ml, keyword, clusterId, page, pageSize);
         List<Response> items = questions.stream().map(QuestionController::toResponse).toList();
-        return ResponseEntity.ok(new ListResponse(items, items.size(), page, pageSize));
+        int total = (int) questionService.countQuestions(userId);
+        return ResponseEntity.ok(new ListResponse(items, total, page, pageSize));
     }
 
     @PostMapping("/{id}/regenerate")

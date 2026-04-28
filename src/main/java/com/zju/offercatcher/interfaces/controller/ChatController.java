@@ -44,12 +44,14 @@ public class ChatController {
     @GetMapping("/api/v1/conversations")
     public ResponseEntity<ConversationListResponse> listConversations(
         @UserId String userId,
-        @RequestParam(defaultValue = "20") int limit) {
-        List<Conversation> conversations = chatService.listConversations(userId, limit);
+        @RequestParam(defaultValue = "1") int page,
+        @RequestParam(defaultValue = "20") int pageSize) {
+        List<Conversation> conversations = chatService.listConversations(userId, page, pageSize);
         List<ConversationResponse> items = conversations.stream()
             .map(ChatController::toConversationResponse)
             .toList();
-        return ResponseEntity.ok(new ConversationListResponse(items));
+        int total = (int) chatService.countConversations(userId);
+        return ResponseEntity.ok(new ConversationListResponse(items, total, page, pageSize));
     }
 
     @PostMapping("/api/v1/conversations")

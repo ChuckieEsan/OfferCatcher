@@ -168,6 +168,10 @@ public class QuestionApplicationService {
         return questionRepository.findById(id);
     }
 
+    public long countQuestions(String userId) {
+        return questionRepository.countByUserId(userId);
+    }
+
     public Map<Long, String> getBatchAnswers(List<Long> ids) {
         Map<Long, String> answers = new HashMap<>();
         for (Long id : ids) {

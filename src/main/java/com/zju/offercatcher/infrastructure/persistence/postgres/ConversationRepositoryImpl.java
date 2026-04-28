@@ -29,7 +29,7 @@ public class ConversationRepositoryImpl implements ConversationRepository {
 
     @Override
     public List<Conversation> findByUserId(String userId, int page, int size) {
-        int offset = (page - 1) * size;
+        int offset = Math.max(0, page - 1) * size;
         List<ConversationJpaEntity> entities = conversationJpaRepository.findByUserIdPaginated(userId, size, offset);
         return entities.stream()
             .map(this::loadConversationWithMessages)
@@ -44,7 +44,7 @@ public class ConversationRepositoryImpl implements ConversationRepository {
 
     @Override
     public List<Conversation> findByUserIdAndStatus(String userId, ConversationStatus status, int page, int size) {
-        int offset = (page - 1) * size;
+        int offset = Math.max(0, page - 1) * size;
         List<ConversationJpaEntity> entities = conversationJpaRepository.findByUserIdAndStatusPaginated(userId, status, size, offset);
         return entities.stream()
             .map(this::loadConversationWithMessages)

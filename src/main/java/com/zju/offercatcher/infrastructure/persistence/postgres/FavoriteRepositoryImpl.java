@@ -24,7 +24,7 @@ public class FavoriteRepositoryImpl implements FavoriteRepository {
 
     @Override
     public List<Favorite> findByUserId(String userId, int page, int size) {
-        int offset = (page - 1) * size;
+        int offset = Math.max(0, page - 1) * size;
         return jpaRepository.findByUserIdPaginated(userId, size, offset)
             .stream()
             .map(FavoriteJpaEntity::toDomain)

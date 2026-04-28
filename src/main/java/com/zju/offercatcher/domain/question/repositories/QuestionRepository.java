@@ -154,4 +154,6 @@ public interface QuestionRepository {
      * @return 用户可见的该公司题目
      */
     List<Question> findByCompanyForUser(String userId, String company, int page, int size);
+
+    long countByUserId(String userId);
 }

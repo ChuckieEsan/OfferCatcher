@@ -49,9 +49,9 @@ public class InterviewApplicationService {
 
     public List<InterviewSession> listSessions(String userId, int limit, SessionStatus status) {
         if (status != null) {
-            return sessionRepository.findByUserIdAndStatus(userId, status, 0, limit);
+            return sessionRepository.findByUserIdAndStatus(userId, status, 1, limit);
         }
-        return sessionRepository.findByUserId(userId, 0, limit);
+        return sessionRepository.findByUserId(userId, 1, limit);
     }
 
     @Transactional

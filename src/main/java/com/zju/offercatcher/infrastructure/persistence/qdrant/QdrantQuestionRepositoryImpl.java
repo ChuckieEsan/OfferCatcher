@@ -241,7 +241,7 @@ public class QdrantQuestionRepositoryImpl implements QuestionRepository {
 
     @Override
     public List<Question> findByUserId(String userId, int page, int size) {
-        int offset = (page - 1) * size;
+        int offset = Math.max(0, page - 1) * size;
         return jpaRepository.findByUserIdPaginated(userId, size, offset)
             .stream()
             .map(QuestionJpaEntity::toDomain)
@@ -250,11 +250,16 @@ public class QdrantQuestionRepositoryImpl implements QuestionRepository {
 
     @Override
     public List<Question> findPublicQuestions(int page, int size) {
-        int offset = (page - 1) * size;
+        int offset = Math.max(0, page - 1) * size;
         return jpaRepository.findPublicQuestionsPaginated(size, offset)
             .stream()
             .map(QuestionJpaEntity::toDomain)
             .toList();
+    }
+
+    @Override
+    public long countByUserId(String userId) {
+        return jpaRepository.countUserVisible(userId);
     }
 
     @Override

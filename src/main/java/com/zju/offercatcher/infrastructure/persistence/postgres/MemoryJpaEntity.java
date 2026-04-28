@@ -7,6 +7,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -35,7 +37,7 @@ public class MemoryJpaEntity {
     private MemoryStatus status;
 
     @Column(name = "memory_references", columnDefinition = "JSON")
-    @Convert(converter = MemoryReferenceConverter.class)
+    @JdbcTypeCode(SqlTypes.JSON)
     private List<MemoryReference> references;
 
     @Column(name = "created_at", nullable = false)

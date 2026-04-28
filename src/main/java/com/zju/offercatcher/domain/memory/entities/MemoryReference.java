@@ -1,5 +1,7 @@
 package com.zju.offercatcher.domain.memory.entities;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.zju.offercatcher.domain.shared.exception.DomainException;
 
 import java.time.LocalDateTime;
@@ -75,7 +77,10 @@ public class MemoryReference {
 
     // ==================== 构造函数 ====================
 
-    private MemoryReference(String referenceName, String content, LocalDateTime updatedAt) {
+    @JsonCreator
+    private MemoryReference(@JsonProperty("referenceName") String referenceName,
+                            @JsonProperty("content") String content,
+                            @JsonProperty("updatedAt") LocalDateTime updatedAt) {
         this.referenceName = referenceName;
         this.content = content;
         this.updatedAt = updatedAt;

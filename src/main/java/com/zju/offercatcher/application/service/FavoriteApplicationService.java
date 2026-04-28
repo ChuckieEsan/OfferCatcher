@@ -61,7 +61,8 @@ public class FavoriteApplicationService {
         return questionIds.stream()
             .collect(Collectors.toMap(
                 id -> id,
-                id -> favoriteRepository.existsByUserIdAndQuestionId(userId, id)
+                id -> favoriteRepository.existsByUserIdAndQuestionId(userId, id),
+                (a, b) -> a
             ));
     }
 

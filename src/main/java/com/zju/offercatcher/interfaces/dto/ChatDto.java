@@ -36,6 +36,9 @@ public interface ChatDto {
     ) {}
 
     record ConversationListResponse(
-        List<ConversationResponse> conversations
+        List<ConversationResponse> conversations,
+        int total,
+        int page,
+        int pageSize
     ) {}
 }
