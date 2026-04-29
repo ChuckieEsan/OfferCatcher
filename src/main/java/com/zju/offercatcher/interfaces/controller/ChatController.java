@@ -31,7 +31,7 @@ public class ChatController {
     @PostMapping(value = "/api/v1/chat/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<String> chatStream(@UserId String userId, @Valid @RequestBody ChatRequest req) {
         return chatAgent.chatStream(req.message(), req.conversationId(), userId)
-            .concatWithValues("data: [DONE]\n\n");
+            .concatWithValues("[DONE]\n\n");
     }
 
     @GetMapping("/api/v1/conversations")

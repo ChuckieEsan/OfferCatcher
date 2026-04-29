@@ -211,9 +211,11 @@ public class ChatAgentService {
 
         try {
             Map<String, String> frame = Map.of("type", type, "content", content);
-            return "data: " + objectMapper.writeValueAsString(frame) + "\n\n";
+            // Spring MVC Flux<String> + TEXT_EVENT_STREAM 会自动添加 "data:" 前缀
+            // 所以这里只返回 JSON 内容，不手动添加前缀
+            return objectMapper.writeValueAsString(frame) + "\n\n";
         } catch (JsonProcessingException e) {
-            return "data: {\"type\":\"" + type + "\",\"content\":\"\"}\n\n";
+            return "{\"type\":\"" + type + "\",\"content\":\"\"}\n\n";
         }
     }
 

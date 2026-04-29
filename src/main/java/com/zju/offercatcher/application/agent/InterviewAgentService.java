@@ -1,5 +1,7 @@
 package com.zju.offercatcher.application.agent;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zju.offercatcher.application.agent.dto.ScoreResult;
 import com.zju.offercatcher.application.service.InterviewApplicationService;
 import com.zju.offercatcher.application.service.QuestionApplicationService;
@@ -57,6 +59,7 @@ public class InterviewAgentService {
     private final OnnxEmbeddingAdapter embeddingAdapter;
     private final ScorerAgent scorerAgent;
     private final PromptLoader promptLoader;
+    private final ObjectMapper objectMapper;
     private final OpenAIChatModel llm;
     private final int maxFollowUps;
 
@@ -66,6 +69,7 @@ public class InterviewAgentService {
                                   OnnxEmbeddingAdapter embeddingAdapter,
                                   ScorerAgent scorerAgent,
                                   PromptLoader promptLoader,
+                                  ObjectMapper objectMapper,
                                   LLMProperties llmProperties,
                                   InterviewProperties interviewProperties) {
         this.interviewService = interviewService;
@@ -74,6 +78,7 @@ public class InterviewAgentService {
         this.embeddingAdapter = embeddingAdapter;
         this.scorerAgent = scorerAgent;
         this.promptLoader = promptLoader;
+        this.objectMapper = objectMapper;
         this.maxFollowUps = interviewProperties.getMaxFollowUps();
 
         LLMProperties.DeepSeek cfg = llmProperties.getDeepseek();
@@ -161,12 +166,12 @@ public class InterviewAgentService {
     public Flux<String> getHintStream(Long sessionId, String userId) {
         InterviewSession session = interviewService.getSession(sessionId, userId).orElse(null);
         if (session == null) {
-            return Flux.just(jsonError("Session not found"));
+            return Flux.just(toSSEFrame(Map.of("type", "error", "message", "Session not found")));
         }
 
         InterviewQuestion currentQuestion = session.getCurrentQuestion().orElse(null);
         if (currentQuestion == null) {
-            return Flux.just(jsonError("No current question"));
+            return Flux.just(toSSEFrame(Map.of("type", "error", "message", "No current question")));
         }
 
         String systemPrompt = getSystemPrompt(session);
@@ -184,13 +189,21 @@ public class InterviewAgentService {
                 .build())
             .build();
 
+        StreamOptions streamOptions = StreamOptions.builder()
+            .includeReasoningChunk(true)
+            .includeSummaryChunk(true)
+            .build();
+
         return agent.stream(
                 List.of(Msg.builder().role(MsgRole.USER).textContent(userPrompt).build()),
-                StreamOptions.defaults())
-            .filter(event -> event.getType() == EventType.REASONING)
+                streamOptions)
+            .filter(event -> {
+                EventType type = event.getType();
+                return type == EventType.REASONING || type == EventType.SUMMARY;
+            })
             .map(event -> {
                 String text = event.getMessage() != null ? event.getMessage().getTextContent() : "";
-                return jsonContent("text", text != null ? text : "");
+                return toSSEFrame(Map.of("type", "text", "content", text != null ? text : ""));
             });
     }
 
@@ -251,75 +264,71 @@ public class InterviewAgentService {
         );
     }
 
-    // ==================== JSON Helpers ====================
+    // ==================== JSON / SSE Helpers ====================
+
+    /**
+     * 统一的 SSE frame 构建：使用 Jackson 序列化，与 ChatAgentService 保持一致。
+     * Spring MVC Flux<String> + TEXT_EVENT_STREAM 会自动添加 "data:" 前缀，
+     * 所以这里只返回 JSON 内容。
+     */
+    private String toSSEFrame(Map<String, Object> data) {
+        try {
+            return objectMapper.writeValueAsString(data) + "\n\n";
+        } catch (JsonProcessingException e) {
+            return "{\"type\":\"error\",\"message\":\"serialization failed\"}\n\n";
+        }
+    }
 
     private String jsonError(String message) {
-        return "{\"type\":\"error\",\"message\":\"" + escapeJson(message) + "\"}";
+        return toSSEFrame(Map.of("type", "error", "message", message));
     }
 
     private String jsonScoreResult(ScoreResult result) {
-        return String.format(
-            "{\"type\":\"score_result\",\"score\":%d,\"mastery_before\":\"%s\",\"mastery_after\":\"%s\",\"strengths\":%s,\"improvements\":%s,\"feedback\":\"%s\"}",
-            result.score(),
-            "LEVEL_0",
-            result.masteryLevel(),
-            toJsonArray(result.strengths()),
-            toJsonArray(result.improvements()),
-            escapeJson(result.feedback())
-        );
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("type", "score_result");
+        data.put("score", result.score());
+        data.put("mastery_before", "LEVEL_0");
+        data.put("mastery_after", result.masteryLevel());
+        data.put("strengths", result.strengths() != null ? result.strengths() : List.of());
+        data.put("improvements", result.improvements() != null ? result.improvements() : List.of());
+        data.put("feedback", result.feedback() != null ? result.feedback() : "");
+        return toSSEFrame(data);
     }
 
     private String jsonCompleted(InterviewSession session) {
-        return String.format(
-            "{\"type\":\"completed\",\"message\":\"面试已结束，感谢你的参与！\",\"session_id\":%d}",
-            session.getSessionId()
-        );
+        return toSSEFrame(Map.of(
+            "type", "completed",
+            "message", "面试已结束，感谢你的参与！",
+            "session_id", session.getSessionId()
+        ));
     }
 
     private String jsonNextQuestion(InterviewQuestion next, int idx, int score) {
-        return String.format(
-            "{\"type\":\"next_question_ready\",\"question_idx\":%d,\"next_question\":\"%s\",\"score\":%d}",
-            idx, escapeJson(next != null ? next.getQuestionText() : ""), score
-        );
+        return toSSEFrame(Map.of(
+            "type", "next_question_ready",
+            "question_idx", idx,
+            "next_question", next != null ? next.getQuestionText() : "",
+            "score", score
+        ));
     }
 
     private String jsonForceNext(InterviewQuestion next, int idx, int score) {
-        return String.format(
-            "{\"type\":\"force_next\",\"message\":\"该题目已追问 %d 次，进入下一题\",\"question_idx\":%d,\"next_question\":\"%s\",\"score\":%d}",
-            maxFollowUps, idx, escapeJson(next != null ? next.getQuestionText() : ""), score
-        );
+        return toSSEFrame(Map.of(
+            "type", "force_next",
+            "message", "该题目已追问 " + maxFollowUps + " 次，进入下一题",
+            "question_idx", idx,
+            "next_question", next != null ? next.getQuestionText() : "",
+            "score", score
+        ));
     }
 
     private String jsonFollowUp(int score, int followUpCount) {
-        return String.format(
-            "{\"type\":\"follow_up\",\"score\":%d,\"follow_up_count\":%d,\"max_follow_ups\":%d,\"remaining_chances\":%d}",
-            score, followUpCount, maxFollowUps, maxFollowUps - followUpCount
-        );
-    }
-
-    private String jsonContent(String type, String content) {
-        return String.format(
-            "{\"type\":\"%s\",\"content\":\"%s\"}", type, escapeJson(content)
-        );
-    }
-
-    private static String escapeJson(String s) {
-        if (s == null) return "";
-        return s.replace("\\", "\\\\")
-                .replace("\"", "\\\"")
-                .replace("\n", "\\n")
-                .replace("\r", "\\r")
-                .replace("\t", "\\t");
-    }
-
-    private static String toJsonArray(List<String> items) {
-        if (items == null || items.isEmpty()) return "[]";
-        StringBuilder sb = new StringBuilder("[");
-        for (int i = 0; i < items.size(); i++) {
-            if (i > 0) sb.append(",");
-            sb.append("\"").append(escapeJson(items.get(i))).append("\"");
-        }
-        sb.append("]");
-        return sb.toString();
+        return toSSEFrame(Map.of(
+            "type", "follow_up",
+            "score", score,
+            "follow_up_count", followUpCount,
+            "max_follow_ups", maxFollowUps,
+            "remaining_chances", maxFollowUps - followUpCount
+        ));
     }
 }
