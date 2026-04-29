@@ -19,7 +19,6 @@ import io.agentscope.core.tool.Toolkit;
 import io.agentscope.core.tool.ToolkitConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -27,7 +26,7 @@ import java.util.List;
 /**
  * 记忆管理 Agent 服务
  *
- * 在对话结束后异步执行，分析对话内容并更新用户记忆。
+ * 在对话结束后异步执行（由调用方通过 workerExecutor 调度），分析对话内容并更新用户记忆。
  * 使用 ReActAgent 自主调用 MemoryTools。
  * 对应 Python: app/application/agents/memory/agent.py
  */
@@ -44,6 +43,10 @@ public class MemoryAgentService {
     private final PromptLoader promptLoader;
     private final LLMProperties llmProperties;
 
+    // Cached stateless resources
+    private final OpenAIChatModel cachedModel;
+    private final Toolkit cachedToolkit;
+
     public MemoryAgentService(MemoryApplicationService memoryService,
                                MemoryRepository memoryRepository,
                                SessionSummaryRepository sessionSummaryRepository,
@@ -58,14 +61,25 @@ public class MemoryAgentService {
         this.memoryTools = memoryTools;
         this.promptLoader = promptLoader;
         this.llmProperties = llmProperties;
+
+        LLMProperties.DeepSeek cfg = llmProperties.getDeepseek();
+        this.cachedModel = OpenAIChatModel.builder()
+            .apiKey(cfg.getApiKey())
+            .modelName(cfg.getModel())
+            .baseUrl(cfg.getBaseUrl())
+            .stream(false)
+            .build();
+
+        this.cachedToolkit = new Toolkit(ToolkitConfig.defaultConfig());
+        this.cachedToolkit.registerTool(memoryTools);
     }
 
     /**
      * 异步执行记忆提取
      *
      * 对话结束后 fire-and-forget 调用，不阻塞主流程。
+     * 使用 workerExecutor 线程池执行，避免阻塞 HTTP 线程。
      */
-    @Async
     public void extractMemories(String userId, Long conversationId, List<Message> messages) {
         try {
             log.info("Memory extraction started for conversation {}", conversationId);
@@ -101,32 +115,19 @@ public class MemoryAgentService {
     }
 
     private ReActAgent createMemoryAgent(String userId) {
-        LLMProperties.DeepSeek cfg = llmProperties.getDeepseek();
-        OpenAIChatModel model = OpenAIChatModel.builder()
-            .apiKey(cfg.getApiKey())
-            .modelName(cfg.getModel())
-            .baseUrl(cfg.getBaseUrl())
-            .stream(false)
-            .build();
-
-        Toolkit toolkit = new Toolkit(ToolkitConfig.defaultConfig());
-        toolkit.registerTool(memoryTools);
-
         ToolExecutionContext toolContext = ToolExecutionContext.builder()
             .register("userContext", new UserToolContext(userId))
             .build();
 
-        String sysPrompt = """
-            你是记忆管理 Agent，分析对话内容并更新用户记忆。
-            目标是积累可复用的用户偏好和行为模式，而非记录所有对话内容。
-            根据对话内容，调用合适的工具更新记忆。
-            """;
-
         return ReActAgent.builder()
             .name("memory-agent")
-            .sysPrompt(sysPrompt)
-            .model(model)
-            .toolkit(toolkit)
+            .sysPrompt("""
+                你是记忆管理 Agent，分析对话内容并更新用户记忆。
+                目标是积累可复用的用户偏好和行为模式，而非记录所有对话内容。
+                根据对话内容，调用合适的工具更新记忆。
+                """)
+            .model(cachedModel)
+            .toolkit(cachedToolkit)
             .toolExecutionContext(toolContext)
             .maxIters(8)
             .generateOptions(GenerateOptions.builder()

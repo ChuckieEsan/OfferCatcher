@@ -5,7 +5,6 @@ import com.zju.offercatcher.application.service.ChatApplicationService;
 import com.zju.offercatcher.domain.chat.aggregates.Conversation;
 import com.zju.offercatcher.interfaces.config.UserId;
 import com.zju.offercatcher.interfaces.dto.ChatDto.*;
-import io.agentscope.core.agent.Event;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,12 +31,6 @@ public class ChatController {
     @PostMapping(value = "/api/v1/chat/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<String> chatStream(@UserId String userId, @Valid @RequestBody ChatRequest req) {
         return chatAgent.chatStream(req.message(), req.conversationId(), userId)
-            .map(event -> {
-                String type = event.getType() != null ? event.getType().name().toLowerCase() : "unknown";
-                String content = event.getMessage() != null ? event.getMessage().getTextContent() : "";
-                if (content == null) content = "";
-                return "data: {\"type\":\"" + type + "\",\"content\":\"" + escapeJson(content) + "\"}\n\n";
-            })
             .concatWithValues("data: [DONE]\n\n");
     }
 
@@ -111,9 +104,4 @@ public class ChatController {
         );
     }
 
-    private static String escapeJson(String s) {
-        if (s == null) return "";
-        return s.replace("\\", "\\\\").replace("\"", "\\\"")
-                .replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t");
-    }
 }

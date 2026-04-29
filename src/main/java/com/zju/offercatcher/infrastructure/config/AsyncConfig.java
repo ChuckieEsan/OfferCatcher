@@ -17,12 +17,12 @@ public class AsyncConfig {
     @Bean("workerExecutor")
     public Executor workerExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(2);
-        executor.setMaxPoolSize(4);
-        executor.setQueueCapacity(100);
+        executor.setCorePoolSize(4);
+        executor.setMaxPoolSize(8);
+        executor.setQueueCapacity(200);
         executor.setThreadNamePrefix("worker-");
         executor.setWaitForTasksToCompleteOnShutdown(true);
-        executor.setAwaitTerminationSeconds(30);
+        executor.setAwaitTerminationSeconds(60);
         executor.initialize();
         return executor;
     }

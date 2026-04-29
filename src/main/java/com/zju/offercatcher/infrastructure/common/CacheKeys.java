@@ -66,6 +66,18 @@ public final class CacheKeys {
     public static String toolGraphPattern() { return PREFIX + ":tool:graph:*"; }
     public static String toolWebPattern() { return PREFIX + ":tool:web:*"; }
 
+    // ==================== Memory Retrieval Keys ====================
+
+    /** 异步检索后存储的记忆上下文，Key: oc:memory:context:{userId}:{conversationId} */
+    public static String memoryContext(String userId, Long conversationId) {
+        return PREFIX + ":memory:context:" + userId + ":" + conversationId;
+    }
+
+    /** 检索锁，防止同一对话并发检索，Key: oc:memory:retrieval-lock:{userId}:{conversationId} */
+    public static String memoryRetrievalLock(String userId, Long conversationId) {
+        return PREFIX + ":memory:retrieval-lock:" + userId + ":" + conversationId;
+    }
+
     // ==================== Utility ====================
 
     /**

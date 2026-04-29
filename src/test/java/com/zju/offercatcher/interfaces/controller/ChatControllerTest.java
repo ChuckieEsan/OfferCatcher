@@ -59,7 +59,7 @@ class ChatControllerTest {
         @Test
         @DisplayName("列表查询返回 200")
         void listSuccess() throws Exception {
-            when(chatService.listConversations(anyString(), anyInt()))
+            when(chatService.listConversations(anyString(), anyInt(), anyInt()))
                 .thenReturn(List.of(sampleConv));
 
             mvc.perform(get("/api/v1/conversations")
