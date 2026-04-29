@@ -33,6 +33,12 @@ public class MessageJpaEntity {
     @Column(name = "content", columnDefinition = "TEXT", nullable = false)
     private String content;
 
+    @Column(name = "reasoning", columnDefinition = "TEXT")
+    private String reasoning;
+
+    @Column(name = "tool_calls", columnDefinition = "TEXT")
+    private String toolCalls;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
@@ -42,13 +48,15 @@ public class MessageJpaEntity {
         entity.setConversationId(conversationId);
         entity.setRole(message.getRole());
         entity.setContent(message.getContent());
+        entity.setReasoning(message.getReasoning());
+        entity.setToolCalls(message.getToolCalls());
         entity.setCreatedAt(message.getCreatedAt());
         return entity;
     }
 
     public com.zju.offercatcher.domain.chat.entities.Message toDomain() {
         return com.zju.offercatcher.domain.chat.entities.Message.rebuild(
-            messageId, role, content, createdAt
+            messageId, role, content, reasoning, toolCalls, createdAt
         );
     }
 }

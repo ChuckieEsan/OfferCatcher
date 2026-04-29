@@ -74,10 +74,24 @@ public class Conversation {
      * 追加消息（聚合内操作）
      */
     public Message addMessage(Long messageId, MessageRole role, String content) {
+        return addMessage(messageId, role, content, null, null);
+    }
+
+    /**
+     * 追加消息（含 reasoning）
+     */
+    public Message addMessage(Long messageId, MessageRole role, String content, String reasoning) {
+        return addMessage(messageId, role, content, reasoning, null);
+    }
+
+    /**
+     * 追加消息（含 reasoning 和 toolCalls）
+     */
+    public Message addMessage(Long messageId, MessageRole role, String content, String reasoning, String toolCalls) {
         if (status == ConversationStatus.ENDED) {
             throw new InvalidStateException("对话已结束，无法添加消息", "CONVERSATION_ENDED");
         }
-        Message message = Message.create(messageId, role, content);
+        Message message = Message.create(messageId, role, content, reasoning, toolCalls);
         this.messages.add(message);
         this.updatedAt = LocalDateTime.now();
         return message;
@@ -88,7 +102,7 @@ public class Conversation {
      */
     public Message addMessage(MessageRole role, String content) {
         Long messageId = SnowflakeIdGenerator.generate();
-        return addMessage(messageId, role, content);
+        return addMessage(messageId, role, content, null);
     }
 
     /**

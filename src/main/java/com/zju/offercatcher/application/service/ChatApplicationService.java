@@ -7,6 +7,7 @@ import com.zju.offercatcher.domain.chat.repositories.ConversationRepository;
 import com.zju.offercatcher.domain.shared.enums.ConversationStatus;
 import com.zju.offercatcher.domain.shared.enums.MessageRole;
 import com.zju.offercatcher.domain.shared.exception.ConversationNotFoundException;
+import com.zju.offercatcher.infrastructure.common.SnowflakeIdGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -84,11 +85,22 @@ public class ChatApplicationService {
 
     @Transactional
     public Long addMessage(String userId, Long conversationId, MessageRole role, String content) {
+        return addMessage(userId, conversationId, role, content, null, null);
+    }
+
+    @Transactional
+    public Long addMessage(String userId, Long conversationId, MessageRole role, String content, String reasoning) {
+        return addMessage(userId, conversationId, role, content, reasoning, null);
+    }
+
+    @Transactional
+    public Long addMessage(String userId, Long conversationId, MessageRole role, String content, String reasoning, String toolCalls) {
         Conversation conversation = conversationRepository.findById(conversationId)
             .filter(c -> c.isOwnedBy(userId))
             .orElseThrow(() -> new ConversationNotFoundException(conversationId));
 
-        Message message = conversation.addMessage(role, content);
+        Message message = conversation.addMessage(
+            SnowflakeIdGenerator.generate(), role, content, reasoning, toolCalls);
         conversationRepository.save(conversation);
         log.info("Added message {} to conversation: {}", message.getMessageId(), conversationId);
         return message.getMessageId();

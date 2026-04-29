@@ -16,23 +16,41 @@ public class Message {
     private final Long messageId;
     private final MessageRole role;
     private final String content;
+    private final String reasoning;
+    private final String toolCalls;
     private final LocalDateTime createdAt;
 
     /**
      * 创建消息（工厂方法）
      */
     public static Message create(Long messageId, MessageRole role, String content) {
+        return create(messageId, role, content, null, null);
+    }
+
+    /**
+     * 创建消息，带 reasoning（AI 思考过程）。reasoning 仅对 ASSISTANT 消息有意义。
+     */
+    public static Message create(Long messageId, MessageRole role, String content, String reasoning) {
+        return create(messageId, role, content, reasoning, null);
+    }
+
+    /**
+     * 创建消息（完整参数）。
+     *
+     * @param toolCalls JSON 数组，记录工具调用信息，仅对 ASSISTANT 消息有意义，可为 null
+     */
+    public static Message create(Long messageId, MessageRole role, String content, String reasoning, String toolCalls) {
         validateMessageId(messageId);
         validateRole(role);
         validateContent(content);
-        return new Message(messageId, role, content, LocalDateTime.now());
+        return new Message(messageId, role, content, reasoning, toolCalls, LocalDateTime.now());
     }
 
     /**
      * 从持久化存储重建消息（用于 Repository 实现）
      */
-    public static Message rebuild(Long messageId, MessageRole role, String content, LocalDateTime createdAt) {
-        return new Message(messageId, role, content, createdAt);
+    public static Message rebuild(Long messageId, MessageRole role, String content, String reasoning, String toolCalls, LocalDateTime createdAt) {
+        return new Message(messageId, role, content, reasoning, toolCalls, createdAt);
     }
 
     public boolean isUserMessage() {
@@ -57,16 +75,30 @@ public class Message {
         return content;
     }
 
+    public String getReasoning() {
+        return reasoning;
+    }
+
+    public String getToolCalls() {
+        return toolCalls;
+    }
+
+    public boolean hasReasoning() {
+        return reasoning != null && !reasoning.isBlank();
+    }
+
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
 
     // ==================== 构造函数 ====================
 
-    private Message(Long messageId, MessageRole role, String content, LocalDateTime createdAt) {
+    private Message(Long messageId, MessageRole role, String content, String reasoning, String toolCalls, LocalDateTime createdAt) {
         this.messageId = messageId;
         this.role = role;
         this.content = content;
+        this.reasoning = reasoning;
+        this.toolCalls = toolCalls;
         this.createdAt = createdAt;
     }
 

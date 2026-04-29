@@ -91,11 +91,13 @@ class MessageTest {
         void shouldRebuildMessageSuccessfully() {
             LocalDateTime createdAt = LocalDateTime.now().minusHours(1);
 
-            Message message = Message.rebuild(MESSAGE_ID, MessageRole.USER, CONTENT, createdAt);
+            Message message = Message.rebuild(MESSAGE_ID, MessageRole.USER, CONTENT, null, null, createdAt);
 
             assertThat(message.getMessageId()).isEqualTo(MESSAGE_ID);
             assertThat(message.getRole()).isEqualTo(MessageRole.USER);
             assertThat(message.getContent()).isEqualTo(CONTENT);
+            assertThat(message.getReasoning()).isNull();
+            assertThat(message.getToolCalls()).isNull();
             assertThat(message.getCreatedAt()).isEqualTo(createdAt);
         }
     }

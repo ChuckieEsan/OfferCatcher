@@ -95,7 +95,8 @@ public class ChatController {
         List<MessageResponse> msgs = c.getMessages().stream()
             .map(m -> new MessageResponse(
                 m.getMessageId(), m.getRole().name().toLowerCase(),
-                m.getContent(), m.getCreatedAt().toString()))
+                m.getContent(), m.getReasoning(), m.getToolCalls(),
+                m.getCreatedAt().toString()))
             .toList();
         return new ConversationResponse(
             c.getConversationId(), c.getTitle(),

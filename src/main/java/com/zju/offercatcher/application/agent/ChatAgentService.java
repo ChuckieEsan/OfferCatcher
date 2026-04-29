@@ -18,6 +18,7 @@ import io.agentscope.core.agent.EventType;
 import io.agentscope.core.agent.StreamOptions;
 import io.agentscope.core.message.Msg;
 import io.agentscope.core.message.MsgRole;
+import io.agentscope.core.message.ToolResultBlock;
 import io.agentscope.core.model.GenerateOptions;
 import io.agentscope.core.model.OpenAIChatModel;
 import io.agentscope.core.tool.ToolExecutionContext;
@@ -32,6 +33,7 @@ import reactor.core.publisher.Sinks;
 import reactor.core.scheduler.Schedulers;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -156,12 +158,14 @@ public class ChatAgentService {
             .build();
 
         Sinks.Many<Event> sink = Sinks.many().unicast().onBackpressureBuffer();
-        StringBuilder fullResponse = new StringBuilder();
+        StringBuilder formalResponse = new StringBuilder();
+        StringBuilder reasoningResponse = new StringBuilder();
+        List<Map<String, Object>> toolCallRecords = new ArrayList<>();
 
         agent.stream(input, streamOptions)
             .doOnNext(event -> {
                 sink.tryEmitNext(event);
-                collectTextContent(event, fullResponse);
+                collectTextContent(event, formalResponse, reasoningResponse, toolCallRecords);
             })
             .doOnComplete(() -> {
                 // Emit final event before completing
@@ -170,7 +174,8 @@ public class ChatAgentService {
                 sink.tryEmitComplete();
 
                 // Async post-processing — does NOT block stream completion
-                CompletableFuture.runAsync(() -> postProcess(userId, finalConversationId, fullResponse.toString()),
+                CompletableFuture.runAsync(() -> postProcess(userId, finalConversationId,
+                    formalResponse.toString(), reasoningResponse.toString(), toolCallRecords),
                     workerExecutor);
             })
             .doOnError(error -> {
@@ -187,18 +192,64 @@ public class ChatAgentService {
     // ==================== Event Text Collection ====================
 
     /**
-     * 从所有相关事件类型中收集文本内容。
-     * REASONING = DeepSeek 思考过程，SUMMARY = 最终回答。
+     * 分离收集 thinking、正式回答和工具调用记录。
+     * REASONING → reasoningResponse（AI 思考过程）
+     * SUMMARY / AGENT_RESULT → formalResponse（正式输出）
+     * TOOL_RESULT → toolCallRecords（结构化工具调用追踪，用于可观测性）
      */
-    private void collectTextContent(Event event, StringBuilder fullResponse) {
+    private void collectTextContent(Event event, StringBuilder formalResponse,
+                                     StringBuilder reasoningResponse,
+                                     List<Map<String, Object>> toolCallRecords) {
         if (event.getMessage() == null) return;
-        String text = event.getMessage().getTextContent();
-        if (text == null || text.isBlank()) return;
-
         EventType type = event.getType();
-        if (type == EventType.REASONING || type == EventType.SUMMARY
-            || type == EventType.TOOL_RESULT || type == EventType.AGENT_RESULT) {
-            fullResponse.append(text);
+        String text = event.getMessage().getTextContent();
+
+        if (type == EventType.REASONING) {
+            if (text != null && !text.isBlank()) {
+                reasoningResponse.append(text);
+            }
+        } else if (type == EventType.SUMMARY || type == EventType.AGENT_RESULT) {
+            if (text != null && !text.isBlank()) {
+                formalResponse.append(text);
+            }
+        } else if (type == EventType.TOOL_RESULT) {
+            // Extract structured tool call info from AgentScope's native ToolResultBlock
+            recordToolCall(event.getMessage(), toolCallRecords);
+        }
+    }
+
+    /**
+     * 利用 AgentScope 原生的 ToolResultBlock API 提取工具调用信息。
+     */
+    private void recordToolCall(Msg message, List<Map<String, Object>> toolCallRecords) {
+        List<ToolResultBlock> results = message.getContentBlocks(ToolResultBlock.class);
+        for (ToolResultBlock result : results) {
+            String toolName = result.getName() != null ? result.getName() : "unknown";
+            String resultText = result.getOutput() != null
+                ? result.getOutput().stream()
+                    .map(b -> b instanceof io.agentscope.core.message.TextBlock tb ? tb.getText() : "")
+                    .reduce("", (a, b) -> a + b)
+                : message.getTextContent();
+
+            // Truncate result to avoid excessive DB storage
+            String truncatedResult = resultText != null && resultText.length() > 500
+                ? resultText.substring(0, 500) + "…" : resultText;
+
+            Map<String, Object> record = new LinkedHashMap<>();
+            record.put("tool", toolName);
+            record.put("result", truncatedResult != null ? truncatedResult : "");
+            toolCallRecords.add(record);
+        }
+
+        // Fallback: if no ToolResultBlock found, record from text content
+        if (results.isEmpty()) {
+            String text = message.getTextContent();
+            if (text != null && !text.isBlank()) {
+                Map<String, Object> record = new LinkedHashMap<>();
+                record.put("tool", "unknown");
+                record.put("result", text.length() > 500 ? text.substring(0, 500) + "…" : text);
+                toolCallRecords.add(record);
+            }
         }
     }
 
@@ -221,11 +272,17 @@ public class ChatAgentService {
 
     // ==================== Post-Processing (Async) ====================
 
-    private void postProcess(String userId, Long conversationId, String aiResponse) {
+    private void postProcess(String userId, Long conversationId, String formalResponse,
+                               String reasoningResponse, List<Map<String, Object>> toolCallRecords) {
         try {
-            if (aiResponse.isBlank()) return;
+            if (formalResponse.isBlank() && reasoningResponse.isBlank()) return;
 
-            chatService.addMessage(userId, conversationId, MessageRole.ASSISTANT, aiResponse);
+            String reasoning = reasoningResponse.isBlank() ? null : reasoningResponse.toString();
+            String toolCallsJson = toolCallRecords.isEmpty() ? null
+                : objectMapper.writeValueAsString(toolCallRecords);
+
+            chatService.addMessage(userId, conversationId, MessageRole.ASSISTANT,
+                formalResponse.toString(), reasoning, toolCallsJson);
 
             Conversation conv = chatService.getConversation(userId, conversationId).orElse(null);
             if (conv == null) return;

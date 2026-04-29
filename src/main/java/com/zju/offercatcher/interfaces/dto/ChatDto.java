@@ -32,6 +32,8 @@ public interface ChatDto {
         Long messageId,
         String role,
         String content,
+        String reasoning,
+        String toolCalls,
         String createdAt
     ) {}
 
