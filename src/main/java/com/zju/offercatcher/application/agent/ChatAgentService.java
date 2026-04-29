@@ -18,6 +18,8 @@ import io.agentscope.core.agent.EventType;
 import io.agentscope.core.agent.StreamOptions;
 import io.agentscope.core.message.Msg;
 import io.agentscope.core.message.MsgRole;
+import io.agentscope.core.message.TextBlock;
+import io.agentscope.core.message.ThinkingBlock;
 import io.agentscope.core.message.ToolResultBlock;
 import io.agentscope.core.model.GenerateOptions;
 import io.agentscope.core.model.OpenAIChatModel;
@@ -148,13 +150,13 @@ public class ChatAgentService {
         List<Msg> input = new ArrayList<>(historyMessages);
         input.add(Msg.builder().role(MsgRole.USER).textContent(message).build());
 
-        // 4. Stream with all event types
+        // 4. Stream with chunk events only (avoid duplicate output from result events)
         StreamOptions streamOptions = StreamOptions.builder()
             .includeReasoningChunk(true)
-            .includeReasoningResult(true)
+            .includeReasoningResult(false)   // 不输出完整思考结果，避免重复
             .includeActingChunk(true)
             .includeSummaryChunk(true)
-            .includeSummaryResult(true)
+            .includeSummaryResult(false)    // 不输出完整回答结果，避免重复
             .build();
 
         Sinks.Many<Event> sink = Sinks.many().unicast().onBackpressureBuffer();
@@ -186,35 +188,51 @@ public class ChatAgentService {
             .subscribe();
 
         return sink.asFlux()
-            .map(event -> toSSEFrame(event));
+            .map(event -> toSSEFrame(event))
+            .filter(frame -> !frame.isEmpty());
     }
 
     // ==================== Event Text Collection ====================
 
     /**
      * 分离收集 thinking、正式回答和工具调用记录。
-     * REASONING → reasoningResponse（AI 思考过程）
-     * SUMMARY / AGENT_RESULT → formalResponse（正式输出）
-     * TOOL_RESULT → toolCallRecords（结构化工具调用追踪，用于可观测性）
+     *
+     * 用 AgentScope 原生的 ContentBlock 类型来判断，而非 event.getType()——
+     * 对于无工具调用的对话，AgentScope 的 reasoning() 阶段所有事件都是 REASONING 类型。
+     *
+     * ThinkingBlock → reasoningResponse
+     * TextBlock      → formalResponse
+     * ToolResultBlock → toolCallRecords
      */
     private void collectTextContent(Event event, StringBuilder formalResponse,
                                      StringBuilder reasoningResponse,
                                      List<Map<String, Object>> toolCallRecords) {
-        if (event.getMessage() == null) return;
-        EventType type = event.getType();
-        String text = event.getMessage().getTextContent();
+        Msg msg = event.getMessage();
+        if (msg == null) return;
 
-        if (type == EventType.REASONING) {
-            if (text != null && !text.isBlank()) {
-                reasoningResponse.append(text);
+        // ThinkingBlock → reasoning
+        List<ThinkingBlock> thinkingBlocks = msg.getContentBlocks(ThinkingBlock.class);
+        if (!thinkingBlocks.isEmpty()) {
+            String thinking = thinkingBlocks.get(0).getThinking();
+            if (thinking != null && !thinking.isBlank()) {
+                reasoningResponse.append(thinking);
             }
-        } else if (type == EventType.SUMMARY || type == EventType.AGENT_RESULT) {
-            if (text != null && !text.isBlank()) {
-                formalResponse.append(text);
-            }
-        } else if (type == EventType.TOOL_RESULT) {
-            // Extract structured tool call info from AgentScope's native ToolResultBlock
-            recordToolCall(event.getMessage(), toolCallRecords);
+            return;
+        }
+
+        // ToolResultBlock → structured tool call records
+        if (!msg.getContentBlocks(ToolResultBlock.class).isEmpty()) {
+            recordToolCall(msg, toolCallRecords);
+            return;
+        }
+
+        // TextBlock → formal response (skip synthetic result events, content already accumulated from chunks)
+        if (event.getType() == EventType.AGENT_RESULT || event.getType() == EventType.HINT) {
+            return;
+        }
+        String text = msg.getTextContent();
+        if (text != null && !text.isBlank()) {
+            formalResponse.append(text);
         }
     }
 
@@ -255,15 +273,52 @@ public class ChatAgentService {
 
     // ==================== SSE Serialization ====================
 
+    /**
+     * 将 Event 转为 SSE frame。
+     *
+     * 用 AgentScope 原生的 ContentBlock 类型来区分输出类型。
+     * 注意：跳过 Result 类型事件中的 TextBlock（完整内容已通过 Chunk 累加输出，避免重复）。
+     */
     private String toSSEFrame(Event event) {
-        String type = event.getType() != null ? event.getType().name().toLowerCase() : "unknown";
-        String content = event.getMessage() != null ? event.getMessage().getTextContent() : "";
-        if (content == null) content = "";
+        Msg msg = event.getMessage();
+        if (msg == null) {
+            return sseJson("unknown", "");
+        }
 
+        EventType eventType = event.getType();
+        // AGENT_RESULT 和 HINT 是合成事件，包含已累加的完整内容，不应再输出
+        boolean isSyntheticResult = eventType == EventType.AGENT_RESULT
+            || eventType == EventType.HINT;
+
+        // 优先根据 ContentBlock 类型判断实际输出类型
+        if (!msg.getContentBlocks(ThinkingBlock.class).isEmpty()) {
+            String thinking = msg.getContentBlocks(ThinkingBlock.class).get(0).getThinking();
+            return sseJson("reasoning", thinking != null ? thinking : "");
+        }
+
+        if (!msg.getContentBlocks(TextBlock.class).isEmpty()) {
+            // 跳过合成 Result 事件：完整内容已通过 Chunk 累加输出到前端
+            if (isSyntheticResult) {
+                return "";
+            }
+            String text = msg.getTextContent();
+            return sseJson("text", text != null ? text : "");
+        }
+
+        if (!msg.getContentBlocks(ToolResultBlock.class).isEmpty()) {
+            String text = msg.getTextContent();
+            return sseJson("tool_result", text != null ? text : "");
+        }
+
+        // Fallback: use EventType name (for agent_result, hint, etc.)
+        String type = event.getType() != null ? event.getType().name().toLowerCase() : "unknown";
+        String content = msg.getTextContent();
+        return sseJson(type, content != null ? content : "");
+    }
+
+    private String sseJson(String type, String content) {
         try {
             Map<String, String> frame = Map.of("type", type, "content", content);
-            // Spring MVC Flux<String> + TEXT_EVENT_STREAM 会自动添加 "data:" 前缀
-            // 所以这里只返回 JSON 内容，不手动添加前缀
             return objectMapper.writeValueAsString(frame) + "\n\n";
         } catch (JsonProcessingException e) {
             return "{\"type\":\"" + type + "\",\"content\":\"\"}\n\n";

@@ -16,10 +16,11 @@ import com.zju.offercatcher.infrastructure.config.InterviewProperties;
 import com.zju.offercatcher.infrastructure.config.LLMProperties;
 import io.agentscope.core.ReActAgent;
 import io.agentscope.core.agent.Event;
-import io.agentscope.core.agent.EventType;
 import io.agentscope.core.agent.StreamOptions;
 import io.agentscope.core.message.Msg;
 import io.agentscope.core.message.MsgRole;
+import io.agentscope.core.message.TextBlock;
+import io.agentscope.core.message.ThinkingBlock;
 import io.agentscope.core.model.GenerateOptions;
 import io.agentscope.core.model.OpenAIChatModel;
 import org.slf4j.Logger;
@@ -198,11 +199,24 @@ public class InterviewAgentService {
                 List.of(Msg.builder().role(MsgRole.USER).textContent(userPrompt).build()),
                 streamOptions)
             .filter(event -> {
-                EventType type = event.getType();
-                return type == EventType.REASONING || type == EventType.SUMMARY;
+                Msg msg = event.getMessage();
+                if (msg == null) return false;
+                // Filter events with actual content (ThinkingBlock or TextBlock)
+                return !msg.getContentBlocks(ThinkingBlock.class).isEmpty()
+                    || !msg.getContentBlocks(TextBlock.class).isEmpty()
+                    || (msg.getTextContent() != null && !msg.getTextContent().isBlank());
             })
             .map(event -> {
-                String text = event.getMessage() != null ? event.getMessage().getTextContent() : "";
+                Msg msg = event.getMessage();
+                if (msg == null) return toSSEFrame(Map.of("type", "text", "content", ""));
+
+                // ThinkingBlock → reasoning type for frontend distinction
+                if (!msg.getContentBlocks(ThinkingBlock.class).isEmpty()) {
+                    String thinking = msg.getContentBlocks(ThinkingBlock.class).get(0).getThinking();
+                    return toSSEFrame(Map.of("type", "reasoning", "content", thinking != null ? thinking : ""));
+                }
+                // TextBlock → text type (the actual answer)
+                String text = msg.getTextContent();
                 return toSSEFrame(Map.of("type", "text", "content", text != null ? text : ""));
             });
     }
