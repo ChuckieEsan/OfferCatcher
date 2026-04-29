@@ -58,7 +58,6 @@ public class ConversationRepositoryImpl implements ConversationRepository {
         conversationJpaRepository.save(conversationEntity);
 
         Long conversationId = conversation.getConversationId();
-        messageJpaRepository.deleteByConversationId(conversationId);
 
         List<MessageJpaEntity> messageEntities = conversation.getMessages()
             .stream()
