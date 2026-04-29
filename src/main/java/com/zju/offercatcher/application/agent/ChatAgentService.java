@@ -201,7 +201,7 @@ public class ChatAgentService {
      * 对于无工具调用的对话，AgentScope 的 reasoning() 阶段所有事件都是 REASONING 类型。
      *
      * ThinkingBlock → reasoningResponse
-     * TextBlock      → formalResponse
+     * TextBlock      → formalResponse（跳过合成 Result 事件，避免重复累加）
      * ToolResultBlock → toolCallRecords
      */
     private void collectTextContent(Event event, StringBuilder formalResponse,
@@ -210,11 +210,16 @@ public class ChatAgentService {
         Msg msg = event.getMessage();
         if (msg == null) return;
 
+        EventType eventType = event.getType();
+        // AGENT_RESULT 和 HINT 是合成事件，包含已累加的完整内容，不应再收集
+        boolean isSyntheticResult = eventType == EventType.AGENT_RESULT
+            || eventType == EventType.HINT;
+
         // ThinkingBlock → reasoning
         List<ThinkingBlock> thinkingBlocks = msg.getContentBlocks(ThinkingBlock.class);
         if (!thinkingBlocks.isEmpty()) {
             String thinking = thinkingBlocks.get(0).getThinking();
-            if (thinking != null && !thinking.isBlank()) {
+            if (thinking != null && !thinking.isEmpty()) {
                 reasoningResponse.append(thinking);
             }
             return;
@@ -226,12 +231,12 @@ public class ChatAgentService {
             return;
         }
 
-        // TextBlock → formal response (skip synthetic result events, content already accumulated from chunks)
-        if (event.getType() == EventType.AGENT_RESULT || event.getType() == EventType.HINT) {
+        // TextBlock → formal response (skip synthetic result events)
+        if (isSyntheticResult) {
             return;
         }
         String text = msg.getTextContent();
-        if (text != null && !text.isBlank()) {
+        if (text != null && !text.isEmpty()) {
             formalResponse.append(text);
         }
     }

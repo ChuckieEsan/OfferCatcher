@@ -145,8 +145,10 @@ public class KnowledgeGraphTools {
                 @SuppressWarnings("unchecked")
                 List<Map<String, Object>> sorted = crossEntities.stream()
                     .sorted((a, b) -> {
-                        long ca = ((Number) a.getOrDefault("total_count", 0L)).longValue();
-                        long cb = ((Number) b.getOrDefault("total_count", 0L)).longValue();
+                        Object caRaw = a.get("total_count");
+                        Object cbRaw = b.get("total_count");
+                        long ca = caRaw instanceof Number n ? n.longValue() : 0L;
+                        long cb = cbRaw instanceof Number n ? n.longValue() : 0L;
                         return Long.compare(cb, ca);
                     })
                     .limit(finalLimit)

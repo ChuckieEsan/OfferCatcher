@@ -204,7 +204,7 @@ public class InterviewAgentService {
                 // Filter events with actual content (ThinkingBlock or TextBlock)
                 return !msg.getContentBlocks(ThinkingBlock.class).isEmpty()
                     || !msg.getContentBlocks(TextBlock.class).isEmpty()
-                    || (msg.getTextContent() != null && !msg.getTextContent().isBlank());
+                    || (msg.getTextContent() != null && !msg.getTextContent().isEmpty());
             })
             .map(event -> {
                 Msg msg = event.getMessage();

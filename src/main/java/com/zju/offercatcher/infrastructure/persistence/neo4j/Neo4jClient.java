@@ -138,6 +138,15 @@ public class Neo4jClient {
     // ==================== 查询操作 ====================
 
     /**
+     * 将 Neo4j Value 转为 Java 原生类型，避免 StringValue/IntegerValue 等驱动类型泄漏到上层。
+     */
+    @SuppressWarnings("unchecked")
+    private static Object toJavaValue(Value value) {
+        if (value == null || value.isNull()) return null;
+        return value.asObject();
+    }
+
+    /**
      * 获取热门考点，可按公司过滤
      */
     public List<Map<String, Object>> getTopEntities(String company, int limit) {
@@ -150,7 +159,7 @@ public class Neo4jClient {
                     LIMIT $limit
                     """, Map.of("company", company, "limit", limit));
                 return result.stream()
-                    .map(r -> Map.<String, Object>of("entity", r.get("entity"), "count", r.get("count")))
+                    .map(r -> Map.<String, Object>of("entity", toJavaValue(r.get("entity")), "count", toJavaValue(r.get("count"))))
                     .toList();
             } else {
                 var result = s.run("""
@@ -160,7 +169,7 @@ public class Neo4jClient {
                     LIMIT $limit
                     """, Map.of("limit", limit));
                 return result.stream()
-                    .map(r -> Map.<String, Object>of("entity", r.get("entity"), "count", r.get("count")))
+                    .map(r -> Map.<String, Object>of("entity", toJavaValue(r.get("entity")), "count", toJavaValue(r.get("count"))))
                     .toList();
             }
         } catch (Exception e) {
@@ -181,8 +190,8 @@ public class Neo4jClient {
                 """, Map.of("company", company));
             var record = result.single();
             return Map.of(
-                "entity_count", record.get("entity_count", 0L),
-                "total_questions", record.get("total_questions", 0L)
+                "entity_count", toJavaValue(record.get("entity_count")),
+                "total_questions", toJavaValue(record.get("total_questions"))
             );
         } catch (Exception e) {
             log.error("Failed to get company stats: {}", e.getMessage());
@@ -207,8 +216,8 @@ public class Neo4jClient {
                 """, Map.of("entity", entity, "limit", limit));
             return result.stream()
                 .map(r -> Map.<String, Object>of(
-                    "related_entity", r.get("related_entity"),
-                    "co_occurrence_count", r.get("co_occurrence_count")))
+                    "related_entity", toJavaValue(r.get("related_entity")),
+                    "co_occurrence_count", toJavaValue(r.get("co_occurrence_count"))))
                 .toList();
         } catch (Exception e) {
             log.error("Failed to get related entities: {}", e.getMessage());
@@ -232,10 +241,10 @@ public class Neo4jClient {
                 """, Map.of("minCompanies", minCompanies));
             return result.stream()
                 .map(r -> Map.<String, Object>of(
-                    "entity", r.get("entity"),
-                    "companies", r.get("companies"),
-                    "total_count", r.get("total_count"),
-                    "company_count", r.get("company_count")))
+                    "entity", toJavaValue(r.get("entity")),
+                    "companies", toJavaValue(r.get("companies")),
+                    "total_count", toJavaValue(r.get("total_count")),
+                    "company_count", toJavaValue(r.get("company_count"))))
                 .toList();
         } catch (Exception e) {
             log.error("Failed to get cross-company entities: {}", e.getMessage());
@@ -333,12 +342,12 @@ public class Neo4jClient {
             var record = result.single();
             if (record != null) {
                 return Optional.of(Map.of(
-                    "cluster_id", record.get("cluster_id"),
-                    "cluster_name", record.get("cluster_name"),
-                    "summary", record.get("summary", ""),
-                    "question_ids", record.get("question_ids", List.of()),
-                    "knowledge_points", record.get("knowledge_points", List.of()),
-                    "frequency", record.get("frequency", 0L)
+                    "cluster_id", toJavaValue(record.get("cluster_id")),
+                    "cluster_name", toJavaValue(record.get("cluster_name")),
+                    "summary", toJavaValue(record.get("summary")),
+                    "question_ids", toJavaValue(record.get("question_ids")),
+                    "knowledge_points", toJavaValue(record.get("knowledge_points")),
+                    "frequency", toJavaValue(record.get("frequency"))
                 ));
             }
         } catch (Exception e) {
@@ -363,10 +372,10 @@ public class Neo4jClient {
                 """, Map.of("limit", limit));
             return result.stream()
                 .map(r -> Map.<String, Object>of(
-                    "cluster_id", r.get("cluster_id"),
-                    "cluster_name", r.get("cluster_name"),
-                    "summary", r.get("summary", ""),
-                    "frequency", r.get("frequency", 0L)))
+                    "cluster_id", toJavaValue(r.get("cluster_id")),
+                    "cluster_name", toJavaValue(r.get("cluster_name")),
+                    "summary", toJavaValue(r.get("summary")),
+                    "frequency", toJavaValue(r.get("frequency"))))
                 .toList();
         } catch (Exception e) {
             log.error("Failed to get all clusters: {}", e.getMessage());

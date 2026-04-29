@@ -122,7 +122,8 @@ public class ScorerAgent {
             @SuppressWarnings("unchecked")
             Map<String, Object> data = objectMapper.readValue(jsonStr, Map.class);
 
-            int score = ((Number) data.getOrDefault("score", 0)).intValue();
+            Object scoreObj = data.get("score");
+            int score = scoreObj instanceof Number n ? n.intValue() : 0;
             String masteryLevel = (String) data.getOrDefault("mastery_level", "LEVEL_0");
 
             @SuppressWarnings("unchecked")
