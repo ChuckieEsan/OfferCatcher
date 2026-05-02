@@ -1,4 +1,4 @@
-package com.zju.offercatcher.application.service;
+package com.zju.offercatcher.application.agent;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -28,9 +28,9 @@ import java.util.stream.Collectors;
  * 对应 Python: app/application/services/position_normalization_service.py
  */
 @Service
-public class PositionNormalizationService {
+public class PositionNormalizationAgent {
 
-    private static final Logger log = LoggerFactory.getLogger(PositionNormalizationService.class);
+    private static final Logger log = LoggerFactory.getLogger(PositionNormalizationAgent.class);
     private static final Path MAPPINGS_FILE = Path.of("config", "position_mappings.json");
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -61,7 +61,7 @@ public class PositionNormalizationService {
     private final OpenAIChatModel llm;
     private Map<String, String> mappings = new LinkedHashMap<>();
 
-    public PositionNormalizationService(QuestionJpaRepository questionJpaRepo,
+    public PositionNormalizationAgent(QuestionJpaRepository questionJpaRepo,
                                          LLMProperties llmProperties) {
         this.questionJpaRepo = questionJpaRepo;
         LLMProperties.DeepSeek cfg = llmProperties.getDeepseek();

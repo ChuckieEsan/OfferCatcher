@@ -3,6 +3,7 @@ package com.zju.offercatcher.application.agent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zju.offercatcher.application.agent.dto.ScoreResult;
+import com.zju.offercatcher.infrastructure.common.PromptLoader;
 import com.zju.offercatcher.application.service.InterviewApplicationService;
 import com.zju.offercatcher.application.service.QuestionApplicationService;
 import com.zju.offercatcher.domain.interview.aggregates.InterviewSession;
@@ -38,9 +39,9 @@ import java.util.*;
  * 对应 Python: app/application/agents/interview/agent.py
  */
 @Service
-public class InterviewAgentService {
+public class InterviewAgent {
 
-    private static final Logger log = LoggerFactory.getLogger(InterviewAgentService.class);
+    private static final Logger log = LoggerFactory.getLogger(InterviewAgent.class);
 
     private static final Map<String, String> COMPANY_STYLES = Map.of(
         "字节跳动", "务实、注重细节和深度",
@@ -64,7 +65,7 @@ public class InterviewAgentService {
     private final OpenAIChatModel llm;
     private final int maxFollowUps;
 
-    public InterviewAgentService(InterviewApplicationService interviewService,
+    public InterviewAgent(InterviewApplicationService interviewService,
                                   QuestionApplicationService questionService,
                                   QuestionRepository questionRepository,
                                   OnnxEmbeddingAdapter embeddingAdapter,
@@ -271,17 +272,40 @@ public class InterviewAgentService {
 
     private String getSystemPrompt(InterviewSession session) {
         String style = COMPANY_STYLES.getOrDefault(session.getCompany(), "专业、友好、有深度");
-        return promptLoader.render("interviewer_system.md",
+        String prompt = promptLoader.render("interviewer_system.md",
             "company", session.getCompany(),
             "position", session.getPosition(),
             "style", style
         );
+        // 注入 JD 上下文（如果有），不注入用户记忆
+        String jdCtx = buildInterviewContext(session);
+        if (jdCtx != null && !jdCtx.isBlank()) {
+            prompt += "\n\n" + jdCtx;
+        }
+        return prompt;
+    }
+
+    /**
+     * 构建面试专用上下文。
+     *
+     * 注意：不包含 MEMORY.md、preferences、behaviors、session_summaries。
+     * 仅包含 JD 解析结果（如果有）和当前面试阶段信息。
+     */
+    private String buildInterviewContext(InterviewSession session) {
+        StringBuilder sb = new StringBuilder();
+        if (session.getJdContext() != null && !session.getJdContext().isBlank()) {
+            sb.append("<岗位需求>\n");
+            sb.append(session.getJdContext());
+            sb.append("\n</岗位需求>");
+        }
+        // 后续 Phase 4 可注入面试阶段信息
+        return sb.toString();
     }
 
     // ==================== JSON / SSE Helpers ====================
 
     /**
-     * 统一的 SSE frame 构建：使用 Jackson 序列化，与 ChatAgentService 保持一致。
+     * 统一的 SSE frame 构建：使用 Jackson 序列化，与 ChatAgent 保持一致。
      * Spring MVC Flux<String> + TEXT_EVENT_STREAM 会自动添加 "data:" 前缀，
      * 所以这里只返回 JSON 内容。
      */

@@ -1,6 +1,7 @@
 package com.zju.offercatcher.application.agent;
 
 import com.zju.offercatcher.domain.chat.entities.Message;
+import com.zju.offercatcher.infrastructure.common.PromptLoader;
 import com.zju.offercatcher.infrastructure.config.LLMProperties;
 import io.agentscope.core.ReActAgent;
 import io.agentscope.core.message.Msg;

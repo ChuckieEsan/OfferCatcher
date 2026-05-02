@@ -2,6 +2,7 @@ package com.zju.offercatcher.application.agent;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zju.offercatcher.application.agent.dto.ScoreResult;
+import com.zju.offercatcher.infrastructure.common.PromptLoader;
 import com.zju.offercatcher.domain.question.aggregates.Question;
 import com.zju.offercatcher.domain.question.repositories.QuestionRepository;
 import com.zju.offercatcher.domain.shared.enums.MasteryLevel;

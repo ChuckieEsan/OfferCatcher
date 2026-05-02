@@ -3,7 +3,7 @@ package com.zju.offercatcher.interfaces.controller;
 import com.zju.offercatcher.application.agent.VisionExtractorAgent;
 import com.zju.offercatcher.application.agent.dto.ExtractedQuestionItem;
 import com.zju.offercatcher.application.service.ExtractTaskApplicationService;
-import com.zju.offercatcher.application.service.IngestFlowService;
+import com.zju.offercatcher.application.service.IngestFlowApplicationService;
 import com.zju.offercatcher.domain.question.aggregates.ExtractTask;
 import com.zju.offercatcher.infrastructure.adapters.ocr.OcrAdapter;
 import com.zju.offercatcher.interfaces.config.UserId;
@@ -22,9 +22,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -106,7 +104,7 @@ public class ExtractController {
     @PostMapping("/tasks/{taskId}/confirm")
     public ResponseEntity<ConfirmResponse> confirm(@PathVariable Long taskId,
                                                     @UserId String userId) {
-        IngestFlowService.IngestResult result = taskService.confirm(taskId, userId);
+        IngestFlowApplicationService.IngestResult result = taskService.confirm(taskId, userId);
         return ResponseEntity.ok(new ConfirmResponse(
             result.processed, result.failed, result.questionIds));
     }

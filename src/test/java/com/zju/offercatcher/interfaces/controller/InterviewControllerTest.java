@@ -1,7 +1,7 @@
 package com.zju.offercatcher.interfaces.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.zju.offercatcher.application.agent.InterviewAgentService;
+import com.zju.offercatcher.application.agent.InterviewAgent;
 import com.zju.offercatcher.application.service.InterviewApplicationService;
 import com.zju.offercatcher.domain.interview.aggregates.InterviewSession;
 import com.zju.offercatcher.domain.shared.enums.DifficultyLevel;
@@ -29,7 +29,7 @@ class InterviewControllerTest {
     @Autowired MockMvc mvc;
     @Autowired ObjectMapper mapper;
     @MockitoBean InterviewApplicationService interviewService;
-    @MockitoBean InterviewAgentService interviewAgent;
+    @MockitoBean InterviewAgent interviewAgent;
 
     InterviewSession sampleSession = InterviewSession.create(
         "user-1", "字节跳动", "Java 后端", DifficultyLevel.MEDIUM, 5);

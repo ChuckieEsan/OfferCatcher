@@ -5,14 +5,14 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 /**
- * 题目 ID 生成器
+ * 题目 Hash 生成器
  * 使用 MD5 算法生成唯一 ID，格式：MD5(userId|company|questionText)
  *
  * ID 包含 userId 确保用户隔离：
  * - 不同用户上传相同题目会生成不同 ID
  * - 系统导入题目使用 userId = "system"
  */
-public final class QuestionIdGenerator {
+public final class QuestionHashGenerator {
 
     private static final String ALGORITHM = "MD5";
 
@@ -44,7 +44,7 @@ public final class QuestionIdGenerator {
      * @param questionText 题目文本
      * @return 32 位 MD5 字符串
      */
-    public static String generateSystemId(String company, String questionText) {
+    public static String generateSystemQuestionHash(String company, String questionText) {
         return generate("system", company, questionText);
     }
 

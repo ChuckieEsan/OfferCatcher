@@ -78,6 +78,11 @@ public final class CacheKeys {
         return PREFIX + ":memory:retrieval-lock:" + userId + ":" + conversationId;
     }
 
+    /** 记忆提取游标，记录上次处理到的消息 ID，Key: oc:memory:cursor:{userId}:{conversationId} */
+    public static String memoryCursor(String userId, Long conversationId) {
+        return PREFIX + ":memory:cursor:" + userId + ":" + conversationId;
+    }
+
     // ==================== Utility ====================
 
     /**

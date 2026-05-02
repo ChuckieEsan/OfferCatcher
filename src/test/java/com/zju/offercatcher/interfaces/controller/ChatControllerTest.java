@@ -2,7 +2,7 @@ package com.zju.offercatcher.interfaces.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zju.offercatcher.application.service.ChatApplicationService;
-import com.zju.offercatcher.application.agent.ChatAgentService;
+import com.zju.offercatcher.application.agent.ChatAgent;
 import com.zju.offercatcher.domain.chat.aggregates.Conversation;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -28,7 +28,7 @@ class ChatControllerTest {
     @Autowired MockMvc mvc;
     @Autowired ObjectMapper mapper;
     @MockitoBean ChatApplicationService chatService;
-    @MockitoBean ChatAgentService chatAgent;
+    @MockitoBean ChatAgent chatAgent;
 
     Conversation sampleConv = Conversation.create("user-1", "测试对话");
 

@@ -1,12 +1,13 @@
 package com.zju.offercatcher.domain.question.aggregates;
 
+import com.zju.offercatcher.domain.question.services.QuestionHashGenerator;
 import com.zju.offercatcher.domain.shared.enums.MasteryLevel;
 import com.zju.offercatcher.domain.shared.enums.QuestionType;
 import com.zju.offercatcher.domain.shared.enums.SourceType;
 import com.zju.offercatcher.domain.shared.enums.Visibility;
 import com.zju.offercatcher.domain.shared.exception.DomainException;
-import com.zju.offercatcher.domain.question.services.QuestionIdGenerator;
 import com.zju.offercatcher.infrastructure.common.SnowflakeIdGenerator;
+import lombok.Getter;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -23,6 +24,7 @@ import java.util.Map;
  * - 通过工厂方法创建，确保 ID 生成一致性
  * - 业务逻辑封装在聚合内部，不暴露 setter
  */
+@Getter
 public class Question {
 
     // ==================== 标识字段 ====================
@@ -65,7 +67,7 @@ public class Question {
                                           String company, String position,
                                           QuestionType questionType, List<String> coreEntities) {
         Long id = SnowflakeIdGenerator.generate();
-        String hash = QuestionIdGenerator.generate(userId, company, questionText);
+        String hash = QuestionHashGenerator.generate(userId, company, questionText);
         return new Question(id, hash, userId, questionText, questionType, company, position,
                             coreEntities, Visibility.PRIVATE, SourceType.USER_UPLOAD);
     }
@@ -84,7 +86,7 @@ public class Question {
                                           String company, String position,
                                           QuestionType questionType, List<String> coreEntities) {
         Long id = SnowflakeIdGenerator.generate();
-        String hash = QuestionIdGenerator.generate(userId, company, questionText);
+        String hash = QuestionHashGenerator.generate(userId, company, questionText);
         return new Question(id, hash, userId, questionText, questionType, company, position,
                             coreEntities, Visibility.PUBLIC, SourceType.USER_UPLOAD);
     }
@@ -102,7 +104,7 @@ public class Question {
                                                String company, String position,
                                                QuestionType questionType, List<String> coreEntities) {
         Long id = SnowflakeIdGenerator.generate();
-        String hash = QuestionIdGenerator.generateSystemId(company, questionText);
+        String hash = QuestionHashGenerator.generateSystemQuestionHash(company, questionText);
         return new Question(id, hash, "system", questionText, questionType, company, position,
                             coreEntities, Visibility.PUBLIC, SourceType.SYSTEM_IMPORT);
     }
@@ -217,45 +219,8 @@ public class Question {
     }
 
     // ==================== Getter 方法 ====================
-
-    public Long getId() {
-        return id;
-    }
-
-    public String getQuestionHash() {
-        return questionHash;
-    }
-
-    public String getUserId() {
-        return userId;
-    }
-
-    public String getQuestionText() {
-        return questionText;
-    }
-
-    public QuestionType getQuestionType() {
-        return questionType;
-    }
-
-    public MasteryLevel getMasteryLevel() {
-        return masteryLevel;
-    }
-
-    public String getCompany() {
-        return company;
-    }
-
-    public String getPosition() {
-        return position;
-    }
-
     public List<String> getCoreEntities() {
         return Collections.unmodifiableList(coreEntities);
-    }
-
-    public String getAnswer() {
-        return answer;
     }
 
     public List<String> getClusterIds() {
@@ -264,22 +229,6 @@ public class Question {
 
     public Map<String, Object> getMetadata() {
         return Collections.unmodifiableMap(metadata);
-    }
-
-    public Visibility getVisibility() {
-        return visibility;
-    }
-
-    public SourceType getSourceType() {
-        return sourceType;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
     }
 
     // ==================== 构造函数 ====================

@@ -2,6 +2,7 @@ package com.zju.offercatcher.application.agent;
 
 import com.zju.offercatcher.domain.question.aggregates.Question;
 import com.zju.offercatcher.infrastructure.adapters.websearch.TavilySearchAdapter;
+import com.zju.offercatcher.infrastructure.common.PromptLoader;
 import com.zju.offercatcher.infrastructure.config.LLMProperties;
 import io.agentscope.core.ReActAgent;
 import io.agentscope.core.message.Msg;

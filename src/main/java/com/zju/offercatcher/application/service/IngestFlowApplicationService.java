@@ -3,7 +3,6 @@ package com.zju.offercatcher.application.service;
 import com.zju.offercatcher.application.agent.dto.ExtractedQuestionItem;
 import com.zju.offercatcher.domain.question.aggregates.Question;
 import com.zju.offercatcher.domain.shared.enums.QuestionType;
-import com.zju.offercatcher.domain.shared.enums.Visibility;
 import com.zju.offercatcher.infrastructure.adapters.embedding.OnnxEmbeddingAdapter;
 import com.zju.offercatcher.infrastructure.messaging.MQTaskMessage;
 import com.zju.offercatcher.infrastructure.messaging.RabbitMQProducer;
@@ -25,19 +24,19 @@ import java.util.*;
  * 对应 Python: app/application/services/ingestion_service.py
  */
 @Service
-public class IngestFlowService {
+public class IngestFlowApplicationService {
 
-    private static final Logger log = LoggerFactory.getLogger(IngestFlowService.class);
+    private static final Logger log = LoggerFactory.getLogger(IngestFlowApplicationService.class);
 
     private final QuestionJpaRepository questionJpaRepo;
     private final QdrantVectorStore qdrantVectorStore;
     private final OnnxEmbeddingAdapter embeddingAdapter;
     private final Optional<RabbitMQProducer> mqProducer;
 
-    public IngestFlowService(QuestionJpaRepository questionJpaRepo,
-                             QdrantVectorStore qdrantVectorStore,
-                             OnnxEmbeddingAdapter embeddingAdapter,
-                             Optional<RabbitMQProducer> mqProducer) {
+    public IngestFlowApplicationService(QuestionJpaRepository questionJpaRepo,
+                                        QdrantVectorStore qdrantVectorStore,
+                                        OnnxEmbeddingAdapter embeddingAdapter,
+                                        Optional<RabbitMQProducer> mqProducer) {
         this.questionJpaRepo = questionJpaRepo;
         this.qdrantVectorStore = qdrantVectorStore;
         this.embeddingAdapter = embeddingAdapter;

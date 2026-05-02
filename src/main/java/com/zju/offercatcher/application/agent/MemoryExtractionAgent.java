@@ -5,7 +5,10 @@ import com.zju.offercatcher.domain.chat.entities.Message;
 import com.zju.offercatcher.domain.memory.entities.SessionSummary;
 import com.zju.offercatcher.domain.memory.repositories.MemoryRepository;
 import com.zju.offercatcher.domain.memory.repositories.SessionSummaryRepository;
+import com.zju.offercatcher.domain.shared.enums.MessageRole;
 import com.zju.offercatcher.infrastructure.adapters.embedding.OnnxEmbeddingAdapter;
+import com.zju.offercatcher.infrastructure.common.CacheKeys;
+import com.zju.offercatcher.infrastructure.common.PromptLoader;
 import com.zju.offercatcher.infrastructure.config.LLMProperties;
 import com.zju.offercatcher.infrastructure.tools.MemoryTools;
 import com.zju.offercatcher.infrastructure.tools.UserToolContext;
@@ -19,9 +22,11 @@ import io.agentscope.core.tool.Toolkit;
 import io.agentscope.core.tool.ToolkitConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 记忆管理 Agent 服务
@@ -31,9 +36,9 @@ import java.util.List;
  * 对应 Python: app/application/agents/memory/agent.py
  */
 @Service
-public class MemoryAgentService {
+public class MemoryExtractionAgent {
 
-    private static final Logger log = LoggerFactory.getLogger(MemoryAgentService.class);
+    private static final Logger log = LoggerFactory.getLogger(MemoryExtractionAgent.class);
 
     private final MemoryApplicationService memoryService;
     private final MemoryRepository memoryRepository;
@@ -42,18 +47,20 @@ public class MemoryAgentService {
     private final MemoryTools memoryTools;
     private final PromptLoader promptLoader;
     private final LLMProperties llmProperties;
+    private final RedisTemplate<String, String> redisTemplate;
 
     // Cached stateless resources
     private final OpenAIChatModel cachedModel;
     private final Toolkit cachedToolkit;
 
-    public MemoryAgentService(MemoryApplicationService memoryService,
-                               MemoryRepository memoryRepository,
-                               SessionSummaryRepository sessionSummaryRepository,
-                               OnnxEmbeddingAdapter embeddingAdapter,
-                               MemoryTools memoryTools,
-                               PromptLoader promptLoader,
-                               LLMProperties llmProperties) {
+    public MemoryExtractionAgent(MemoryApplicationService memoryService,
+                                 MemoryRepository memoryRepository,
+                                 SessionSummaryRepository sessionSummaryRepository,
+                                 OnnxEmbeddingAdapter embeddingAdapter,
+                                 MemoryTools memoryTools,
+                                 PromptLoader promptLoader,
+                                 LLMProperties llmProperties,
+                                 RedisTemplate<String, String> redisTemplate) {
         this.memoryService = memoryService;
         this.memoryRepository = memoryRepository;
         this.sessionSummaryRepository = sessionSummaryRepository;
@@ -61,6 +68,7 @@ public class MemoryAgentService {
         this.memoryTools = memoryTools;
         this.promptLoader = promptLoader;
         this.llmProperties = llmProperties;
+        this.redisTemplate = redisTemplate;
 
         LLMProperties.DeepSeek cfg = llmProperties.getDeepseek();
         this.cachedModel = OpenAIChatModel.builder()
@@ -78,18 +86,43 @@ public class MemoryAgentService {
      * 异步执行记忆提取
      *
      * 对话结束后 fire-and-forget 调用，不阻塞主流程。
-     * 使用 workerExecutor 线程池执行，避免阻塞 HTTP 线程。
+     * 使用游标机制避免重复处理已提取过的消息。
      */
     public void extractMemories(String userId, Long conversationId, List<Message> messages) {
         try {
-            log.info("Memory extraction started for conversation {}", conversationId);
+            // 1. 读取上次游标
+            String cursorKey = CacheKeys.memoryCursor(userId, conversationId);
+            String cursorVal = redisTemplate.opsForValue().get(cursorKey);
+            Long lastCursor = cursorVal != null ? Long.parseLong(cursorVal) : null;
+
+            // 2. 过滤游标后的新消息
+            List<Message> newMessages = lastCursor == null
+                ? messages
+                : messages.stream()
+                    .filter(m -> m.getMessageId() > lastCursor)
+                    .collect(Collectors.toList());
+
+            if (newMessages.isEmpty()) {
+                log.debug("No new messages since cursor {} for conversation {}", lastCursor, conversationId);
+                return;
+            }
+
+            // 3. 检查游标后是否有主 Agent 写入标记
+            if (hasMemoryWriteMarker(newMessages)) {
+                log.info("Memory update skipped: main agent already wrote in conversation {}", conversationId);
+                updateCursor(userId, conversationId, getLatestMessageId(messages));
+                return;
+            }
+
+            log.info("Memory extraction started for conversation {}, {} new messages (cursor: {})",
+                conversationId, newMessages.size(), lastCursor);
 
             String currentPreferences = memoryService.getPreferences(userId);
             String currentBehaviors = memoryService.getBehaviors(userId);
             List<SessionSummary> recentSummaries = sessionSummaryRepository.findTopKByImportance(userId, 10);
 
             String memoryContext = formatSessionSummaries(recentSummaries);
-            String formattedNew = formatMessages(messages);
+            String formattedNew = formatMessages(newMessages);
 
             String prompt = promptLoader.render("memory_agent.md",
                 "memory_context", memoryContext,
@@ -109,9 +142,34 @@ public class MemoryAgentService {
             agent.call(input).block();
             log.info("Memory extraction completed for conversation {}", conversationId);
 
+            // 4. 更新游标
+            updateCursor(userId, conversationId, getLatestMessageId(messages));
+
         } catch (Exception e) {
             log.error("Memory extraction failed for conversation {}: {}", conversationId, e.getMessage(), e);
         }
+    }
+
+    // ==================== 游标管理 ====================
+
+    private void updateCursor(String userId, Long conversationId, Long messageId) {
+        redisTemplate.opsForValue().set(
+            CacheKeys.memoryCursor(userId, conversationId),
+            String.valueOf(messageId));
+    }
+
+    private Long getLatestMessageId(List<Message> messages) {
+        return messages.stream()
+            .mapToLong(Message::getMessageId)
+            .max()
+            .orElse(0L);
+    }
+
+    private boolean hasMemoryWriteMarker(List<Message> messages) {
+        return messages.stream()
+            .filter(m -> m.getRole() == MessageRole.ASSISTANT)
+            .anyMatch(m -> m.getContent() != null
+                && m.getContent().contains("<memory_write>"));
     }
 
     private ReActAgent createMemoryAgent(String userId) {

@@ -1,6 +1,6 @@
 package com.zju.offercatcher.application.worker;
 
-import com.zju.offercatcher.application.service.PositionNormalizationService;
+import com.zju.offercatcher.application.agent.PositionNormalizationAgent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -20,9 +20,9 @@ public class PositionNormalizationWorker {
 
     private static final Logger log = LoggerFactory.getLogger(PositionNormalizationWorker.class);
 
-    private final PositionNormalizationService normalizationService;
+    private final PositionNormalizationAgent normalizationService;
 
-    public PositionNormalizationWorker(PositionNormalizationService normalizationService) {
+    public PositionNormalizationWorker(PositionNormalizationAgent normalizationService) {
         this.normalizationService = normalizationService;
     }
 

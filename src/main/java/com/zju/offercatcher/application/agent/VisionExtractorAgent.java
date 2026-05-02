@@ -2,7 +2,8 @@ package com.zju.offercatcher.application.agent;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zju.offercatcher.application.agent.dto.ExtractedQuestionItem;
-import com.zju.offercatcher.domain.question.services.QuestionIdGenerator;
+import com.zju.offercatcher.infrastructure.common.PromptLoader;
+import com.zju.offercatcher.domain.question.services.QuestionHashGenerator;
 import com.zju.offercatcher.domain.shared.enums.QuestionType;
 import com.zju.offercatcher.infrastructure.adapters.ocr.OcrAdapter;
 import com.zju.offercatcher.infrastructure.config.LLMProperties;
@@ -141,7 +142,7 @@ public class VisionExtractorAgent {
                     @SuppressWarnings("unchecked")
                     Map<String, Object> metadata = (Map<String, Object>) q.getOrDefault("metadata", Map.of());
 
-                    String questionHash = QuestionIdGenerator.generateSystemId(company, questionText);
+                    String questionHash = QuestionHashGenerator.generateSystemQuestionHash(company, questionText);
 
                     questions.add(new ExtractedQuestionItem.QuestionItem(
                         questionHash, questionText, questionType.getValue(),

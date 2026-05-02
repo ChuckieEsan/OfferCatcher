@@ -26,16 +26,16 @@ import java.util.Optional;
  */
 @Component
 @ConditionalOnProperty(name = "offercatcher.rabbitmq.enabled", havingValue = "true", matchIfMissing = true)
-public class AnswerTaskConsumer {
+public class AnswerTaskMQConsumer {
 
-    private static final Logger log = LoggerFactory.getLogger(AnswerTaskConsumer.class);
+    private static final Logger log = LoggerFactory.getLogger(AnswerTaskMQConsumer.class);
 
     private final QuestionRepository questionRepository;
     private final AnswerSpecialistAgent answerAgent;
     private final MQMessageHelper messageHelper;
     private final ObjectMapper objectMapper;
 
-    public AnswerTaskConsumer(QuestionRepository questionRepository,
+    public AnswerTaskMQConsumer(QuestionRepository questionRepository,
                               AnswerSpecialistAgent answerAgent,
                               MQMessageHelper messageHelper,
                               ObjectMapper objectMapper) {

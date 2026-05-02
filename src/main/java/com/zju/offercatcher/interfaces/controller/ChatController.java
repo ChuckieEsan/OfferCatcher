@@ -1,6 +1,6 @@
 package com.zju.offercatcher.interfaces.controller;
 
-import com.zju.offercatcher.application.agent.ChatAgentService;
+import com.zju.offercatcher.application.agent.ChatAgent;
 import com.zju.offercatcher.application.service.ChatApplicationService;
 import com.zju.offercatcher.domain.chat.aggregates.Conversation;
 import com.zju.offercatcher.interfaces.config.UserId;
@@ -21,9 +21,9 @@ public class ChatController {
     private static final Logger log = LoggerFactory.getLogger(ChatController.class);
 
     private final ChatApplicationService chatService;
-    private final ChatAgentService chatAgent;
+    private final ChatAgent chatAgent;
 
-    public ChatController(ChatApplicationService chatService, ChatAgentService chatAgent) {
+    public ChatController(ChatApplicationService chatService, ChatAgent chatAgent) {
         this.chatService = chatService;
         this.chatAgent = chatAgent;
     }

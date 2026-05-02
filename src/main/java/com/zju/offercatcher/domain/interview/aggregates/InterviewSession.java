@@ -34,6 +34,7 @@ public class InterviewSession {
     private final String position;
     private final DifficultyLevel difficulty;
     private final int totalQuestions;
+    private String jdContext;  // JD 解析后的面试上下文（Phase 2 集成 JD 解析后由 JobDescriptionParserAgent 填充）
 
     private SessionStatus status;
     private final List<InterviewQuestion> questions;
@@ -52,12 +53,21 @@ public class InterviewSession {
      */
     public static InterviewSession create(String userId, String company, String position,
                                            DifficultyLevel difficulty, int totalQuestions) {
+        return create(userId, company, position, difficulty, totalQuestions, null);
+    }
+
+    public static InterviewSession create(String userId, String company, String position,
+                                           DifficultyLevel difficulty, int totalQuestions,
+                                           String jdContext) {
         validateUserId(userId);
         validateTotalQuestions(totalQuestions);
         Long sessionId = SnowflakeIdGenerator.generate();
         LocalDateTime now = LocalDateTime.now();
-        return new InterviewSession(sessionId, userId, company, position, difficulty, totalQuestions,
+        InterviewSession session = new InterviewSession(sessionId, userId, company, position,
+            difficulty, totalQuestions,
             SessionStatus.ACTIVE, new ArrayList<>(), 0, 0, 0, now, null, now, now);
+        session.jdContext = jdContext;
+        return session;
     }
 
     /**
@@ -69,9 +79,24 @@ public class InterviewSession {
                                             int currentQuestionIdx, int correctCount, int totalScore,
                                             LocalDateTime startedAt, LocalDateTime endedAt,
                                             LocalDateTime createdAt, LocalDateTime updatedAt) {
-        return new InterviewSession(sessionId, userId, company, position, difficulty, totalQuestions,
+        return rebuild(sessionId, userId, company, position, difficulty, totalQuestions,
+            status, questions, currentQuestionIdx, correctCount, totalScore,
+            startedAt, endedAt, createdAt, updatedAt, null);
+    }
+
+    public static InterviewSession rebuild(Long sessionId, String userId, String company,
+                                            String position, DifficultyLevel difficulty, int totalQuestions,
+                                            SessionStatus status, List<InterviewQuestion> questions,
+                                            int currentQuestionIdx, int correctCount, int totalScore,
+                                            LocalDateTime startedAt, LocalDateTime endedAt,
+                                            LocalDateTime createdAt, LocalDateTime updatedAt,
+                                            String jdContext) {
+        InterviewSession session = new InterviewSession(sessionId, userId, company, position,
+            difficulty, totalQuestions,
             status, questions, currentQuestionIdx, correctCount, totalScore,
             startedAt, endedAt, createdAt, updatedAt);
+        session.jdContext = jdContext;
+        return session;
     }
 
     // ==================== 业务方法 ====================
@@ -249,6 +274,14 @@ public class InterviewSession {
 
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
+    }
+
+    public String getJdContext() {
+        return jdContext;
+    }
+
+    public void setJdContext(String jdContext) {
+        this.jdContext = jdContext;
     }
 
     // ==================== 构造函数 ====================

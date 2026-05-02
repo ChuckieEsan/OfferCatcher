@@ -1,4 +1,4 @@
-package com.zju.offercatcher.application.agent;
+package com.zju.offercatcher.infrastructure.common;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

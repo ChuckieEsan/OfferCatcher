@@ -28,14 +28,14 @@ public class ExtractTaskApplicationService {
     private static final Logger log = LoggerFactory.getLogger(ExtractTaskApplicationService.class);
 
     private final ExtractTaskJpaRepository taskJpaRepo;
-    private final IngestFlowService ingestFlowService;
+    private final IngestFlowApplicationService ingestFlowApplicationService;
     private final VisionExtractorAgent visionExtractor;
 
     public ExtractTaskApplicationService(ExtractTaskJpaRepository taskJpaRepo,
-                                          IngestFlowService ingestFlowService,
+                                          IngestFlowApplicationService ingestFlowApplicationService,
                                           VisionExtractorAgent visionExtractor) {
         this.taskJpaRepo = taskJpaRepo;
-        this.ingestFlowService = ingestFlowService;
+        this.ingestFlowApplicationService = ingestFlowApplicationService;
         this.visionExtractor = visionExtractor;
     }
 
@@ -141,7 +141,7 @@ public class ExtractTaskApplicationService {
     }
 
     @Transactional
-    public IngestFlowService.IngestResult confirm(Long taskId, String userId) {
+    public IngestFlowApplicationService.IngestResult confirm(Long taskId, String userId) {
         ExtractTaskJpaEntity entity = taskJpaRepo.findByIdAndUserId(taskId, userId)
             .orElseThrow(() -> new NotFoundException("ExtractTask", taskId));
 
@@ -155,7 +155,7 @@ public class ExtractTaskApplicationService {
         }
 
         ExtractedQuestionItem extracted = mapToExtractedQuestionItem(interview);
-        IngestFlowService.IngestResult result = ingestFlowService.ingest(extracted, userId);
+        IngestFlowApplicationService.IngestResult result = ingestFlowApplicationService.ingest(extracted, userId);
 
         entity.setStatus(ExtractTaskStatus.CONFIRMED);
         entity.setUpdatedAt(java.time.LocalDateTime.now());

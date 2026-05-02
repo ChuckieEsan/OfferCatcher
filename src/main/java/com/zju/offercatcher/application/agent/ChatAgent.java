@@ -4,14 +4,15 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zju.offercatcher.application.service.ChatApplicationService;
 import com.zju.offercatcher.application.service.MemoryApplicationService;
-import com.zju.offercatcher.application.service.MemoryRetrievalService;
 import com.zju.offercatcher.domain.chat.aggregates.Conversation;
 import com.zju.offercatcher.domain.chat.entities.Message;
-import com.zju.offercatcher.domain.memory.entities.SessionSummary;
 import com.zju.offercatcher.domain.memory.repositories.SessionSummaryRepository;
 import com.zju.offercatcher.domain.shared.enums.MessageRole;
 import com.zju.offercatcher.infrastructure.config.LLMProperties;
 import com.zju.offercatcher.infrastructure.tools.*;
+import com.zju.offercatcher.infrastructure.adapters.memory.UserLongTermMemory;
+import com.zju.offercatcher.infrastructure.common.PromptLoader;
+import io.agentscope.core.memory.LongTermMemoryMode;
 import io.agentscope.core.ReActAgent;
 import io.agentscope.core.agent.Event;
 import io.agentscope.core.agent.EventType;
@@ -55,16 +56,16 @@ import java.util.concurrent.Executor;
  *   app/application/agents/chat/workflow.py
  */
 @Service
-public class ChatAgentService {
+public class ChatAgent {
 
-    private static final Logger log = LoggerFactory.getLogger(ChatAgentService.class);
+    private static final Logger log = LoggerFactory.getLogger(ChatAgent.class);
     private static final int MAX_HISTORY_MESSAGES = 20;
 
     private final ChatApplicationService chatService;
     private final MemoryApplicationService memoryService;
-    private final MemoryRetrievalService memoryRetrieval;
+    private final MemoryRetrievalAgent retrievalAgent;
     private final SessionSummaryRepository sessionSummaryRepository;
-    private final MemoryAgentService memoryAgent;
+    private final MemoryExtractionAgent memoryAgent;
     private final PromptLoader promptLoader;
     private final LLMProperties llmProperties;
     private final Executor workerExecutor;
@@ -74,11 +75,11 @@ public class ChatAgentService {
     private final OpenAIChatModel cachedModel;
     private final Toolkit cachedToolkit;
 
-    public ChatAgentService(ChatApplicationService chatService,
+    public ChatAgent(ChatApplicationService chatService,
                              MemoryApplicationService memoryService,
-                             MemoryRetrievalService memoryRetrieval,
+                             MemoryRetrievalAgent retrievalAgent,
                              SessionSummaryRepository sessionSummaryRepository,
-                             MemoryAgentService memoryAgent,
+                             MemoryExtractionAgent memoryAgent,
                              PromptLoader promptLoader,
                              LLMProperties llmProperties,
                              SearchQuestionsTool searchQuestionsTool,
@@ -89,7 +90,7 @@ public class ChatAgentService {
                              ObjectMapper objectMapper) {
         this.chatService = chatService;
         this.memoryService = memoryService;
-        this.memoryRetrieval = memoryRetrieval;
+        this.retrievalAgent = retrievalAgent;
         this.sessionSummaryRepository = sessionSummaryRepository;
         this.memoryAgent = memoryAgent;
         this.promptLoader = promptLoader;
@@ -112,7 +113,7 @@ public class ChatAgentService {
         this.cachedToolkit.registerTool(knowledgeGraphTools);
         this.cachedToolkit.registerTool(memoryTools);
 
-        log.info("ChatAgentService initialized with cached model={}, tools=4", cfg.getModel());
+        log.info("ChatAgent initialized with cached model={}, tools=4", cfg.getModel());
     }
 
     /**
@@ -133,20 +134,14 @@ public class ChatAgentService {
         final Long finalConversationId = conversation.getConversationId();
         chatService.addMessage(userId, finalConversationId, MessageRole.USER, message);
 
-        // 2. Fire-and-forget: trigger async memory retrieval for this turn's message.
-        //    Results will be available for the NEXT turn via getCachedContext().
-        memoryRetrieval.triggerRetrieval(userId, finalConversationId, message);
-
-        // 3. Build history and memory context.
-        //    Static memory (MEMORY.md) is read synchronously.
-        //    Dynamic session summaries come from the PREVIOUS turn's async retrieval.
+        // 2. Build history messages from DB
         Conversation refreshed = chatService.getConversation(userId, finalConversationId).orElse(conversation);
         List<Msg> historyMessages = buildHistoryMessages(refreshed);
-        String asyncRetrievedContext = memoryRetrieval.getCachedContext(userId, finalConversationId);
-        String memoryContext = buildMemoryContext(userId, asyncRetrievedContext);
 
-        // 4. Create ReActAgent (model + toolkit are cached, only per-request parts are new)
-        ReActAgent agent = createReActAgent(userId, memoryContext);
+        // 3. Create ReActAgent with UserLongTermMemory (STATIC_CONTROL mode)
+        //    retrieve(): PreCall injects MEMORY.md + Short-term Memory context
+        //    record():   PostCall async triggers retrieval warmup + extraction
+        ReActAgent agent = createReActAgent(userId, finalConversationId);
         List<Msg> input = new ArrayList<>(historyMessages);
         input.add(Msg.builder().role(MsgRole.USER).textContent(message).build());
 
@@ -358,8 +353,8 @@ public class ChatAgentService {
                 }
             }
 
-            // Trigger background memory extraction
-            memoryAgent.extractMemories(userId, conversationId, conv.getMessages());
+            // Memory retrieval and extraction are now handled by
+            // UserLongTermMemory.record() via AgentScope's StaticLongTermMemoryHook.
 
         } catch (Exception e) {
             log.error("Post-processing failed for conversation {}: {}", conversationId, e.getMessage(), e);
@@ -368,12 +363,12 @@ public class ChatAgentService {
 
     // ==================== ReActAgent 创建 ====================
 
-    private ReActAgent createReActAgent(String userId, String memoryContext) {
+    private ReActAgent createReActAgent(String userId, Long conversationId) {
         ToolExecutionContext toolContext = ToolExecutionContext.builder()
             .register("userContext", new UserToolContext(userId))
             .build();
 
-        String systemPrompt = buildSystemPrompt(memoryContext);
+        String systemPrompt = buildSystemPrompt();
 
         return ReActAgent.builder()
             .name("offer-catcher-chat")
@@ -383,6 +378,10 @@ public class ChatAgentService {
             .toolkit(cachedToolkit)
             .toolExecutionContext(toolContext)
             .maxIters(10)
+            .longTermMemory(new UserLongTermMemory(memoryService, retrievalAgent,
+                memoryAgent, sessionSummaryRepository, chatService,
+                workerExecutor, userId, conversationId))
+            .longTermMemoryMode(LongTermMemoryMode.STATIC_CONTROL)
             .generateOptions(GenerateOptions.builder()
                 .temperature(0.3)
                 .maxTokens(2048)
@@ -392,14 +391,11 @@ public class ChatAgentService {
 
     // ==================== System Prompt ====================
 
-    private String buildSystemPrompt(String memoryContext) {
+    private String buildSystemPrompt() {
         String template = promptLoader.load("react_agent.md");
         template = template.replace("{{ skills_prompt }}", "");
-
-        if (memoryContext != null && !memoryContext.isBlank()) {
-            template += "\n\n<记忆上下文>\n" + memoryContext + "\n</记忆上下文>";
-        }
-
+        // Memory context is injected by UserLongTermMemory.retrieve()
+        // via AgentScope's StaticLongTermMemoryHook (PreCallEvent).
         return template;
     }
 
@@ -426,34 +422,5 @@ public class ChatAgentService {
      * 2. 异步检索的会话摘要 — 来自上一轮对话的 fire-and-forget 检索结果，
      *    如果这是首批消息则可能为空
      */
-    private String buildMemoryContext(String userId, String asyncRetrievedContext) {
-        StringBuilder sb = new StringBuilder();
-
-        // Static memory (MEMORY.md) — user preferences & behaviors summary
-        String memoryContent = memoryService.getMemoryContent(userId);
-        if (memoryContent != null && !memoryContent.isBlank()) {
-            sb.append(memoryContent);
-        }
-
-        // Async-retrieved session summaries from previous turn
-        if (asyncRetrievedContext != null && !asyncRetrievedContext.isBlank()) {
-            if (!sb.isEmpty()) {
-                sb.append("\n\n---\n\n## 相关历史会话\n");
-            }
-            sb.append(asyncRetrievedContext);
-        } else {
-            // Fallback: sync top-K query (fast path for first message)
-            List<SessionSummary> summaries = sessionSummaryRepository.findTopKByImportance(userId, 3);
-            if (!summaries.isEmpty()) {
-                if (!sb.isEmpty()) {
-                    sb.append("\n\n---\n\n## 相关历史会话\n");
-                }
-                for (SessionSummary s : summaries) {
-                    sb.append("- ").append(s.getSummary()).append("\n");
-                }
-            }
-        }
-
-        return sb.toString();
-    }
+    // buildMemoryContext removed — memory injection now handled by MemoryInjectionHook
 }

@@ -1,6 +1,6 @@
 package com.zju.offercatcher.interfaces.controller;
 
-import com.zju.offercatcher.application.agent.InterviewAgentService;
+import com.zju.offercatcher.application.agent.InterviewAgent;
 import com.zju.offercatcher.application.service.InterviewApplicationService;
 import com.zju.offercatcher.domain.interview.aggregates.InterviewSession;
 import com.zju.offercatcher.domain.interview.entities.InterviewQuestion;
@@ -26,10 +26,10 @@ public class InterviewController {
     private static final Logger log = LoggerFactory.getLogger(InterviewController.class);
 
     private final InterviewApplicationService interviewService;
-    private final InterviewAgentService interviewAgent;
+    private final InterviewAgent interviewAgent;
 
     public InterviewController(InterviewApplicationService interviewService,
-                               InterviewAgentService interviewAgent) {
+                               InterviewAgent interviewAgent) {
         this.interviewService = interviewService;
         this.interviewAgent = interviewAgent;
     }

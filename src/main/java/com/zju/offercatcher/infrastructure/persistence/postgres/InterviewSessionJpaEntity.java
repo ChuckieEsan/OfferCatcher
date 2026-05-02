@@ -40,6 +40,9 @@ public class InterviewSessionJpaEntity {
     @Column(name = "position")
     private String position;
 
+    @Column(name = "jd_context", columnDefinition = "text")
+    private String jdContext;
+
     @Column(name = "difficulty", nullable = false)
     @Enumerated(EnumType.STRING)
     private DifficultyLevel difficulty;
@@ -82,6 +85,7 @@ public class InterviewSessionJpaEntity {
         entity.setUserId(session.getUserId());
         entity.setCompany(session.getCompany());
         entity.setPosition(session.getPosition());
+        entity.setJdContext(session.getJdContext());
         entity.setDifficulty(session.getDifficulty());
         entity.setTotalQuestions(session.getTotalQuestions());
         entity.setStatus(session.getStatus());
@@ -100,7 +104,7 @@ public class InterviewSessionJpaEntity {
         return com.zju.offercatcher.domain.interview.aggregates.InterviewSession.rebuild(
             sessionId, userId, company, position, difficulty, totalQuestions,
             status, questions, currentQuestionIdx, correctCount, totalScore,
-            startedAt, endedAt, createdAt, updatedAt
+            startedAt, endedAt, createdAt, updatedAt, jdContext
         );
     }
 }
