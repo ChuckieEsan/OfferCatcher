@@ -1,6 +1,7 @@
 package com.zju.offercatcher.application.service;
 
 import com.zju.offercatcher.domain.question.aggregates.Question;
+import com.zju.offercatcher.domain.question.repositories.QuestionRepository;
 import com.zju.offercatcher.infrastructure.adapters.embedding.OnnxEmbeddingAdapter;
 import com.zju.offercatcher.infrastructure.persistence.neo4j.Neo4jClient;
 import com.zju.offercatcher.infrastructure.persistence.postgres.QuestionJpaEntity;
@@ -26,13 +27,16 @@ public class ClusteringApplicationService {
     private static final Logger log = LoggerFactory.getLogger(ClusteringApplicationService.class);
 
     private final QuestionJpaRepository questionJpaRepo;
+    private final QuestionRepository questionRepository;
     private final OnnxEmbeddingAdapter embeddingAdapter;
     private final Neo4jClient neo4jClient;
 
     public ClusteringApplicationService(QuestionJpaRepository questionJpaRepo,
+                                         QuestionRepository questionRepository,
                                          OnnxEmbeddingAdapter embeddingAdapter,
                                          Neo4jClient neo4jClient) {
         this.questionJpaRepo = questionJpaRepo;
+        this.questionRepository = questionRepository;
         this.embeddingAdapter = embeddingAdapter;
         this.neo4jClient = neo4jClient;
     }
@@ -116,6 +120,7 @@ public class ClusteringApplicationService {
 
         // 8. Update question cluster_ids and sync to Neo4j
         int clusteredCount = 0;
+        List<Question> modifiedQuestions = new ArrayList<>();
         for (int i = 0; i < labels.length; i++) {
             QuestionJpaEntity entity = entities.get(i);
             String clusterId = clusterIdMap.get(labels[i]);
@@ -127,6 +132,7 @@ public class ClusteringApplicationService {
             if (!currentClusters.contains(clusterId)) {
                 currentClusters.add(clusterId);
                 entity.setClusterIds(currentClusters);
+                modifiedQuestions.add(entity.toDomain());
             }
 
             neo4jClient.createBelongsToRelationship(entity.getQuestionHash(), clusterId);
@@ -134,6 +140,10 @@ public class ClusteringApplicationService {
         }
 
         questionJpaRepo.saveAll(entities);
+        if (!modifiedQuestions.isEmpty()) {
+            // clusterIds 不影响 toContext()，但保持 Qdrant 同步以防后续 toContext 变更
+            questionRepository.resyncEmbeddings(modifiedQuestions);
+        }
 
         log.info("Clustering complete: {} clusters, {} questions updated, silhouette={:.4f}",
             nClusters, clusteredCount, silScore);

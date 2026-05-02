@@ -109,7 +109,7 @@ public class InterviewAgent {
 
     public InterviewSession createSession(String userId, String company, String position,
                                            DifficultyLevel difficulty, int totalQuestions,
-                                           Long jdId) {
+                                           Long jdId, String resumeContext) {
         String jdContext = null;
         JobDescription jd = null;
         if (jdId != null) {
@@ -122,10 +122,12 @@ public class InterviewAgent {
         }
         InterviewSession session = interviewService.createSession(
             userId, company, position, difficulty, totalQuestions, jdContext);
-        if (jd != null) {
-            session.setJdId(jd.getId());
+        if (jd != null) session.setJdId(jd.getId());
+        if (resumeContext != null && !resumeContext.isBlank()) {
+            session.setResumeContext(resumeContext);
         }
         preloadQuestions(session, jd);
+        interviewService.saveSession(session);
         return session;
     }
 
@@ -337,9 +339,11 @@ public class InterviewAgent {
         if (session.getJdContext() != null && !session.getJdContext().isBlank()) {
             sb.append("<岗位需求>\n");
             sb.append(session.getJdContext());
-            sb.append("\n</岗位需求>");
+            sb.append("\n</岗位需求>\n");
         }
-        // 后续 Phase 4 可注入面试阶段信息
+        if (session.getResumeContext() != null && !session.getResumeContext().isBlank()) {
+            sb.append(session.getResumeContext());
+        }
         return sb.toString();
     }
 

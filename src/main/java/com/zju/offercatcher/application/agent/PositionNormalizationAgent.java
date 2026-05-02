@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zju.offercatcher.application.agent.dto.PositionMappingOutput;
 import com.zju.offercatcher.infrastructure.common.StructuredOutputUtil;
 import com.zju.offercatcher.infrastructure.config.LLMProperties;
+import com.zju.offercatcher.domain.question.aggregates.Question;
+import com.zju.offercatcher.domain.question.repositories.QuestionRepository;
 import com.zju.offercatcher.infrastructure.persistence.postgres.QuestionJpaEntity;
 import com.zju.offercatcher.infrastructure.persistence.postgres.QuestionJpaRepository;
 import io.agentscope.core.message.Msg;
@@ -64,12 +66,15 @@ public class PositionNormalizationAgent {
         请返回 JSON 格式：{"mappings": {"原始岗位名": "标准岗位名", ...}}""";
 
     private final QuestionJpaRepository questionJpaRepo;
+    private final QuestionRepository questionRepository;
     private final OpenAIChatModel llm;
     private Map<String, String> mappings = new LinkedHashMap<>();
 
     public PositionNormalizationAgent(QuestionJpaRepository questionJpaRepo,
+                                         QuestionRepository questionRepository,
                                          LLMProperties llmProperties) {
         this.questionJpaRepo = questionJpaRepo;
+        this.questionRepository = questionRepository;
         LLMProperties.DeepSeek cfg = llmProperties.getDeepseek();
         this.llm = OpenAIChatModel.builder()
             .apiKey(cfg.getApiKey())
@@ -156,7 +161,7 @@ public class PositionNormalizationAgent {
         Map<String, Integer> stats = new LinkedHashMap<>();
 
         List<QuestionJpaEntity> all = questionJpaRepo.findAll();
-        int updated = 0;
+        List<Question> updatedQuestions = new ArrayList<>();
 
         for (QuestionJpaEntity q : all) {
             String original = q.getPosition();
@@ -167,14 +172,16 @@ public class PositionNormalizationAgent {
 
             q.setPosition(normalized);
             stats.merge(original, 1, Integer::sum);
-            updated++;
+            updatedQuestions.add(q.toDomain());
         }
 
-        if (updated > 0) {
+        if (!updatedQuestions.isEmpty()) {
             questionJpaRepo.saveAll(all);
+            // position 变更后 toContext() 输出变化，需重算 embedding 同步到 Qdrant
+            questionRepository.resyncEmbeddings(updatedQuestions);
         }
 
-        log.info("Migration completed: {} records updated for {} original positions", updated, stats.size());
+        log.info("Migration completed: {} records updated for {} original positions", updatedQuestions.size(), stats.size());
         return stats;
     }
 

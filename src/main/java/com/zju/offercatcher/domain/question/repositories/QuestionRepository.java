@@ -119,6 +119,12 @@ public interface QuestionRepository {
     void saveAll(List<Question> questions);
 
     /**
+     * 重同步题目 Embedding 到 Qdrant，不修改 PostgreSQL。
+     * 用于元数据变更（如岗位归一化）后补偿向量索引。
+     */
+    void resyncEmbeddings(List<Question> questions);
+
+    /**
      * 按用户查询题目列表（分页）
      * @param userId 用户 ID
      * @param page 页码（从 0 开始）

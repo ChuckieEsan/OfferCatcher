@@ -39,7 +39,8 @@ public class InterviewController {
         @UserId String userId, @Valid @RequestBody CreateSessionRequest req) {
         DifficultyLevel difficulty = DifficultyLevel.fromValue(req.difficulty());
         InterviewSession session = interviewAgent.createSession(
-            userId, req.company(), req.position(), difficulty, req.totalQuestions(), req.jdId());
+            userId, req.company(), req.position(), difficulty, req.totalQuestions(),
+            req.jdId(), req.resumeContext());
         return ResponseEntity.ok(toSessionResponse(session));
     }
 

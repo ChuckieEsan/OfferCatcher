@@ -129,6 +129,57 @@ public class QdrantVectorStore {
         }
     }
 
+    /**
+     * 滚动获取 collection 中所有 point 的 ID，用于数据一致性补偿。
+     */
+    public Set<Long> scrollAllIds() {
+        Set<Long> ids = new java.util.HashSet<>();
+        Common.PointId offset = null;
+        int batch = 500;
+        while (true) {
+            Points.ScrollPoints.Builder builder = Points.ScrollPoints.newBuilder()
+                .setCollectionName(qdrantProperties.getCollection())
+                .setLimit(batch)
+                .setWithPayload(Points.WithPayloadSelector.newBuilder().setEnable(false));
+            if (offset != null) builder.setOffset(offset);
+            try {
+                Points.ScrollResponse resp = qdrantClient.scrollAsync(builder.build(), null).get();
+                for (Points.RetrievedPoint rp : resp.getResultList()) {
+                    if (rp.getId().hasNum()) ids.add(rp.getId().getNum());
+                    else if (rp.getId().hasUuid()) ids.add(Long.parseLong(rp.getId().getUuid().replace("-", "")));
+                }
+                if (!resp.hasNextPageOffset()) break;
+                offset = resp.getNextPageOffset();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException("Qdrant scroll interrupted", e);
+            } catch (ExecutionException e) {
+                throw new RuntimeException("Qdrant scroll failed", e.getCause());
+            }
+        }
+        log.info("Scrolled {} ids from Qdrant collection {}", ids.size(), qdrantProperties.getCollection());
+        return ids;
+    }
+
+    /**
+     * 批量删除 Qdrant points，用于补偿脚本清理 stale entries。
+     */
+    public void deleteBatch(Collection<Long> ids) {
+        if (ids.isEmpty()) return;
+        List<Common.PointId> pointIds = ids.stream()
+            .map(PointIdFactory::id)
+            .toList();
+        try {
+            qdrantClient.deleteAsync(qdrantProperties.getCollection(), pointIds, null).get();
+            log.info("Batch deleted {} points from Qdrant", ids.size());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Qdrant batch delete interrupted", e);
+        } catch (ExecutionException e) {
+            throw new RuntimeException("Qdrant batch delete failed", e.getCause());
+        }
+    }
+
     public void updateVisibility(Long id, Visibility visibility) {
         Map<String, JsonWithInt.Value> payloadUpdate = Map.of(
             QdrantPayloadFields.VISIBILITY,
@@ -249,9 +300,16 @@ public class QdrantVectorStore {
         return s != null && s.length() > maxLen ? s.substring(0, maxLen) : s;
     }
 
+    /**
+     * 检查是否为 Qdrant collection 不存在的错误。
+     * Qdrant 报错格式为 "Collection <name> doesn't exist!"。
+     * 必须同时匹配 "collection" 和 "doesn't exist" 避免误判其他错误。
+     */
     private static boolean isCollectionNotFound(ExecutionException e) {
-        return e.getCause() != null
-            && e.getCause().getMessage() != null
-            && e.getCause().getMessage().contains("doesn't exist");
+        if (e.getCause() != null && e.getCause().getMessage() != null) {
+            String msg = e.getCause().getMessage().toLowerCase();
+            return msg.contains("collection") && msg.contains("doesn't exist");
+        }
+        return false;
     }
 }

@@ -12,6 +12,8 @@ import com.zju.offercatcher.infrastructure.persistence.postgres.QuestionJpaEntit
 import com.zju.offercatcher.infrastructure.persistence.postgres.QuestionJpaRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -226,9 +228,24 @@ public class QdrantQuestionRepositoryImpl implements QuestionRepository {
         jpaRepository.saveAll(entities);
 
         if (embeddingAdapter.isInitialized()) {
-            for (Question q : questions) {
-                float[] vector = embeddingAdapter.embed(q.toContext());
-                vectorStore.upsert(q, vector);
+            List<Long> upsertedIds = new ArrayList<>();
+            try {
+                for (Question q : questions) {
+                    float[] vector = embeddingAdapter.embed(q.toContext());
+                    vectorStore.upsert(q, vector);
+                    upsertedIds.add(q.getId());
+                }
+            } catch (RuntimeException e) {
+                // 部分 upsert 成功 → PG 事务回滚，需清理已写入的 Qdrant entries
+                log.error("Qdrant batch upsert failed after {} of {} questions, cleaning up stale entries",
+                    upsertedIds.size(), questions.size(), e);
+                if (!upsertedIds.isEmpty()) {
+                    try { vectorStore.deleteBatch(upsertedIds); }
+                    catch (RuntimeException cleanupE) {
+                        log.error("Cleanup of stale Qdrant entries also failed: {}", cleanupE.getMessage());
+                    }
+                }
+                throw e;
             }
         }
 
@@ -292,6 +309,60 @@ public class QdrantQuestionRepositoryImpl implements QuestionRepository {
             .stream()
             .map(QuestionJpaEntity::toDomain)
             .toList();
+    }
+
+    @Override
+    public void resyncEmbeddings(List<Question> questions) {
+        if (!embeddingAdapter.isInitialized()) return;
+        for (Question q : questions) {
+            float[] vector = embeddingAdapter.embed(q.toContext());
+            vectorStore.upsert(q, vector);
+        }
+        log.info("Resynced embeddings for {} questions", questions.size());
+    }
+
+    // ==================== Qdrant-PG 数据一致性补偿 ====================
+
+    /**
+     * 应用启动后自动清理 Qdrant 中 PG 已不存在的 stale entries。
+     * 仅记录日志，不阻断启动。
+     */
+    @EventListener(ApplicationReadyEvent.class)
+    public void onStartup() {
+        try {
+            int cleaned = syncQdrantWithPostgres();
+            if (cleaned > 0) {
+                log.info("Startup Qdrant-PG sync cleaned {} stale entries", cleaned);
+            }
+        } catch (Exception e) {
+            log.warn("Startup Qdrant-PG sync failed (non-fatal): {}", e.getMessage());
+        }
+    }
+
+    /**
+     * 清理 Qdrant 中在 PostgreSQL 已不存在的 stale entries。
+     * @return 被清理的 stale entry 数量
+     */
+    public int syncQdrantWithPostgres() {
+        Set<Long> qdrantIds = vectorStore.scrollAllIds();
+        Set<Long> pgIds = new HashSet<>(jpaRepository.findAllIds());
+
+        List<Long> staleIds = qdrantIds.stream()
+            .filter(id -> !pgIds.contains(id))
+            .toList();
+
+        if (staleIds.isEmpty()) {
+            log.info("Qdrant-PG sync: no stale entries found (qdrant={}, pg={})",
+                qdrantIds.size(), pgIds.size());
+            return 0;
+        }
+
+        log.warn("Qdrant-PG sync: found {} stale entries (qdrant={}, pg={}), ids={}",
+            staleIds.size(), qdrantIds.size(), pgIds.size(),
+            staleIds.stream().map(Object::toString).limit(20).toList());
+
+        vectorStore.deleteBatch(staleIds);
+        return staleIds.size();
     }
 
     // ==================== Neo4j 同步 ====================

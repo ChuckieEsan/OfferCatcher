@@ -73,7 +73,7 @@ public class TelemetryConfig {
      * Micrometer OTLP 指标导出。
      */
     @Bean
-    @ConditionalOnProperty(name = "offercatcher.telemetry.enabled", havingValue = "true")
+    @ConditionalOnProperty(name = "offercatcher.telemetry.metrics-enabled", havingValue = "true")
     public OtlpMeterRegistry otlpMeterRegistry() {
         String endpoint = properties.getOtlpEndpoint();
         log.info("OTLP metrics enabled, endpoint: {}", endpoint);

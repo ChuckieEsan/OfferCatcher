@@ -49,6 +49,12 @@ public class InterviewApplicationService {
         return session;
     }
 
+    @Transactional
+    public void saveSession(InterviewSession session) {
+        sessionRepository.save(session);
+        log.debug("Saved interview session: {}", session.getSessionId());
+    }
+
     public Optional<InterviewSession> getSession(Long sessionId, String userId) {
         return sessionRepository.findById(sessionId)
             .filter(s -> s.isOwnedBy(userId));

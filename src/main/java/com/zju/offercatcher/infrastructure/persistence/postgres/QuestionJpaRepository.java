@@ -81,6 +81,12 @@ public interface QuestionJpaRepository extends JpaRepository<QuestionJpaEntity, 
     List<QuestionJpaEntity> findUnansweredQuestions(@Param("limit") int limit);
 
     /**
+     * 获取所有题目 ID，用于 Qdrant-PG 数据一致性补偿。
+     */
+    @Query("SELECT q.id FROM QuestionJpaEntity q")
+    List<Long> findAllIds();
+
+    /**
      * 查找最近更新过的题目（用于 Reembed Worker）
      */
     @Query("SELECT q FROM QuestionJpaEntity q WHERE q.updatedAt > :since ORDER BY q.updatedAt ASC LIMIT :limit")

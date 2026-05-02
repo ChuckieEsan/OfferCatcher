@@ -16,7 +16,8 @@ public interface InterviewDto {
         @NotBlank String position,
         @NotBlank String difficulty,
         @Min(1) @Max(50) int totalQuestions,
-        Long jdId
+        Long jdId,
+        String resumeContext
     ) {}
 
     record SubmitAnswerRequest(

@@ -11,6 +11,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 /**
  * 面试题目实体
  *
@@ -21,6 +24,7 @@ import java.util.List;
  * - 包含答题状态、评分、反馈
  * - 支持追问和提示机制
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class InterviewQuestion {
 
     private final Long questionId;        // Snowflake PK，引用 questions.id
@@ -167,6 +171,7 @@ public class InterviewQuestion {
     /**
      * 判断是否已回答
      */
+    @JsonIgnore
     public boolean isAnswered() {
         return status.isAnswered();
     }
@@ -174,6 +179,7 @@ public class InterviewQuestion {
     /**
      * 判断是否得分通过（>= 60）
      */
+    @JsonIgnore
     public boolean isPassed() {
         return score != null && score >= 60;
     }

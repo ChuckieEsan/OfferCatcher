@@ -36,6 +36,7 @@ public class InterviewSession {
     private final int totalQuestions;
     private String jdContext;
     private Long jdId;
+    private String resumeContext;
 
     private SessionStatus status;
     private final List<InterviewQuestion> questions;
@@ -144,6 +145,12 @@ public class InterviewSession {
             .orElseThrow(() -> new InvalidStateException("没有当前题目", "NO_CURRENT_QUESTION"));
 
         current.skip();
+
+        if (currentQuestionIdx >= totalQuestions - 1 || currentQuestionIdx >= questions.size() - 1) {
+            complete();
+        } else {
+            currentQuestionIdx++;
+        }
         this.updatedAt = LocalDateTime.now();
     }
 
@@ -288,6 +295,9 @@ public class InterviewSession {
     public Long getJdId() { return jdId; }
 
     public void setJdId(Long jdId) { this.jdId = jdId; }
+
+    public String getResumeContext() { return resumeContext; }
+    public void setResumeContext(String resumeContext) { this.resumeContext = resumeContext; }
 
     // ==================== 构造函数 ====================
 

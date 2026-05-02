@@ -10,7 +10,11 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class TelemetryProperties {
 
     private boolean enabled = false;
-    private String otlpEndpoint = "http://localhost:4317";
+
+    /** 独立的 OTLP metrics 开关。Jaeger 不支持 metrics 摄取，默认关闭。 */
+    private boolean metricsEnabled = false;
+
+    private String otlpEndpoint = "http://localhost:4318/v1/metrics";
 
     /** Langfuse OTLP endpoint (cloud or self-hosted). */
     private String langfuseEndpoint = "https://cloud.langfuse.com/api/public/otel/v1/traces";
