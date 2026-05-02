@@ -15,7 +15,8 @@ public interface InterviewDto {
         @NotBlank String company,
         @NotBlank String position,
         @NotBlank String difficulty,
-        @Min(1) @Max(50) int totalQuestions
+        @Min(1) @Max(50) int totalQuestions,
+        Long jdId
     ) {}
 
     record SubmitAnswerRequest(
@@ -34,6 +35,8 @@ public interface InterviewDto {
         int totalScore,
         String createdAt,
         String updatedAt,
+        String jdCompany,
+        String jdPosition,
         List<QuestionItemResponse> questions
     ) {}
 

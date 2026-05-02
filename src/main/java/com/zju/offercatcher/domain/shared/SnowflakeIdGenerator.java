@@ -1,4 +1,4 @@
-package com.zju.offercatcher.infrastructure.common;
+package com.zju.offercatcher.domain.shared;
 
 import cn.hutool.core.lang.Snowflake;
 import cn.hutool.core.util.IdUtil;

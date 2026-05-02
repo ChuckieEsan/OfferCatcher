@@ -1,7 +1,7 @@
 package com.zju.offercatcher.domain.favorite.aggregates;
 
 import com.zju.offercatcher.domain.shared.exception.DomainException;
-import com.zju.offercatcher.infrastructure.common.SnowflakeIdGenerator;
+import com.zju.offercatcher.domain.shared.SnowflakeIdGenerator;
 
 import java.time.LocalDateTime;
 

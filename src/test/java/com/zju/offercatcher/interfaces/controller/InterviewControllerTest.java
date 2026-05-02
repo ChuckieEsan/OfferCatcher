@@ -41,7 +41,7 @@ class InterviewControllerTest {
         @Test
         @DisplayName("创建成功返回 200")
         void createSuccess() throws Exception {
-            when(interviewAgent.createSession(anyString(), anyString(), anyString(), any(), anyInt()))
+            when(interviewAgent.createSession(anyString(), anyString(), anyString(), any(), anyInt(), any()))
                 .thenReturn(sampleSession);
 
             String body = mapper.writeValueAsString(Map.of(

@@ -6,7 +6,7 @@ import com.zju.offercatcher.domain.shared.enums.QuestionType;
 import com.zju.offercatcher.domain.shared.enums.SourceType;
 import com.zju.offercatcher.domain.shared.enums.Visibility;
 import com.zju.offercatcher.domain.shared.exception.DomainException;
-import com.zju.offercatcher.infrastructure.common.SnowflakeIdGenerator;
+import com.zju.offercatcher.domain.shared.SnowflakeIdGenerator;
 import lombok.Getter;
 
 import java.time.LocalDateTime;

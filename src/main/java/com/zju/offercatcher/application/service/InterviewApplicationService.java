@@ -34,11 +34,18 @@ public class InterviewApplicationService {
     @Transactional
     public InterviewSession createSession(String userId, String company, String position,
                                            DifficultyLevel difficulty, int totalQuestions) {
+        return createSession(userId, company, position, difficulty, totalQuestions, null);
+    }
+
+    @Transactional
+    public InterviewSession createSession(String userId, String company, String position,
+                                           DifficultyLevel difficulty, int totalQuestions,
+                                           String jdContext) {
         InterviewSession session = InterviewSession.create(
-            userId, company, position, difficulty, totalQuestions);
+            userId, company, position, difficulty, totalQuestions, jdContext);
         sessionRepository.save(session);
-        log.info("Created interview session: {}, user={}, company={}, position={}",
-            session.getSessionId(), userId, company, position);
+        log.info("Created interview session: {}, user={}, company={}, position={}, hasJd={}",
+            session.getSessionId(), userId, company, position, jdContext != null);
         return session;
     }
 

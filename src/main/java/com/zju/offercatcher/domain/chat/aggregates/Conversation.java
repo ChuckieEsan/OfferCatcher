@@ -5,7 +5,7 @@ import com.zju.offercatcher.domain.shared.enums.ConversationStatus;
 import com.zju.offercatcher.domain.shared.enums.MessageRole;
 import com.zju.offercatcher.domain.shared.exception.DomainException;
 import com.zju.offercatcher.domain.shared.exception.InvalidStateException;
-import com.zju.offercatcher.infrastructure.common.SnowflakeIdGenerator;
+import com.zju.offercatcher.domain.shared.SnowflakeIdGenerator;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;

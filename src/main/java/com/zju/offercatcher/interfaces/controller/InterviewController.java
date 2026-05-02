@@ -39,7 +39,7 @@ public class InterviewController {
         @UserId String userId, @Valid @RequestBody CreateSessionRequest req) {
         DifficultyLevel difficulty = DifficultyLevel.fromValue(req.difficulty());
         InterviewSession session = interviewAgent.createSession(
-            userId, req.company(), req.position(), difficulty, req.totalQuestions());
+            userId, req.company(), req.position(), difficulty, req.totalQuestions(), req.jdId());
         return ResponseEntity.ok(toSessionResponse(session));
     }
 
@@ -119,7 +119,8 @@ public class InterviewController {
             s.getDifficulty().getValue(), s.getTotalQuestions(),
             s.getStatus().name().toLowerCase(),
             s.getCurrentQuestionIdx(), s.getCorrectCount(), s.getTotalScore(),
-            s.getCreatedAt().toString(), s.getUpdatedAt().toString(), questions
+            s.getCreatedAt().toString(), s.getUpdatedAt().toString(),
+            null, null, questions
         );
     }
 

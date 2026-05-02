@@ -7,11 +7,14 @@ import com.zju.offercatcher.infrastructure.common.PromptLoader;
 import com.zju.offercatcher.application.service.InterviewApplicationService;
 import com.zju.offercatcher.application.service.QuestionApplicationService;
 import com.zju.offercatcher.domain.interview.aggregates.InterviewSession;
+import com.zju.offercatcher.domain.interview.aggregates.JobDescription;
 import com.zju.offercatcher.domain.interview.entities.InterviewQuestion;
+import com.zju.offercatcher.domain.interview.repositories.JobDescriptionRepository;
 import com.zju.offercatcher.domain.question.aggregates.Question;
 import com.zju.offercatcher.domain.question.repositories.QuestionRepository;
 import com.zju.offercatcher.domain.question.valueobjects.QuestionWithScore;
 import com.zju.offercatcher.domain.shared.enums.*;
+import com.zju.offercatcher.domain.shared.exception.DomainException;
 import com.zju.offercatcher.infrastructure.adapters.embedding.OnnxEmbeddingAdapter;
 import com.zju.offercatcher.infrastructure.config.InterviewProperties;
 import com.zju.offercatcher.infrastructure.config.LLMProperties;
@@ -58,6 +61,7 @@ public class InterviewAgent {
     private final InterviewApplicationService interviewService;
     private final QuestionApplicationService questionService;
     private final QuestionRepository questionRepository;
+    private final JobDescriptionRepository jdRepository;
     private final OnnxEmbeddingAdapter embeddingAdapter;
     private final ScorerAgent scorerAgent;
     private final PromptLoader promptLoader;
@@ -68,6 +72,7 @@ public class InterviewAgent {
     public InterviewAgent(InterviewApplicationService interviewService,
                                   QuestionApplicationService questionService,
                                   QuestionRepository questionRepository,
+                                  JobDescriptionRepository jdRepository,
                                   OnnxEmbeddingAdapter embeddingAdapter,
                                   ScorerAgent scorerAgent,
                                   PromptLoader promptLoader,
@@ -77,6 +82,7 @@ public class InterviewAgent {
         this.interviewService = interviewService;
         this.questionService = questionService;
         this.questionRepository = questionRepository;
+        this.jdRepository = jdRepository;
         this.embeddingAdapter = embeddingAdapter;
         this.scorerAgent = scorerAgent;
         this.promptLoader = promptLoader;
@@ -93,9 +99,19 @@ public class InterviewAgent {
     }
 
     public InterviewSession createSession(String userId, String company, String position,
-                                           DifficultyLevel difficulty, int totalQuestions) {
+                                           DifficultyLevel difficulty, int totalQuestions,
+                                           Long jdId) {
+        String jdContext = null;
+        if (jdId != null) {
+            JobDescription jd = jdRepository.findById(jdId)
+                .filter(j -> j.isOwnedBy(userId))
+                .orElseThrow(() -> new DomainException("JD not found: " + jdId, "JD_NOT_FOUND"));
+            jdContext = jd.toInterviewContext();
+            log.info("Interview session with JD: id={}, company={}, position={}",
+                jdId, jd.getCompany(), jd.getPosition());
+        }
         InterviewSession session = interviewService.createSession(
-            userId, company, position, difficulty, totalQuestions);
+            userId, company, position, difficulty, totalQuestions, jdContext);
         preloadQuestions(session);
         return session;
     }
