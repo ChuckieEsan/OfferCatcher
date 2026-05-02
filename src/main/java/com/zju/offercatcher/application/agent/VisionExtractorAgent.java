@@ -1,13 +1,13 @@
 package com.zju.offercatcher.application.agent;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zju.offercatcher.application.agent.dto.ExtractedQuestionItem;
+import com.zju.offercatcher.application.agent.dto.VisionExtractorOutput;
 import com.zju.offercatcher.infrastructure.common.PromptLoader;
+import com.zju.offercatcher.infrastructure.common.StructuredOutputUtil;
 import com.zju.offercatcher.domain.question.services.QuestionHashGenerator;
 import com.zju.offercatcher.domain.shared.enums.QuestionType;
 import com.zju.offercatcher.infrastructure.adapters.ocr.OcrAdapter;
 import com.zju.offercatcher.infrastructure.config.LLMProperties;
-import io.agentscope.core.ReActAgent;
 import io.agentscope.core.message.Msg;
 import io.agentscope.core.message.MsgRole;
 import io.agentscope.core.model.GenerateOptions;
@@ -16,7 +16,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -30,7 +29,12 @@ import java.util.Map;
 public class VisionExtractorAgent {
 
     private static final Logger log = LoggerFactory.getLogger(VisionExtractorAgent.class);
-    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    private static final VisionExtractorOutput DEFAULT_OUTPUT = VisionExtractorOutput.DEFAULT;
+
+    private static final GenerateOptions OPTIONS = GenerateOptions.builder()
+        .temperature(0.1)
+        .build();
 
     private final OpenAIChatModel llm;
     private final PromptLoader promptLoader;
@@ -51,27 +55,7 @@ public class VisionExtractorAgent {
 
     public ExtractedQuestionItem extract(String text) {
         log.info("VisionExtractor: extracting from text ({} chars)", text.length());
-
-        String prompt = promptLoader.render("vision_extractor.md", "text", text);
-
-        ReActAgent agent = ReActAgent.builder()
-            .name("vision-extractor")
-            .model(llm)
-            .maxIters(0)
-            .generateOptions(GenerateOptions.builder().temperature(0.1).build())
-            .build();
-
-        try {
-            Msg response = agent.call(List.of(
-                Msg.builder().role(MsgRole.USER).textContent(prompt).build()
-            )).block();
-
-            String content = response != null ? response.getTextContent() : "";
-            return parseResponse(content);
-        } catch (Exception e) {
-            log.error("Vision extraction failed: {}", e.getMessage(), e);
-            throw new RuntimeException("面经提取失败: " + e.getMessage(), e);
-        }
+        return doExtract(text);
     }
 
     public ExtractedQuestionItem extractFromImages(List<String> imageSources) {
@@ -83,79 +67,37 @@ public class VisionExtractorAgent {
         }
 
         log.info("OCR result ({} chars), forwarding to LLM extraction", ocrText.length());
-
-        String prompt = promptLoader.render("vision_extractor.md", "text", ocrText);
-
-        ReActAgent agent = ReActAgent.builder()
-            .name("vision-extractor")
-            .model(llm)
-            .maxIters(0)
-            .generateOptions(GenerateOptions.builder().temperature(0.1).build())
-            .build();
-
-        try {
-            Msg response = agent.call(List.of(
-                Msg.builder().role(MsgRole.USER).textContent(prompt).build()
-            )).block();
-
-            String content = response != null ? response.getTextContent() : "";
-            return parseResponse(content);
-        } catch (Exception e) {
-            log.error("Vision extraction from images failed: {}", e.getMessage(), e);
-            throw new RuntimeException("图片面经提取失败: " + e.getMessage(), e);
-        }
+        return doExtract(ocrText);
     }
 
-    private ExtractedQuestionItem parseResponse(String content) {
-        try {
-            int jsonStart = content.indexOf("{");
-            int jsonEnd = content.lastIndexOf("}") + 1;
-            if (jsonStart == -1 || jsonEnd == 0) {
-                throw new RuntimeException("Response contains no JSON");
-            }
-            String jsonStr = content.substring(jsonStart, jsonEnd);
+    private ExtractedQuestionItem doExtract(String text) {
+        String prompt = promptLoader.render("vision_extractor.md", "text", text);
+        Msg userMsg = Msg.builder().role(MsgRole.USER).textContent(prompt).build();
 
-            @SuppressWarnings("unchecked")
-            Map<String, Object> data = objectMapper.readValue(jsonStr, Map.class);
+        VisionExtractorOutput output = StructuredOutputUtil.callWithFallback(
+            llm, "vision-extractor", null, OPTIONS,
+            List.of(userMsg), VisionExtractorOutput.class, DEFAULT_OUTPUT, log);
 
-            String company = (String) data.getOrDefault("company", "未知");
-            String position = (String) data.getOrDefault("position", "未知");
-
-            @SuppressWarnings("unchecked")
-            List<Map<String, Object>> questionsRaw = (List<Map<String, Object>>) data.get("questions");
-            List<ExtractedQuestionItem.QuestionItem> questions = new ArrayList<>();
-
-            if (questionsRaw != null) {
-                for (Map<String, Object> q : questionsRaw) {
-                    String questionText = (String) q.get("question_text");
-                    String typeStr = (String) q.getOrDefault("question_type", "knowledge");
-                    QuestionType questionType;
-                    try {
-                        questionType = QuestionType.fromValue(typeStr);
-                    } catch (Exception e) {
-                        questionType = QuestionType.KNOWLEDGE;
-                    }
-
-                    @SuppressWarnings("unchecked")
-                    List<String> coreEntities = (List<String>) q.getOrDefault("core_entities", List.of());
-
-                    @SuppressWarnings("unchecked")
-                    Map<String, Object> metadata = (Map<String, Object>) q.getOrDefault("metadata", Map.of());
-
-                    String questionHash = QuestionHashGenerator.generateSystemQuestionHash(company, questionText);
-
-                    questions.add(new ExtractedQuestionItem.QuestionItem(
-                        questionHash, questionText, questionType.getValue(),
-                        coreEntities != null ? coreEntities : List.of(),
-                        metadata != null ? metadata : Map.of()
-                    ));
+        List<ExtractedQuestionItem.QuestionItem> questions = output.questions().stream()
+            .map(q -> {
+                String hash = QuestionHashGenerator.generateSystemQuestionHash(
+                    output.company(), q.questionText());
+                QuestionType type;
+                try {
+                    type = QuestionType.fromValue(q.questionType());
+                } catch (Exception e) {
+                    type = QuestionType.KNOWLEDGE;
                 }
-            }
+                return new ExtractedQuestionItem.QuestionItem(
+                    hash, q.questionText(), type.getValue(),
+                    q.coreEntities() != null ? q.coreEntities() : List.of(),
+                    q.metadata() != null ? q.metadata() : Map.of());
+            })
+            .toList();
 
-            return new ExtractedQuestionItem(company, position, questions);
-        } catch (Exception e) {
-            log.error("Failed to parse VisionExtractor response: {}", e.getMessage());
-            throw new RuntimeException("面经解析失败: " + e.getMessage(), e);
-        }
+        return new ExtractedQuestionItem(
+            output.company() != null ? output.company() : "未知",
+            output.position() != null ? output.position() : "未知",
+            questions);
     }
 }

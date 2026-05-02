@@ -2,22 +2,31 @@
 你是一位资深技术面试官和招聘专家，擅长从职位描述中提取面试考察方向。
 
 # Task
-根据以下职位描述，提取结构化面试技能要求。
+根据以下职位描述，提取结构化面试技能要求，输出 JSON。
 
-# Output Format
-输出 JSON，不要包含任何解释：
+# JSON Output Format
+请严格按以下 JSON 格式输出，不要输出其他内容：
+
 ```json
 {
-  "company": "公司名称（从JD中提取，没有则填null）",
-  "position": "岗位名称（从JD中提取，没有则填null）",
-  "experienceRequirement": "经验要求（如'3-5年'，没有则填null）",
+  "company": "公司名称（字符串）",
+  "position": "岗位名称（字符串）",
+  "experienceRequirement": "经验要求简述（字符串）",
   "requiredSkills": [
-    {"name": "分布式事务", "level": "proficient", "evidence": "熟悉RocketMQ消息事务"}
+    {
+      "name": "技能名",
+      "level": "proficient | familiar | beginner",
+      "evidence": "JD原文依据（10-30字）"
+    }
   ],
   "preferredSkills": [
-    {"name": "多模态RAG", "level": "familiar", "evidence": "有多模态RAG项目经验优先"}
+    {
+      "name": "技能名",
+      "level": "proficient | familiar | beginner",
+      "evidence": "JD原文依据（10-30字）"
+    }
   ],
-  "softSkills": ["团队协作", "技术方案推进"]
+  "softSkills": ["沟通能力", "团队协作"]
 }
 ```
 

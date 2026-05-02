@@ -2,10 +2,11 @@ package com.zju.offercatcher.application.agent;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.zju.offercatcher.application.agent.dto.PositionMappingOutput;
+import com.zju.offercatcher.infrastructure.common.StructuredOutputUtil;
 import com.zju.offercatcher.infrastructure.config.LLMProperties;
 import com.zju.offercatcher.infrastructure.persistence.postgres.QuestionJpaEntity;
 import com.zju.offercatcher.infrastructure.persistence.postgres.QuestionJpaRepository;
-import io.agentscope.core.ReActAgent;
 import io.agentscope.core.message.Msg;
 import io.agentscope.core.message.MsgRole;
 import io.agentscope.core.model.GenerateOptions;
@@ -22,7 +23,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * 岗位归一化应用服务
+ * 岗位归一化 Agent
  *
  * 实现岗位名称的完整生命周期管理：聚合 → LLM 归一化 → 迁移。
  * 对应 Python: app/application/services/position_normalization_service.py
@@ -32,7 +33,13 @@ public class PositionNormalizationAgent {
 
     private static final Logger log = LoggerFactory.getLogger(PositionNormalizationAgent.class);
     private static final Path MAPPINGS_FILE = Path.of("config", "position_mappings.json");
-    private static final ObjectMapper objectMapper = new ObjectMapper();
+
+    private static final PositionMappingOutput DEFAULT_OUTPUT = PositionMappingOutput.DEFAULT;
+
+    private static final GenerateOptions OPTIONS = GenerateOptions.builder()
+        .temperature(0.3)
+        .maxTokens(2000)
+        .build();
 
     private static final String NORMALIZATION_PROMPT = """
         你是一个岗位名称归一化专家。请将以下岗位名称归一化为最少数量的标准类别。
@@ -88,7 +95,6 @@ public class PositionNormalizationAgent {
             }
         }
 
-        // Sort by count descending
         List<Map.Entry<String, Integer>> sorted = new ArrayList<>(positionCounts.entrySet());
         sorted.sort(Map.Entry.<String, Integer>comparingByValue().reversed());
 
@@ -107,7 +113,6 @@ public class PositionNormalizationAgent {
             return Map.of();
         }
 
-        // Skip already-mapped positions
         List<String> unmapped = positions.keySet().stream()
             .filter(p -> !mappings.containsKey(p))
             .toList();
@@ -125,31 +130,20 @@ public class PositionNormalizationAgent {
 
         log.info("Normalizing {} unmapped positions with LLM...", unmapped.size());
 
-        try {
-            ReActAgent agent = ReActAgent.builder()
-                .name("position-normalizer")
-                .model(llm)
-                .maxIters(0)
-                .generateOptions(GenerateOptions.builder().temperature(0.3).maxTokens(2000).build())
-                .build();
+        Msg userMsg = Msg.builder().role(MsgRole.USER).textContent(prompt).build();
 
-            Msg response = agent.call(List.of(
-                Msg.builder().role(MsgRole.USER).textContent(prompt).build()
-            )).block();
+        PositionMappingOutput output = StructuredOutputUtil.callWithFallback(
+            llm, "position-normalizer", null, OPTIONS,
+            List.of(userMsg), PositionMappingOutput.class, DEFAULT_OUTPUT, log);
 
-            String content = response != null ? response.getTextContent() : "{}";
-            Map<String, Map<String, String>> result = parseJsonResponse(content);
-            Map<String, String> newMappings = result.getOrDefault("mappings", Map.of());
+        Map<String, String> newMappings = output.mappings();
+        if (newMappings == null) newMappings = Map.of();
 
-            mappings.putAll(newMappings);
-            saveMappings();
+        mappings.putAll(newMappings);
+        saveMappings();
 
-            log.info("Generated {} new mappings", newMappings.size());
-            return newMappings;
-        } catch (Exception e) {
-            log.error("Position normalization failed: {}", e.getMessage(), e);
-            return Map.of();
-        }
+        log.info("Generated {} new mappings", newMappings.size());
+        return newMappings;
     }
 
     @Transactional
@@ -205,8 +199,9 @@ public class PositionNormalizationAgent {
     private void loadMappings() {
         try {
             if (Files.exists(MAPPINGS_FILE)) {
+                ObjectMapper mapper = new ObjectMapper();
                 String json = Files.readString(MAPPINGS_FILE);
-                mappings = objectMapper.readValue(json, new TypeReference<LinkedHashMap<String, String>>() {});
+                mappings = mapper.readValue(json, new TypeReference<LinkedHashMap<String, String>>() {});
                 log.info("Loaded {} position mappings", mappings.size());
             }
         } catch (IOException e) {
@@ -216,26 +211,13 @@ public class PositionNormalizationAgent {
 
     private void saveMappings() {
         try {
+            ObjectMapper mapper = new ObjectMapper();
             Files.createDirectories(MAPPINGS_FILE.getParent());
-            String json = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(mappings);
+            String json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(mappings);
             Files.writeString(MAPPINGS_FILE, json);
             log.info("Saved {} mappings to {}", mappings.size(), MAPPINGS_FILE);
         } catch (IOException e) {
             log.error("Failed to save position mappings: {}", e.getMessage());
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private Map<String, Map<String, String>> parseJsonResponse(String content) {
-        try {
-            int jsonStart = content.indexOf("{");
-            int jsonEnd = content.lastIndexOf("}") + 1;
-            if (jsonStart == -1 || jsonEnd == 0) return Map.of();
-            String jsonStr = content.substring(jsonStart, jsonEnd);
-            return objectMapper.readValue(jsonStr, Map.class);
-        } catch (Exception e) {
-            log.error("Failed to parse LLM response: {}", e.getMessage());
-            return Map.of();
         }
     }
 }

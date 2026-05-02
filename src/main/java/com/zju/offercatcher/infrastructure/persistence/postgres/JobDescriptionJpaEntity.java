@@ -7,6 +7,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -30,14 +32,17 @@ public class JobDescriptionJpaEntity {
     @Column(name = "raw_text", columnDefinition = "text", nullable = false)
     private String rawText;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "required_skills", columnDefinition = "jsonb")
     @Convert(converter = SkillRequirementListConverter.class)
     private List<SkillRequirement> requiredSkills;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "preferred_skills", columnDefinition = "jsonb")
     @Convert(converter = SkillRequirementListConverter.class)
     private List<SkillRequirement> preferredSkills;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "soft_skills", columnDefinition = "jsonb")
     @Convert(converter = StringListConverter.class)
     private List<String> softSkills;

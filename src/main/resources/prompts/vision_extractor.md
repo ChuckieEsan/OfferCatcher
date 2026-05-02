@@ -48,28 +48,6 @@
 </section>
 </core_principles>
 
-<output_schema>
-请严格输出以下 JSON 结构：
-
-```json
-{
-  "company": "标准化公司名称",
-  "position": "岗位名称",
-  "questions": [
-    {
-      "question_text": "经过专业改写后的完整面试提问",
-      "question_type": "knowledge / project / behavioral / scenario / algorithm",
-      "core_entities": ["核心技术名词1", "核心技术名词2"],
-      "metadata": {
-        "interview_round": "一面/二面/三面/HR面 (无法识别则不填)",
-        "original_text": "面经中的原始精炼短语"
-      }
-    }
-  ]
-}
-```
-</output_schema>
-
 <input_content>
 {{ text }}
 </input_content>

@@ -32,20 +32,6 @@
 - 分数小于 60 -> 保持当前等级
 </state_machine_rules>
 
-<output_format>
-请输出 JSON 格式的结果：
-
-```json
-{
-  "score": 85,
-  "mastery_level": "LEVEL_2",
-  "strengths": ["优点1", "优点2"],
-  "improvements": ["改进建议1", "改进建议2"],
-  "feedback": "综合反馈"
-}
-```
-</output_format>
-
 <question_info>
 - 题目：{{ question_text }}
 - 标准答案：{{ standard_answer }}
