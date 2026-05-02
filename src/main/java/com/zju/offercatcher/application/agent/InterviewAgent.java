@@ -9,6 +9,7 @@ import com.zju.offercatcher.application.service.QuestionApplicationService;
 import com.zju.offercatcher.domain.interview.aggregates.InterviewSession;
 import com.zju.offercatcher.domain.interview.aggregates.JobDescription;
 import com.zju.offercatcher.domain.interview.entities.InterviewQuestion;
+import com.zju.offercatcher.domain.interview.services.InterviewFlowPhaser;
 import com.zju.offercatcher.domain.interview.repositories.JobDescriptionRepository;
 import com.zju.offercatcher.domain.question.aggregates.Question;
 import com.zju.offercatcher.domain.question.repositories.QuestionRepository;
@@ -34,6 +35,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Sinks;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * 面试 Agent 服务
@@ -266,22 +268,26 @@ public class InterviewAgent {
             }
         }
 
-        Collections.shuffle(allCandidates);
-        List<QuestionWithScore> selected = allCandidates.stream()
-            .limit(session.getTotalQuestions())
-            .toList();
+        // 转 InterviewQuestion 并跑阶段机排序
+        List<InterviewQuestion> candidates = allCandidates.stream()
+            .map(qs -> InterviewQuestion.create(
+                qs.question().getId(), qs.question().getQuestionHash(),
+                qs.question().getQuestionText(),
+                qs.question().getQuestionType().getValue(),
+                session.getDifficulty(), qs.question().getCoreEntities()
+            ))
+            .collect(Collectors.toList());
 
-        for (QuestionWithScore qs : selected) {
-            Question q = qs.question();
-            InterviewQuestion iq = InterviewQuestion.create(
-                q.getId(), q.getQuestionHash(), q.getQuestionText(),
-                q.getQuestionType().getValue(), session.getDifficulty(),
-                q.getCoreEntities()
-            );
+        InterviewFlowPhaser phaser = new InterviewFlowPhaser();
+        List<InterviewQuestion> ordered = phaser.phase(candidates, session.getTotalQuestions());
+
+        for (InterviewQuestion iq : ordered) {
             session.addQuestion(iq);
         }
 
-        log.info("Preloaded {} questions for session {}", selected.size(), session.getSessionId());
+        log.info("Preloaded {} questions for session {}, phases: {}",
+            ordered.size(), session.getSessionId(),
+            ordered.stream().map(InterviewQuestion::getPhase).distinct().toList());
     }
 
     // ==================== System Prompt ====================

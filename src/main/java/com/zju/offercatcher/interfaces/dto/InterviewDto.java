@@ -50,7 +50,8 @@ public interface InterviewDto {
         Integer score,
         String feedback,
         String status,
-        int followUpCount
+        int followUpCount,
+        String phase  // InterviewPhase.getValue()
     ) {}
 
     record ReportResponse(

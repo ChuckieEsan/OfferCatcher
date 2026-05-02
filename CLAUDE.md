@@ -24,6 +24,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ./mvnw spring-boot:run
 ```
 
+## 编码规范
+
+1. 编码开始前，你需要先定义具体的规范，即 Spec-Driven
+2. 编码进行中，你需要以 DDD 驱动开发
+3. 编码结束后，你需要通过测试用例来保证功能可用，即 Test-Driven
+
+### 其他细节
+1. 如果遇到字符串，你需要考虑这部分是否可以抽离为枚举
+
+
 ## 项目架构
 
 这是一个基于 **AgentScope Java** + **Spring Boot 3.5.14** 的 AI Agent 应用，采用 **DDD（领域驱动设计）** 架构。

@@ -129,7 +129,8 @@ public class InterviewController {
             q.getQuestionId(), q.getQuestionText(), q.getQuestionType(),
             q.getDifficulty().getValue(), q.getKnowledgePoints(),
             q.getUserAnswer(), q.getScore(), q.getFeedback(),
-            q.getStatus().name().toLowerCase(), q.getFollowUps().size()
+            q.getStatus().name().toLowerCase(), q.getFollowUps().size(),
+            q.getPhase() != null ? q.getPhase().getValue() : null
         );
     }
 

@@ -1,6 +1,7 @@
 package com.zju.offercatcher.domain.interview.entities;
 
 import com.zju.offercatcher.domain.shared.enums.DifficultyLevel;
+import com.zju.offercatcher.domain.shared.enums.InterviewPhase;
 import com.zju.offercatcher.domain.shared.enums.QuestionStatus;
 import com.zju.offercatcher.domain.shared.exception.DomainException;
 import com.zju.offercatcher.domain.shared.exception.InvalidStateException;
@@ -29,6 +30,8 @@ public class InterviewQuestion {
     private final DifficultyLevel difficulty;
     private final List<String> knowledgePoints;
 
+    private InterviewPhase phase;
+
     private String userAnswer;
     private Integer score;
     private String feedback;
@@ -52,7 +55,7 @@ public class InterviewQuestion {
         validateQuestionText(questionText);
         return new InterviewQuestion(questionId, questionHash, questionText, questionType, difficulty,
             knowledgePoints, null, null, null, null, null,
-            new ArrayList<>(), 0, new ArrayList<>(), QuestionStatus.PENDING, null);
+            new ArrayList<>(), 0, new ArrayList<>(), QuestionStatus.PENDING, null, null);
     }
 
     /**
@@ -66,9 +69,24 @@ public class InterviewQuestion {
                                              List<String> followUps, int currentFollowUpIdx,
                                              List<String> hintsGiven, QuestionStatus status,
                                              LocalDateTime answeredAt) {
-        return new InterviewQuestion(questionId, questionHash, questionText, questionType, difficulty,
+        return rebuild(questionId, questionHash, questionText, questionType, difficulty,
             knowledgePoints, userAnswer, score, feedback, masteryBefore, masteryAfter,
-            followUps, currentFollowUpIdx, hintsGiven, status, answeredAt);
+            followUps, currentFollowUpIdx, hintsGiven, status, answeredAt, null);
+    }
+
+    public static InterviewQuestion rebuild(Long questionId, String questionHash, String questionText,
+                                             String questionType, DifficultyLevel difficulty,
+                                             List<String> knowledgePoints,
+                                             String userAnswer, Integer score, String feedback,
+                                             Integer masteryBefore, Integer masteryAfter,
+                                             List<String> followUps, int currentFollowUpIdx,
+                                             List<String> hintsGiven, QuestionStatus status,
+                                             LocalDateTime answeredAt, InterviewPhase phase) {
+        InterviewQuestion q = new InterviewQuestion(questionId, questionHash, questionText, questionType,
+            difficulty, knowledgePoints, userAnswer, score, feedback, masteryBefore, masteryAfter,
+            followUps, currentFollowUpIdx, hintsGiven, status, answeredAt, null);
+        q.phase = phase;
+        return q;
     }
 
     // ==================== 业务方法 ====================
@@ -246,6 +264,14 @@ public class InterviewQuestion {
         return answeredAt;
     }
 
+    public InterviewPhase getPhase() {
+        return phase;
+    }
+
+    public void setPhase(InterviewPhase phase) {
+        this.phase = phase;
+    }
+
     // ==================== 构造函数 ====================
 
     @com.fasterxml.jackson.annotation.JsonCreator
@@ -265,7 +291,8 @@ public class InterviewQuestion {
             @com.fasterxml.jackson.annotation.JsonProperty("currentFollowUpIdx") int currentFollowUpIdx,
             @com.fasterxml.jackson.annotation.JsonProperty("hintsGiven") List<String> hintsGiven,
             @com.fasterxml.jackson.annotation.JsonProperty("status") QuestionStatus status,
-            @com.fasterxml.jackson.annotation.JsonProperty("answeredAt") LocalDateTime answeredAt) {
+            @com.fasterxml.jackson.annotation.JsonProperty("answeredAt") LocalDateTime answeredAt,
+            @com.fasterxml.jackson.annotation.JsonProperty("phase") InterviewPhase phase) {
         this.questionId = questionId;
         this.questionHash = questionHash;
         this.questionText = questionText;
@@ -282,6 +309,7 @@ public class InterviewQuestion {
         this.hintsGiven = hintsGiven != null ? new ArrayList<>(hintsGiven) : new ArrayList<>();
         this.status = status != null ? status : QuestionStatus.PENDING;
         this.answeredAt = answeredAt;
+        this.phase = phase;
     }
 
     // ==================== 校验方法 ====================
