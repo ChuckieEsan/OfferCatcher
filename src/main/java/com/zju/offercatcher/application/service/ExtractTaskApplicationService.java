@@ -1,9 +1,9 @@
 package com.zju.offercatcher.application.service;
 
 import com.zju.offercatcher.application.agent.VisionExtractorAgent;
-import com.zju.offercatcher.application.agent.dto.ExtractedQuestionItem;
 import com.zju.offercatcher.domain.question.aggregates.ExtractTask;
 import com.zju.offercatcher.domain.question.aggregates.ExtractTaskStatus;
+import com.zju.offercatcher.domain.question.valueobjects.ExtractedQuestionItem;
 import com.zju.offercatcher.domain.shared.exception.NotFoundException;
 import com.zju.offercatcher.domain.shared.exception.InvalidStateException;
 import com.zju.offercatcher.infrastructure.persistence.postgres.ExtractTaskJpaEntity;
@@ -14,7 +14,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * 提取任务应用服务。
@@ -63,19 +62,7 @@ public class ExtractTaskApplicationService {
             }
 
             ExtractedQuestionItem extracted = visionExtractor.extract(sourceContent);
-            Map<String, Object> result = Map.of(
-                "company", extracted.company(),
-                "position", extracted.position(),
-                "questions", extracted.questions().stream().map(q -> Map.<String, Object>of(
-                    "question_hash", q.questionHash(),
-                    "question_text", q.questionText(),
-                    "question_type", q.questionType(),
-                    "core_entities", q.coreEntities(),
-                    "metadata", q.metadata()
-                )).toList()
-            );
-
-            task.complete(result);
+            task.complete(extracted);
         } catch (Exception e) {
             log.error("Vision extraction failed for task {}: {}", taskId, e.getMessage());
             entity.setErrorMessage(e.getMessage());
@@ -122,7 +109,7 @@ public class ExtractTaskApplicationService {
     @Transactional
     public ExtractTask edit(Long taskId, String userId,
                              String company, String position,
-                             List<Map<String, Object>> questions) {
+                             List<ExtractedQuestionItem.QuestionItem> questions) {
         ExtractTaskJpaEntity entity = taskJpaRepo.findByIdAndUserId(taskId, userId)
             .orElseThrow(() -> new NotFoundException("ExtractTask", taskId));
 
@@ -130,12 +117,7 @@ public class ExtractTaskApplicationService {
             throw new InvalidStateException("Cannot edit from status: " + entity.getStatus().name());
         }
 
-        Map<String, Object> result = Map.of(
-            "company", company,
-            "position", position,
-            "questions", questions
-        );
-        entity.setExtractedInterview(result);
+        entity.setExtractedInterview(new ExtractedQuestionItem(company, position, questions));
         entity.setUpdatedAt(java.time.LocalDateTime.now());
         return taskJpaRepo.save(entity).toDomain();
     }
@@ -149,13 +131,12 @@ public class ExtractTaskApplicationService {
             throw new InvalidStateException("Cannot confirm from status: " + entity.getStatus().name());
         }
 
-        Map<String, Object> interview = entity.getExtractedInterview();
+        ExtractedQuestionItem interview = entity.getExtractedInterview();
         if (interview == null) {
             throw new InvalidStateException("ExtractTask has no result");
         }
 
-        ExtractedQuestionItem extracted = mapToExtractedQuestionItem(interview);
-        IngestFlowApplicationService.IngestResult result = ingestFlowApplicationService.ingest(extracted, userId);
+        IngestFlowApplicationService.IngestResult result = ingestFlowApplicationService.ingest(interview, userId);
 
         entity.setStatus(ExtractTaskStatus.CONFIRMED);
         entity.setUpdatedAt(java.time.LocalDateTime.now());
@@ -182,23 +163,4 @@ public class ExtractTaskApplicationService {
         return taskJpaRepo.deleteByIdAndUserId(taskId, userId) > 0;
     }
 
-    @SuppressWarnings("unchecked")
-    private ExtractedQuestionItem mapToExtractedQuestionItem(Map<String, Object> interview) {
-        String company = (String) interview.getOrDefault("company", "");
-        String position = (String) interview.getOrDefault("position", "");
-        List<Map<String, Object>> rawQuestions = (List<Map<String, Object>>) interview.get("questions");
-
-        List<ExtractedQuestionItem.QuestionItem> questions = List.of();
-        if (rawQuestions != null) {
-            questions = rawQuestions.stream().map(q -> new ExtractedQuestionItem.QuestionItem(
-                (String) q.getOrDefault("question_hash", ""),
-                (String) q.getOrDefault("question_text", ""),
-                (String) q.getOrDefault("question_type", "knowledge"),
-                (List<String>) q.getOrDefault("core_entities", List.of()),
-                (Map<String, Object>) q.getOrDefault("metadata", Map.of())
-            )).toList();
-        }
-
-        return new ExtractedQuestionItem(company, position, questions);
-    }
 }

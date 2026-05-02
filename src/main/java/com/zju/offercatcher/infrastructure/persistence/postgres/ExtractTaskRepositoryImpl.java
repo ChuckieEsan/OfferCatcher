@@ -2,6 +2,7 @@ package com.zju.offercatcher.infrastructure.persistence.postgres;
 
 import com.zju.offercatcher.domain.question.aggregates.ExtractTask;
 import com.zju.offercatcher.domain.question.aggregates.ExtractTaskStatus;
+import com.zju.offercatcher.domain.question.valueobjects.ExtractedQuestionItem;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -69,7 +70,7 @@ public class ExtractTaskRepositoryImpl {
     }
 
     @Transactional
-    public ExtractTask updateResult(Long taskId, Map<String, Object> result) {
+    public ExtractTask updateResult(Long taskId, ExtractedQuestionItem result) {
         ExtractTaskJpaEntity entity = jpaRepo.findById(taskId)
             .orElseThrow(() -> new IllegalArgumentException("Task not found: " + taskId));
         entity.setExtractedInterview(result);
@@ -80,17 +81,13 @@ public class ExtractTaskRepositoryImpl {
 
     @Transactional
     public ExtractTask updateEdit(Long taskId, String userId, String company,
-                                  String position, List<Map<String, Object>> questions) {
+                                  String position, List<ExtractedQuestionItem.QuestionItem> questions) {
         ExtractTaskJpaEntity entity = jpaRepo.findByIdAndUserId(taskId, userId)
             .orElse(null);
         if (entity == null || entity.getStatus() != ExtractTaskStatus.COMPLETED) {
             return null;
         }
-        entity.setExtractedInterview(Map.of(
-            "company", company,
-            "position", position,
-            "questions", questions
-        ));
+        entity.setExtractedInterview(new ExtractedQuestionItem(company, position, questions));
         entity.setUpdatedAt(java.time.LocalDateTime.now());
         return jpaRepo.save(entity).toDomain();
     }

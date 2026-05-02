@@ -32,6 +32,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### 其他细节
 1. 如果遇到字符串，你需要考虑这部分是否可以抽离为枚举
+2. 禁止用 `Map.of()` / `Map<String, Object>` 构造 JSONB 列数据或 API 响应数据。
+   Jackson 序列化 Map 时直接输出 key，**不会**经过 `PropertyNamingStrategy` 转换。
+   如果手写 snake_case key（如 `Map.of("question_hash", ...)`），会直接泄漏到 JSON 响应中，
+   与全局 camelCase 不一致。必须使用 typed record/class，字段名即为 camelCase。
+   兼容旧 snake_case 数据时，在 record 字段上加 `@JsonAlias("snake_case_name")`。
 
 
 ## 项目架构

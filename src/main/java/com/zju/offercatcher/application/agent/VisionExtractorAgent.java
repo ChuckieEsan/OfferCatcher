@@ -1,6 +1,6 @@
 package com.zju.offercatcher.application.agent;
 
-import com.zju.offercatcher.application.agent.dto.ExtractedQuestionItem;
+import com.zju.offercatcher.domain.question.valueobjects.ExtractedQuestionItem;
 import com.zju.offercatcher.application.agent.dto.VisionExtractorOutput;
 import com.zju.offercatcher.infrastructure.common.PromptLoader;
 import com.zju.offercatcher.infrastructure.common.StructuredOutputUtil;

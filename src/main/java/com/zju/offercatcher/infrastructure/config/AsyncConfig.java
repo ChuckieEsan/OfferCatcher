@@ -28,12 +28,11 @@ public class AsyncConfig {
     }
 
     @Bean("schedulingExecutor")
-    public Executor schedulingExecutor() {
-        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(2);
-        executor.setMaxPoolSize(2);
-        executor.setThreadNamePrefix("scheduled-");
-        executor.initialize();
-        return executor;
+    public ThreadPoolTaskScheduler schedulingExecutor() {
+        ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
+        scheduler.setPoolSize(4);
+        scheduler.setThreadNamePrefix("scheduled-");
+        scheduler.initialize();
+        return scheduler;
     }
 }

@@ -2,6 +2,7 @@ package com.zju.offercatcher.infrastructure.persistence.postgres;
 
 import com.zju.offercatcher.domain.question.aggregates.ExtractTask;
 import com.zju.offercatcher.domain.question.aggregates.ExtractTaskStatus;
+import com.zju.offercatcher.domain.question.valueobjects.ExtractedQuestionItem;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -11,7 +12,6 @@ import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 
 @Entity
 @Table(name = "extract_tasks")
@@ -43,7 +43,7 @@ public class ExtractTaskJpaEntity {
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "extracted_interview", columnDefinition = "jsonb")
-    private Map<String, Object> extractedInterview;
+    private ExtractedQuestionItem extractedInterview;
 
     @Column(name = "error_message", columnDefinition = "TEXT")
     private String errorMessage;

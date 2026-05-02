@@ -1,11 +1,11 @@
 package com.zju.offercatcher.domain.question.aggregates;
 
+import com.zju.offercatcher.domain.question.valueobjects.ExtractedQuestionItem;
 import com.zju.offercatcher.domain.shared.exception.InvalidStateException;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 
 /**
  * 面经提取任务聚合根。
@@ -22,13 +22,13 @@ public class ExtractTask {
     private String sourceContent;
     private List<String> sourceImages;
     private ExtractTaskStatus status;
-    private Map<String, Object> extractedInterview;
+    private ExtractedQuestionItem extractedInterview;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
     private ExtractTask(Long taskId, String userId, String sourceType, String sourceContent,
                         List<String> sourceImages, ExtractTaskStatus status,
-                        Map<String, Object> extractedInterview,
+                        ExtractedQuestionItem extractedInterview,
                         LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.taskId = taskId;
         this.userId = userId;
@@ -52,7 +52,7 @@ public class ExtractTask {
     public static ExtractTask rebuild(Long taskId, String userId, String sourceType,
                                       String sourceContent, List<String> sourceImages,
                                       ExtractTaskStatus status,
-                                      Map<String, Object> extractedInterview,
+                                      ExtractedQuestionItem extractedInterview,
                                       LocalDateTime createdAt, LocalDateTime updatedAt) {
         return new ExtractTask(taskId, userId, sourceType,
             sourceContent != null ? sourceContent : "",
@@ -67,7 +67,7 @@ public class ExtractTask {
         updatedAt = LocalDateTime.now();
     }
 
-    public void complete(Map<String, Object> result) {
+    public void complete(ExtractedQuestionItem result) {
         if (status != ExtractTaskStatus.PROCESSING) {
             throw new InvalidStateException("Cannot complete from status: " + status.name());
         }
@@ -93,12 +93,8 @@ public class ExtractTask {
     }
 
     public void editResult(String company, String position,
-                           List<Map<String, Object>> questions) {
-        this.extractedInterview = Map.of(
-            "company", company,
-            "position", position,
-            "questions", questions
-        );
+                           List<ExtractedQuestionItem.QuestionItem> questions) {
+        this.extractedInterview = new ExtractedQuestionItem(company, position, questions);
         this.updatedAt = LocalDateTime.now();
     }
 
@@ -108,19 +104,16 @@ public class ExtractTask {
 
     public String getCompanyFromResult() {
         if (extractedInterview == null) return "";
-        Object c = extractedInterview.get("company");
-        return c != null ? c.toString() : "";
+        return extractedInterview.company() != null ? extractedInterview.company() : "";
     }
 
     public String getPositionFromResult() {
         if (extractedInterview == null) return "";
-        Object p = extractedInterview.get("position");
-        return p != null ? p.toString() : "";
+        return extractedInterview.position() != null ? extractedInterview.position() : "";
     }
 
     public int getQuestionCount() {
         if (extractedInterview == null) return 0;
-        Object q = extractedInterview.get("questions");
-        return q instanceof List ? ((List<?>) q).size() : 0;
+        return extractedInterview.questions().size();
     }
 }

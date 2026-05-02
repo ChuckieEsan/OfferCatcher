@@ -8,7 +8,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 /**
- * 聚类 Worker — 定时执行 KMeans 聚类任务
+ * 聚类 Worker — 定时执行 KMeans 聚类任务（Cron 调度，默认每天 18:00）。
  *
  * 对应 Python: app/application/workers/clustering_worker.py
  */
@@ -24,7 +24,7 @@ public class ClusteringWorker {
         this.clusteringService = clusteringService;
     }
 
-    @Scheduled(fixedDelayString = "${offercatcher.clustering.interval-ms:3600000}")
+    @Scheduled(cron = "${offercatcher.clustering.cron:0 0 18 * * ?}")
     public void runClustering() {
         log.info("ClusteringWorker triggered");
         try {

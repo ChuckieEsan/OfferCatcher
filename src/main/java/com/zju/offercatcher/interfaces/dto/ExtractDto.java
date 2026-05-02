@@ -1,5 +1,6 @@
 package com.zju.offercatcher.interfaces.dto;
 
+import com.zju.offercatcher.domain.question.valueobjects.ExtractedQuestionItem;
 import jakarta.validation.constraints.NotBlank;
 
 import java.util.List;
@@ -28,7 +29,7 @@ public interface ExtractDto {
         String sourceContent,
         List<String> sourceImages,
         String status,
-        Map<String, Object> result,
+        ExtractedQuestionItem result,
         String createdAt,
         String updatedAt
     ) {}
@@ -54,7 +55,7 @@ public interface ExtractDto {
     record UpdateRequest(
         String company,
         String position,
-        List<Map<String, Object>> questions
+        List<ExtractedQuestionItem.QuestionItem> questions
     ) {}
 
     record ConfirmResponse(

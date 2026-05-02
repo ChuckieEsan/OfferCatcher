@@ -1,6 +1,6 @@
 package com.zju.offercatcher.application.service;
 
-import com.zju.offercatcher.application.agent.dto.ExtractedQuestionItem;
+import com.zju.offercatcher.domain.question.valueobjects.ExtractedQuestionItem;
 import com.zju.offercatcher.domain.question.aggregates.Question;
 import com.zju.offercatcher.domain.shared.enums.QuestionType;
 import com.zju.offercatcher.infrastructure.adapters.embedding.OnnxEmbeddingAdapter;

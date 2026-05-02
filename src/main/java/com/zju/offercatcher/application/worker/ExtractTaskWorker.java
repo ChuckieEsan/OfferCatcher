@@ -1,7 +1,7 @@
 package com.zju.offercatcher.application.worker;
 
 import com.zju.offercatcher.application.agent.VisionExtractorAgent;
-import com.zju.offercatcher.application.agent.dto.ExtractedQuestionItem;
+import com.zju.offercatcher.domain.question.valueobjects.ExtractedQuestionItem;
 import com.zju.offercatcher.domain.question.aggregates.ExtractTask;
 import com.zju.offercatcher.domain.question.aggregates.ExtractTaskStatus;
 import com.zju.offercatcher.infrastructure.persistence.postgres.ExtractTaskJpaEntity;
@@ -14,7 +14,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * 面经提取 Worker。
@@ -74,19 +73,7 @@ public class ExtractTaskWorker {
             }
 
             ExtractedQuestionItem extracted = visionExtractor.extract(sourceContent);
-            Map<String, Object> result = Map.of(
-                "company", extracted.company(),
-                "position", extracted.position(),
-                "questions", extracted.questions().stream().map(q -> Map.<String, Object>of(
-                    "question_hash", q.questionHash(),
-                    "question_text", q.questionText(),
-                    "question_type", q.questionType(),
-                    "core_entities", q.coreEntities(),
-                    "metadata", q.metadata()
-                )).toList()
-            );
-
-            task.complete(result);
+            task.complete(extracted);
             entity.setStatus(task.getStatus());
             entity.setExtractedInterview(task.getExtractedInterview());
             entity.setUpdatedAt(task.getUpdatedAt());

@@ -1,7 +1,7 @@
 package com.zju.offercatcher.interfaces.controller;
 
 import com.zju.offercatcher.application.agent.VisionExtractorAgent;
-import com.zju.offercatcher.application.agent.dto.ExtractedQuestionItem;
+import com.zju.offercatcher.domain.question.valueobjects.ExtractedQuestionItem;
 import com.zju.offercatcher.application.service.ExtractTaskApplicationService;
 import com.zju.offercatcher.application.service.IngestFlowApplicationService;
 import com.zju.offercatcher.domain.question.aggregates.ExtractTask;
