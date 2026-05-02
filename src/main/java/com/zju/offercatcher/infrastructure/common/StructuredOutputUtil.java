@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.victools.jsonschema.generator.OptionPreset;
 import com.github.victools.jsonschema.generator.SchemaGenerator;
 import com.github.victools.jsonschema.generator.SchemaGeneratorConfigBuilder;
+import com.github.victools.jsonschema.module.jackson.JacksonModule;
 import io.agentscope.core.ReActAgent;
 import io.agentscope.core.message.Msg;
 import io.agentscope.core.message.ToolUseBlock;
@@ -105,8 +106,10 @@ public final class StructuredOutputUtil {
         // 1. 用 victools 生成 JSON Schema
         ObjectNode schemaNode;
         try {
+            JacksonModule jacksonModule = new JacksonModule();
             SchemaGeneratorConfigBuilder configBuilder = new SchemaGeneratorConfigBuilder(
-                MAPPER, OptionPreset.PLAIN_JSON);
+                    MAPPER, OptionPreset.PLAIN_JSON)
+                .with(jacksonModule);
             schemaNode = new SchemaGenerator(configBuilder.build()).generateSchema(schema);
         } catch (Exception e) {
             log.warn("{}: Failed to generate schema: {}", agentName, e.getMessage());
