@@ -278,6 +278,22 @@ public class QdrantQuestionRepositoryImpl implements QuestionRepository {
             .toList();
     }
 
+    @Override
+    public List<Question> findByCoreEntityLike(String userId, String keyword, int limit) {
+        return jpaRepository.findByCoreEntityLike(userId, keyword, limit)
+            .stream()
+            .map(QuestionJpaEntity::toDomain)
+            .toList();
+    }
+
+    @Override
+    public List<Question> findByCoreEntitySimilar(String userId, String keyword, int limit) {
+        return jpaRepository.findByCoreEntitySimilar(userId, keyword, limit)
+            .stream()
+            .map(QuestionJpaEntity::toDomain)
+            .toList();
+    }
+
     // ==================== Neo4j 同步 ====================
 
     private void syncToNeo4j(Question question) {

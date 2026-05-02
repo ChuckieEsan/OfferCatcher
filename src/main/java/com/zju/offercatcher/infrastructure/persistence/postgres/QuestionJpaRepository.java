@@ -88,4 +88,36 @@ public interface QuestionJpaRepository extends JpaRepository<QuestionJpaEntity, 
 
     @Query("SELECT COUNT(q) FROM QuestionJpaEntity q WHERE (q.userId = :userId OR q.visibility = 'PUBLIC')")
     long countUserVisible(@Param("userId") String userId);
+
+    /**
+     * 按核心考点关键词搜索用户可见题目（JD 推荐通道1）。
+     * 使用 native query 因为 coreEntities 存储在 @ElementCollection 关联表中。
+     */
+    @Query(value = """
+        SELECT DISTINCT q.* FROM questions q
+        JOIN question_entities qe ON q.id = qe.question_id
+        WHERE (q.visibility = 'PUBLIC' OR q.user_id = :userId)
+          AND qe.core_entities ILIKE CONCAT('%', :keyword, '%')
+        LIMIT :limit
+        """, nativeQuery = true)
+    List<QuestionJpaEntity> findByCoreEntityLike(@Param("userId") String userId,
+                                                  @Param("keyword") String keyword,
+                                                  @Param("limit") int limit);
+
+    /**
+     * 按核心考点三元组相似度搜索（pg_trgm 扩展）。
+     * JD 推荐通道1 增强：ILIKE 命中不足时通过 similarity 补召。
+     */
+    @Query(value = """
+        SELECT DISTINCT q.*, similarity(qe.core_entities, :keyword) AS sim
+        FROM questions q
+        JOIN question_entities qe ON q.id = qe.question_id
+        WHERE (q.visibility = 'PUBLIC' OR q.user_id = :userId)
+          AND similarity(qe.core_entities, :keyword) > 0.3
+        ORDER BY sim DESC
+        LIMIT :limit
+        """, nativeQuery = true)
+    List<QuestionJpaEntity> findByCoreEntitySimilar(@Param("userId") String userId,
+                                                     @Param("keyword") String keyword,
+                                                     @Param("limit") int limit);
 }

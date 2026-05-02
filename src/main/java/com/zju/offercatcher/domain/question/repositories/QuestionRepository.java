@@ -156,4 +156,13 @@ public interface QuestionRepository {
     List<Question> findByCompanyForUser(String userId, String company, int page, int size);
 
     long countByUserId(String userId);
+
+    /**
+     * 按核心考点关键词搜索用户可见的题目。
+     * 用于 JD 驱动推荐通道1：coreEntities ILIKE 精确匹配。
+     */
+    List<Question> findByCoreEntityLike(String userId, String keyword, int limit);
+
+    /** pg_trgm 三元组相似度搜索，模糊匹配核心考点 */
+    List<Question> findByCoreEntitySimilar(String userId, String keyword, int limit);
 }

@@ -29,15 +29,6 @@ public class PromptLoader {
         return cache.computeIfAbsent(name, this::doLoad);
     }
 
-    public String render(String name, Map<String, String> vars) {
-        String template = load(name);
-        for (var entry : vars.entrySet()) {
-            template = template.replace("{{ " + entry.getKey() + " }}", entry.getValue());
-            template = template.replace("{{" + entry.getKey() + "}}", entry.getValue());
-        }
-        return template;
-    }
-
     public String render(String name, Object... kvPairs) {
         String template = load(name);
         for (int i = 0; i < kvPairs.length; i += 2) {

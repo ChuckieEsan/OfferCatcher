@@ -10,6 +10,9 @@ import com.zju.offercatcher.domain.interview.aggregates.InterviewSession;
 import com.zju.offercatcher.domain.interview.aggregates.JobDescription;
 import com.zju.offercatcher.domain.interview.entities.InterviewQuestion;
 import com.zju.offercatcher.domain.interview.services.InterviewFlowPhaser;
+
+import com.zju.offercatcher.domain.interview.services.RecommendationPipeline;
+import com.zju.offercatcher.domain.interview.valueobjects.CandidateQuestion;
 import com.zju.offercatcher.domain.interview.repositories.JobDescriptionRepository;
 import com.zju.offercatcher.domain.question.aggregates.Question;
 import com.zju.offercatcher.domain.question.repositories.QuestionRepository;
@@ -65,6 +68,7 @@ public class InterviewAgent {
     private final QuestionRepository questionRepository;
     private final JobDescriptionRepository jdRepository;
     private final OnnxEmbeddingAdapter embeddingAdapter;
+    private final SkillKeywordExpanderAgent keywordExpander;
     private final ScorerAgent scorerAgent;
     private final PromptLoader promptLoader;
     private final ObjectMapper objectMapper;
@@ -76,6 +80,7 @@ public class InterviewAgent {
                                   QuestionRepository questionRepository,
                                   JobDescriptionRepository jdRepository,
                                   OnnxEmbeddingAdapter embeddingAdapter,
+                                  SkillKeywordExpanderAgent keywordExpander,
                                   ScorerAgent scorerAgent,
                                   PromptLoader promptLoader,
                                   ObjectMapper objectMapper,
@@ -86,6 +91,7 @@ public class InterviewAgent {
         this.questionRepository = questionRepository;
         this.jdRepository = jdRepository;
         this.embeddingAdapter = embeddingAdapter;
+        this.keywordExpander = keywordExpander;
         this.scorerAgent = scorerAgent;
         this.promptLoader = promptLoader;
         this.objectMapper = objectMapper;
@@ -104,8 +110,9 @@ public class InterviewAgent {
                                            DifficultyLevel difficulty, int totalQuestions,
                                            Long jdId) {
         String jdContext = null;
+        JobDescription jd = null;
         if (jdId != null) {
-            JobDescription jd = jdRepository.findById(jdId)
+            jd = jdRepository.findById(jdId)
                 .filter(j -> j.isOwnedBy(userId))
                 .orElseThrow(() -> new DomainException("JD not found: " + jdId, "JD_NOT_FOUND"));
             jdContext = jd.toInterviewContext();
@@ -114,7 +121,10 @@ public class InterviewAgent {
         }
         InterviewSession session = interviewService.createSession(
             userId, company, position, difficulty, totalQuestions, jdContext);
-        preloadQuestions(session);
+        if (jd != null) {
+            session.setJdId(jd.getId());
+        }
+        preloadQuestions(session, jd);
         return session;
     }
 
@@ -242,52 +252,51 @@ public class InterviewAgent {
 
     // ==================== Question Preloading ====================
 
-    private void preloadQuestions(InterviewSession session) {
-        String context = "公司：" + session.getCompany() + " | 岗位：" + session.getPosition() + " | 面试题";
-        float[] queryVector = embeddingAdapter.embed(context);
-
-        Map<MasteryLevel, Integer> weights = Map.of(
-            MasteryLevel.LEVEL_0, 60,
-            MasteryLevel.LEVEL_1, 30,
-            MasteryLevel.LEVEL_2, 10
-        );
-
-        List<QuestionWithScore> allCandidates = new ArrayList<>();
-        for (var entry : weights.entrySet()) {
-            MasteryLevel level = entry.getKey();
-            int weight = entry.getValue();
-            int desired = session.getTotalQuestions() * weight / 100;
-            if (desired > 0) {
-                Map<String, Object> filters = new HashMap<>();
-                filters.put("company", session.getCompany());
-                filters.put("position", session.getPosition());
-                filters.put("masteryLevel", level.getLevel());
-                List<QuestionWithScore> candidates = questionRepository.searchUserVisible(
-                    session.getUserId(), queryVector, filters, desired * 2);
-                allCandidates.addAll(candidates);
-            }
+    private void preloadQuestions(InterviewSession session, JobDescription jd) {
+        List<InterviewQuestion> candidates;
+        if (jd != null) {
+            candidates = jdDrivenPreload(session, jd);
+        } else {
+            candidates = masteryWeightedPreload(session);
         }
-
-        // 转 InterviewQuestion 并跑阶段机排序
-        List<InterviewQuestion> candidates = allCandidates.stream()
-            .map(qs -> InterviewQuestion.create(
-                qs.question().getId(), qs.question().getQuestionHash(),
-                qs.question().getQuestionText(),
-                qs.question().getQuestionType().getValue(),
-                session.getDifficulty(), qs.question().getCoreEntities()
-            ))
-            .collect(Collectors.toList());
-
         InterviewFlowPhaser phaser = new InterviewFlowPhaser();
         List<InterviewQuestion> ordered = phaser.phase(candidates, session.getTotalQuestions());
+        for (InterviewQuestion iq : ordered) session.addQuestion(iq);
+        log.info("Preloaded {} questions phases: {}",
+            ordered.size(), ordered.stream().map(InterviewQuestion::getPhase).distinct().toList());
+    }
 
-        for (InterviewQuestion iq : ordered) {
-            session.addQuestion(iq);
+    private List<InterviewQuestion> jdDrivenPreload(InterviewSession session, JobDescription jd) {
+        RecommendationPipeline pipeline = new RecommendationPipeline(
+            questionRepository, embeddingAdapter::embed, keywordExpander::expand);
+        List<CandidateQuestion> recommended = pipeline.recommend(
+            jd, session.getUserId(), session.getTotalQuestions());
+        log.info("JD-driven: {} candidates from {} skills",
+            recommended.size(), jd.getRequiredSkills().size());
+        return recommended.stream()
+            .map(c -> InterviewQuestion.create(c.questionId(), "jd-" + c.questionId(),
+                c.questionText(), c.questionType(), c.difficulty(), c.coreEntities()))
+            .collect(Collectors.toList());
+    }
+
+    private List<InterviewQuestion> masteryWeightedPreload(InterviewSession session) {
+        String context = "公司：" + session.getCompany() + " | 岗位：" + session.getPosition() + " | 面试题";
+        float[] queryVector = embeddingAdapter.embed(context);
+        Map<MasteryLevel, Integer> weights = Map.of(
+            MasteryLevel.LEVEL_0, 60, MasteryLevel.LEVEL_1, 30, MasteryLevel.LEVEL_2, 10);
+        List<QuestionWithScore> all = new ArrayList<>();
+        for (var e : weights.entrySet()) {
+            int desired = session.getTotalQuestions() * e.getValue() / 100;
+            if (desired > 0) {
+                Map<String, Object> f = Map.of("company", session.getCompany(),
+                    "position", session.getPosition(), "masteryLevel", e.getKey().getLevel());
+                all.addAll(questionRepository.searchUserVisible(session.getUserId(), queryVector, f, desired * 2));
+            }
         }
-
-        log.info("Preloaded {} questions for session {}, phases: {}",
-            ordered.size(), session.getSessionId(),
-            ordered.stream().map(InterviewQuestion::getPhase).distinct().toList());
+        return all.stream().map(qs -> InterviewQuestion.create(
+            qs.question().getId(), qs.question().getQuestionHash(), qs.question().getQuestionText(),
+            qs.question().getQuestionType().getValue(), session.getDifficulty(), qs.question().getCoreEntities()))
+            .collect(Collectors.toList());
     }
 
     // ==================== System Prompt ====================

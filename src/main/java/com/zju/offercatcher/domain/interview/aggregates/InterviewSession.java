@@ -34,7 +34,8 @@ public class InterviewSession {
     private final String position;
     private final DifficultyLevel difficulty;
     private final int totalQuestions;
-    private String jdContext;  // JD 解析后的面试上下文（Phase 2 集成 JD 解析后由 JobDescriptionParserAgent 填充）
+    private String jdContext;
+    private Long jdId;
 
     private SessionStatus status;
     private final List<InterviewQuestion> questions;
@@ -283,6 +284,10 @@ public class InterviewSession {
     public void setJdContext(String jdContext) {
         this.jdContext = jdContext;
     }
+
+    public Long getJdId() { return jdId; }
+
+    public void setJdId(Long jdId) { this.jdId = jdId; }
 
     // ==================== 构造函数 ====================
 

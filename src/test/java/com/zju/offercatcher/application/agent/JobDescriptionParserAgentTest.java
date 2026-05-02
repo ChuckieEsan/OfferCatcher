@@ -4,6 +4,7 @@ import com.zju.offercatcher.domain.interview.aggregates.JobDescription;
 import com.zju.offercatcher.domain.interview.valueobjects.SkillRequirement;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +25,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @SpringBootTest
 @ActiveProfiles("test")
+@Tag("api")
 class JobDescriptionParserAgentTest {
 
     private static final Logger log = LoggerFactory.getLogger(JobDescriptionParserAgentTest.class);
