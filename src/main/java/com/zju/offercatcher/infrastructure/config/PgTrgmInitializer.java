@@ -36,9 +36,9 @@ public class PgTrgmInitializer implements CommandLineRunner {
         try {
             jdbc.execute("""
                 CREATE INDEX IF NOT EXISTS idx_question_entities_trgm
-                ON question_entities USING GIN (core_entities gin_trgm_ops)
+                ON question_entities USING GIN (entity gin_trgm_ops)
                 """);
-            log.info("pg_trgm index created on question_entities.core_entities");
+            log.info("pg_trgm index created on question_entities.entity");
         } catch (Exception e) {
             log.warn("Failed to create pg_trgm index: {}", e.getMessage());
         }

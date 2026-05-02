@@ -31,6 +31,7 @@
         <agentscope.version>1.0.11</agentscope.version>
         <qdrant.version>1.17.0</qdrant.version>
         <otel-instrumentation.version>2.21.0-alpha</otel-instrumentation.version>
+        <surefire.excludedGroups>api</surefire.excludedGroups>
     </properties>
 
     <dependencyManagement>
@@ -259,7 +260,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <excludedGroups>api</excludedGroups>
+                    <excludedGroups>${surefire.excludedGroups}</excludedGroups>
                 </configuration>
             </plugin>
             <plugin>

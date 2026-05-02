@@ -97,7 +97,7 @@ public interface QuestionJpaRepository extends JpaRepository<QuestionJpaEntity, 
         SELECT DISTINCT q.* FROM questions q
         JOIN question_entities qe ON q.id = qe.question_id
         WHERE (q.visibility = 'PUBLIC' OR q.user_id = :userId)
-          AND qe.core_entities ILIKE CONCAT('%', :keyword, '%')
+          AND qe.entity ILIKE CONCAT('%', :keyword, '%')
         LIMIT :limit
         """, nativeQuery = true)
     List<QuestionJpaEntity> findByCoreEntityLike(@Param("userId") String userId,
@@ -109,11 +109,11 @@ public interface QuestionJpaRepository extends JpaRepository<QuestionJpaEntity, 
      * JD 推荐通道1 增强：ILIKE 命中不足时通过 similarity 补召。
      */
     @Query(value = """
-        SELECT DISTINCT q.*, similarity(qe.core_entities, :keyword) AS sim
+        SELECT DISTINCT q.*, similarity(qe.entity, :keyword) AS sim
         FROM questions q
         JOIN question_entities qe ON q.id = qe.question_id
         WHERE (q.visibility = 'PUBLIC' OR q.user_id = :userId)
-          AND similarity(qe.core_entities, :keyword) > 0.3
+          AND similarity(qe.entity, :keyword) > 0.3
         ORDER BY sim DESC
         LIMIT :limit
         """, nativeQuery = true)

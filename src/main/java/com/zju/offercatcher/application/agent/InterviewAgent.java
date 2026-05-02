@@ -11,6 +11,7 @@ import com.zju.offercatcher.domain.interview.aggregates.JobDescription;
 import com.zju.offercatcher.domain.interview.entities.InterviewQuestion;
 import com.zju.offercatcher.domain.interview.services.InterviewFlowPhaser;
 
+import com.zju.offercatcher.domain.interview.services.CoverageAnalyzer;
 import com.zju.offercatcher.domain.interview.services.RecommendationPipeline;
 import com.zju.offercatcher.domain.interview.valueobjects.CandidateQuestion;
 import com.zju.offercatcher.domain.interview.repositories.JobDescriptionRepository;
@@ -261,6 +262,12 @@ public class InterviewAgent {
         }
         InterviewFlowPhaser phaser = new InterviewFlowPhaser();
         List<InterviewQuestion> ordered = phaser.phase(candidates, session.getTotalQuestions());
+        // Channel B 兜底：JD 驱动召回为空时降级到 Channel A
+        if (ordered.isEmpty() && jd != null) {
+            log.warn("JD-driven returned empty, falling back to mastery-weighted selection");
+            candidates = masteryWeightedPreload(session);
+            ordered = phaser.phase(candidates, session.getTotalQuestions());
+        }
         for (InterviewQuestion iq : ordered) session.addQuestion(iq);
         log.info("Preloaded {} questions phases: {}",
             ordered.size(), ordered.stream().map(InterviewQuestion::getPhase).distinct().toList());
@@ -269,11 +276,14 @@ public class InterviewAgent {
     private List<InterviewQuestion> jdDrivenPreload(InterviewSession session, JobDescription jd) {
         RecommendationPipeline pipeline = new RecommendationPipeline(
             questionRepository, embeddingAdapter::embed, keywordExpander::expand);
-        List<CandidateQuestion> recommended = pipeline.recommend(
+        var result = pipeline.recommendWithCoverage(
             jd, session.getUserId(), session.getTotalQuestions());
-        log.info("JD-driven: {} candidates from {} skills",
-            recommended.size(), jd.getRequiredSkills().size());
-        return recommended.stream()
+        log.info("JD-driven: {} candidates, coverage={}/{}, missing={}",
+            result.questions().size(),
+            result.coverage().coveredSkills(), result.coverage().totalSkills(),
+            result.coverage().missing().stream()
+                .map(CoverageAnalyzer.SkillCoverage::skillName).toList());
+        return result.questions().stream()
             .map(c -> InterviewQuestion.create(c.questionId(), "jd-" + c.questionId(),
                 c.questionText(), c.questionType(), c.difficulty(), c.coreEntities()))
             .collect(Collectors.toList());

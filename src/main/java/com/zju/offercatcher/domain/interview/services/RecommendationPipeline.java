@@ -4,6 +4,7 @@ import com.zju.offercatcher.domain.interview.aggregates.JobDescription;
 import com.zju.offercatcher.domain.interview.valueobjects.CandidateQuestion;
 import com.zju.offercatcher.domain.interview.valueobjects.RecallChannel;
 import com.zju.offercatcher.domain.interview.valueobjects.SkillRequirement;
+import com.zju.offercatcher.domain.interview.services.CoverageAnalyzer.CoverageReport;
 import com.zju.offercatcher.domain.question.aggregates.Question;
 import com.zju.offercatcher.domain.question.repositories.QuestionRepository;
 import com.zju.offercatcher.domain.question.valueobjects.QuestionWithScore;
@@ -66,6 +67,19 @@ public class RecommendationPipeline {
 
         return reranked;
     }
+
+    /**
+     * 推荐并输出覆盖报告。
+     */
+    public RecommendationResult recommendWithCoverage(JobDescription jd, String userId,
+                                                       int totalQuestions) {
+        List<CandidateQuestion> questions = recommend(jd, userId, totalQuestions);
+        CoverageAnalyzer analyzer = new CoverageAnalyzer();
+        CoverageReport report = analyzer.analyze(questions, jd.getRequiredSkills());
+        return new RecommendationResult(questions, report);
+    }
+
+    public record RecommendationResult(List<CandidateQuestion> questions, CoverageReport coverage) {}
 
     // ==================== 召回通道 ====================
 
