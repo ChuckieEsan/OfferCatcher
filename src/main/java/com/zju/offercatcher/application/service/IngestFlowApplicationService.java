@@ -1,5 +1,6 @@
 package com.zju.offercatcher.application.service;
 
+import com.zju.offercatcher.domain.question.services.QuestionHashGenerator;
 import com.zju.offercatcher.domain.question.valueobjects.ExtractedQuestionItem;
 import com.zju.offercatcher.domain.question.aggregates.Question;
 import com.zju.offercatcher.domain.shared.enums.QuestionType;
@@ -52,10 +53,12 @@ public class IngestFlowApplicationService {
 
         for (ExtractedQuestionItem.QuestionItem item : extracted.questions()) {
             try {
-                // 1. 检查是否已存在
-                Optional<QuestionJpaEntity> existing = questionJpaRepo.findByQuestionHash(item.questionHash());
+                // 1. 去重：用与 Question.createPrivate 相同的 hash 函数查 DB
+                String hash = QuestionHashGenerator.generate(
+                    userId, extracted.company(), item.questionText());
+                Optional<QuestionJpaEntity> existing = questionJpaRepo.findByQuestionHash(hash);
                 if (existing.isPresent()) {
-                    log.info("Question {} already exists, skip", item.questionHash());
+                    log.info("Question already exists, skip: hash={}", hash);
                     result.questionIds.add(item.questionHash());
                     continue;
                 }
@@ -94,7 +97,7 @@ public class IngestFlowApplicationService {
                 result.processed++;
                 result.questionIds.add(item.questionHash());
 
-                // 5. Publish MQ task for async answer generation (if no answer reused)
+                // 5. MQ 推送异步答案生成
                 if (reusedAnswer == null && mqProducer.isPresent()) {
                     MQTaskMessage taskMsg = new MQTaskMessage(
                         question.getId(), question.getQuestionText(),

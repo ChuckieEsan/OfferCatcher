@@ -1,6 +1,5 @@
 package com.zju.offercatcher.application.worker;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.Channel;
 import com.zju.offercatcher.application.agent.AnswerSpecialistAgent;
 import com.zju.offercatcher.domain.question.aggregates.Question;
@@ -33,29 +32,23 @@ public class AnswerTaskMQConsumer {
     private final QuestionRepository questionRepository;
     private final AnswerSpecialistAgent answerAgent;
     private final MQMessageHelper messageHelper;
-    private final ObjectMapper objectMapper;
 
     public AnswerTaskMQConsumer(QuestionRepository questionRepository,
                               AnswerSpecialistAgent answerAgent,
-                              MQMessageHelper messageHelper,
-                              ObjectMapper objectMapper) {
+                              MQMessageHelper messageHelper) {
         this.questionRepository = questionRepository;
         this.answerAgent = answerAgent;
         this.messageHelper = messageHelper;
-        this.objectMapper = objectMapper;
     }
 
     @RabbitListener(queues = "${offercatcher.rabbitmq.queue}")
-    public void handle(byte[] body, Channel channel,
+    public void handle(MQTaskMessage task, Channel channel,
                        @Header(AmqpHeaders.DELIVERY_TAG) long deliveryTag,
                        @Header(value = "x-retry-count", required = false, defaultValue = "0") int retryCount)
         throws IOException {
 
-        MQTaskMessage task = null;
-        Long questionId = null;
+        Long questionId = task.questionId();
         try {
-            task = objectMapper.readValue(body, MQTaskMessage.class);
-            questionId = task.questionId();
             log.info("Received answer task: qId={}, retry={}", questionId, retryCount);
 
             // Idempotency check
@@ -82,8 +75,7 @@ public class AnswerTaskMQConsumer {
 
         } catch (Exception e) {
             log.error("Failed to process answer task {}: {}", questionId, e.getMessage());
-            Long qid = task != null ? task.questionId() : questionId;
-            messageHelper.republishToBack(channel, deliveryTag, body, retryCount, qid);
+            messageHelper.republishToBack(channel, deliveryTag, task, retryCount);
         }
     }
 }

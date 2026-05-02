@@ -1,5 +1,6 @@
 package com.zju.offercatcher.infrastructure.messaging;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.Channel;
 import com.zju.offercatcher.infrastructure.config.RabbitMQProperties;
 import org.slf4j.Logger;
@@ -8,7 +9,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 
 /**
  * RabbitMQ 消息处理辅助类
@@ -22,6 +22,8 @@ public class MQMessageHelper {
 
     private static final Logger log = LoggerFactory.getLogger(MQMessageHelper.class);
 
+    private static final ObjectMapper objectMapper = new ObjectMapper();
+
     private final String queueName;
     private final int maxRetries;
 
@@ -33,15 +35,17 @@ public class MQMessageHelper {
     /**
      * 将失败消息重新发布到队尾（带 x-retry-count 计数）
      */
-    public boolean republishToBack(Channel channel, long deliveryTag, byte[] body,
-                                   int retryCount, Long questionId) throws IOException {
+    public boolean republishToBack(Channel channel, long deliveryTag, MQTaskMessage task,
+                                   int retryCount) throws IOException {
         int newRetryCount = retryCount + 1;
 
         if (newRetryCount >= maxRetries) {
-            log.warn("Max retries ({}) exceeded for {}, discarding", maxRetries, questionId);
+            log.warn("Max retries ({}) exceeded for {}, discarding", maxRetries, task.questionId());
             channel.basicAck(deliveryTag, false);
             return false;
         }
+
+        byte[] body = objectMapper.writeValueAsBytes(task);
 
         var props = new com.rabbitmq.client.AMQP.BasicProperties.Builder()
             .deliveryMode(2) // persistent
@@ -50,7 +54,7 @@ public class MQMessageHelper {
 
         channel.basicPublish("", queueName, props, body);
         channel.basicAck(deliveryTag, false);
-        log.info("Message republished to back: qId={}, retry={}", questionId, newRetryCount);
+        log.info("Message republished to back: qId={}, retry={}", task.questionId(), newRetryCount);
         return true;
     }
 

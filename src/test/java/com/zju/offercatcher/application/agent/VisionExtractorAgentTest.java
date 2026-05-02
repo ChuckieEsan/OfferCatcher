@@ -1,6 +1,6 @@
 package com.zju.offercatcher.application.agent;
 
-import com.zju.offercatcher.application.agent.dto.ExtractedQuestionItem;
+import com.zju.offercatcher.domain.question.valueobjects.ExtractedQuestionItem;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
