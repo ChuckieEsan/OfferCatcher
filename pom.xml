@@ -112,6 +112,12 @@
             <artifactId>micrometer-registry-otlp</artifactId>
         </dependency>
 
+        <!-- Micrometer Prometheus (本地开发 metrics 可视化) -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
+
         <!-- OpenTelemetry SDK (AgentScope TelemetryTracer 所需) -->
         <dependency>
             <groupId>io.opentelemetry</groupId>

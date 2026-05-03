@@ -50,28 +50,34 @@ public class ReembedWorker {
         LocalDateTime since = lastCheck;
         lastCheck = LocalDateTime.now();
 
-        List<QuestionJpaEntity> updated = questionJpaRepository.findRecentlyUpdated(since, BATCH_SIZE);
+        List<QuestionJpaEntity> updated = questionJpaRepository.findAllRecentlyUpdated(since);
         if (updated.isEmpty()) {
             return;
         }
 
-        log.info("Reembed worker found {} updated questions since {}", updated.size(), since);
+        log.info("Reembed worker found {} updated questions since {}, processing in batches of {}",
+            updated.size(), since, BATCH_SIZE);
 
         int succeeded = 0;
         int failed = 0;
-        for (QuestionJpaEntity entity : updated) {
-            try {
-                Question question = entity.toDomain();
-                String context = question.toContext();
-                float[] vector = embeddingAdapter.embed(context);
-                qdrantVectorStore.upsert(question, vector);
-                succeeded++;
-            } catch (Exception e) {
-                failed++;
-                log.error("Reembed failed for question {}: {}", entity.getQuestionHash(), e.getMessage());
+        for (int i = 0; i < updated.size(); i += BATCH_SIZE) {
+            int end = Math.min(i + BATCH_SIZE, updated.size());
+            for (QuestionJpaEntity entity : updated.subList(i, end)) {
+                try {
+                    Question question = entity.toDomain();
+                    String context = question.toContext();
+                    float[] vector = embeddingAdapter.embed(context);
+                    qdrantVectorStore.upsert(question, vector);
+                    succeeded++;
+                } catch (Exception e) {
+                    failed++;
+                    log.error("Reembed failed for question {}: {}", entity.getQuestionHash(), e.getMessage());
+                }
             }
+            log.debug("Reembed batch [{}/{}]: {} succeeded, {} failed so far",
+                end, updated.size(), succeeded, failed);
         }
 
-        log.info("Reembed batch complete: {} succeeded, {} failed", succeeded, failed);
+        log.info("Reembed complete: {} succeeded, {} failed out of {} total", succeeded, failed, updated.size());
     }
 }

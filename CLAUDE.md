@@ -37,6 +37,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
    如果手写 snake_case key（如 `Map.of("question_hash", ...)`），会直接泄漏到 JSON 响应中，
    与全局 camelCase 不一致。必须使用 typed record/class，字段名即为 camelCase。
    兼容旧 snake_case 数据时，在 record 字段上加 `@JsonAlias("snake_case_name")`。
+3. 不允许在代码中硬编码 prompt，必须放到资源文件夹的 prompts 文件夹当中
 
 
 ## 项目架构

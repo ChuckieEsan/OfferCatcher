@@ -87,10 +87,16 @@ public interface QuestionJpaRepository extends JpaRepository<QuestionJpaEntity, 
     List<Long> findAllIds();
 
     /**
-     * 查找最近更新过的题目（用于 Reembed Worker）
+     * 查找最近更新过的题目（用于 Reembed Worker 分页）
      */
     @Query("SELECT q FROM QuestionJpaEntity q WHERE q.updatedAt > :since ORDER BY q.updatedAt ASC LIMIT :limit")
     List<QuestionJpaEntity> findRecentlyUpdated(@Param("since") java.time.LocalDateTime since, @Param("limit") int limit);
+
+    /**
+     * 查找所有最近更新过的题目（用于 Reembed Worker 全量刷新）
+     */
+    @Query("SELECT q FROM QuestionJpaEntity q WHERE q.updatedAt > :since ORDER BY q.updatedAt ASC")
+    List<QuestionJpaEntity> findAllRecentlyUpdated(@Param("since") java.time.LocalDateTime since);
 
     @Query("SELECT COUNT(q) FROM QuestionJpaEntity q WHERE (q.userId = :userId OR q.visibility = 'PUBLIC')")
     long countUserVisible(@Param("userId") String userId);

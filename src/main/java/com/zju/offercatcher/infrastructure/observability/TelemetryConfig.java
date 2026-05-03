@@ -1,6 +1,9 @@
 package com.zju.offercatcher.infrastructure.observability;
 
+import com.zju.offercatcher.infrastructure.config.LLMProperties;
 import com.zju.offercatcher.infrastructure.config.TelemetryProperties;
+import io.agentscope.core.model.transport.HttpTransport;
+import io.agentscope.core.model.transport.HttpTransportFactory;
 import io.agentscope.core.tracing.TracerRegistry;
 import io.agentscope.core.tracing.telemetry.TelemetryTracer;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -28,9 +31,11 @@ public class TelemetryConfig {
     private static final Logger log = LoggerFactory.getLogger(TelemetryConfig.class);
 
     private final TelemetryProperties properties;
+    private final LLMProperties llmProperties;
 
-    public TelemetryConfig(TelemetryProperties properties) {
+    public TelemetryConfig(TelemetryProperties properties, LLMProperties llmProperties) {
         this.properties = properties;
+        this.llmProperties = llmProperties;
     }
 
     /**
@@ -91,5 +96,46 @@ public class TelemetryConfig {
         };
 
         return new OtlpMeterRegistry(otlpConfig, io.micrometer.core.instrument.Clock.SYSTEM);
+    }
+
+    /**
+     * 缓存命中指标记录器。
+     *
+     * 注入 MeterRegistry（Spring Boot Actuator 总会提供），
+     * OTLP 启用时 OtlpMeterRegistry 会自动加入复合注册表。
+     */
+    @Bean
+    @ConditionalOnProperty(name = "offercatcher.telemetry.cache-hit-tracking.enabled",
+                        havingValue = "true", matchIfMissing = true)
+    public CacheHitMetrics cacheHitMetrics(MeterRegistry meterRegistry) {
+        return new CacheHitMetrics(meterRegistry);
+    }
+
+    /**
+     * 缓存命中追踪 Transport，全局替换 HttpTransportFactory 默认实现。
+     *
+     * 所有 OpenAIChatModel 创建时通过 HttpTransportFactory.getDefault()
+     * 自动获取此装饰器，13 个 Agent 无需修改。
+     *
+     * {@code @Configuration} 的 Bean 方法在 {@code @Service} 之前执行，
+     * 确保 setDefault() 在 Agent 创建 OpenAIChatModel 之前生效。
+     */
+    @Bean
+    @ConditionalOnProperty(name = "offercatcher.telemetry.cache-hit-tracking.enabled",
+                        havingValue = "true", matchIfMissing = true)
+    public CacheHitTrackingTransport cacheHitTrackingTransport(
+            CacheHitMetrics cacheHitMetrics) {
+
+        HttpTransport defaultTransport = HttpTransportFactory.getDefault();
+        String modelName = llmProperties.getDeepseek().getModel();
+
+        CacheHitTrackingTransport wrapped =
+            new CacheHitTrackingTransport(defaultTransport, cacheHitMetrics, modelName);
+
+        HttpTransportFactory.setDefault(wrapped);
+
+        log.info("CacheHitTrackingTransport registered for model: {} (wrapping {})",
+            modelName, defaultTransport.getClass().getSimpleName());
+        return wrapped;
     }
 }

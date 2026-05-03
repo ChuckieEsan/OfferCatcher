@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: root
       POSTGRES_DB: offer_catcher_v2
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
 
   qdrant:
     image: qdrant/qdrant:latest
@@ -19,14 +19,14 @@ services:
       - qdrant_data:/qdrant/storage
 
   redis:
-    image: redis:7-alpine
+    image: redis/redis-stack-server:latest
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
 
   rabbitmq:
-    image: rabbitmq:3-management
+    image: rabbitmq:latest
     ports:
       - "5672:5672"
       - "15672:15672"
@@ -45,8 +45,29 @@ services:
     environment:
       COLLECTOR_OTLP_ENABLED: true
 
+  prometheus:
+    image: ubuntu/prometheus:3-24.04_stable
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    entrypoint:
+      - /usr/bin/prometheus
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=liuchenyu222
+    volumes:
+      - grafana_data:/var/lib/grafana
+
   neo4j:
-    image: neo4j:5.26
+    image: neo4j:latest
     ports:
       - "7474:7474"
       - "7687:7687"
@@ -69,3 +90,5 @@ volumes:
   redis_data:
   rabbitmq_data:
   neo4j_data:
+  prometheus_data:
+  grafana_data:

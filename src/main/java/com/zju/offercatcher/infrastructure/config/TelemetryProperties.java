@@ -21,6 +21,15 @@ public class TelemetryProperties {
     private String langfusePublicKey;
     private String langfuseSecretKey;
 
+    /** 缓存命中追踪开关。默认开启，仅当 OTLP metrics 启用时才导出。 */
+    private CacheHitTracking cacheHitTracking = new CacheHitTracking();
+
+    @Setter
+    @Getter
+    public static class CacheHitTracking {
+        private boolean enabled = true;
+    }
+
     public String getLangfuseAuthHeader() {
         if (langfusePublicKey == null || langfuseSecretKey == null
             || langfusePublicKey.isBlank() || langfuseSecretKey.isBlank()) {
