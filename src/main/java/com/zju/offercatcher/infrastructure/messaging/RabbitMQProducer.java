@@ -3,7 +3,6 @@ package com.zju.offercatcher.infrastructure.messaging;
 import com.zju.offercatcher.infrastructure.config.RabbitMQProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageDeliveryMode;
 import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -12,7 +11,7 @@ import org.springframework.stereotype.Service;
 
 /**
  * RabbitMQ 消息生产者
- *
+ * <p>
  * 对应 Python: app/infrastructure/messaging/producer.py RabbitMQProducer
  */
 @Service

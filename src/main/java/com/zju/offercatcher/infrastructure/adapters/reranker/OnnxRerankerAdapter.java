@@ -13,7 +13,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 @Service
 public class OnnxRerankerAdapter {
@@ -38,7 +41,7 @@ public class OnnxRerankerAdapter {
             env = OrtEnvironment.getEnvironment();
             Path onnxFile = Path.of(modelPath, "model.onnx");
             session = env.createSession(onnxFile.toString(),
-                new OrtSession.SessionOptions());
+                    new OrtSession.SessionOptions());
             tokenizer = HuggingFaceTokenizer.newInstance(Path.of(modelPath, "tokenizer.json"));
             initialized = true;
             log.info("ONNX Reranker model loaded: {}", modelPath);
@@ -89,8 +92,8 @@ public class OnnxRerankerAdapter {
                      OnnxTensor maskTensor = OnnxTensor.createTensor(env, batchAttentionMask)) {
 
                     Map<String, OnnxTensor> inputs = Map.of(
-                        "input_ids", inputTensor,
-                        "attention_mask", maskTensor
+                            "input_ids", inputTensor,
+                            "attention_mask", maskTensor
                     );
 
                     OrtSession.Result result = session.run(inputs);

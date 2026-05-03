@@ -2,7 +2,7 @@ package com.zju.offercatcher.domain.shared.enums;
 
 /**
  * 难度等级枚举
- *
+ * <p>
  * 用于面试题目难度设置和评分标准调整。
  */
 public enum DifficultyLevel {

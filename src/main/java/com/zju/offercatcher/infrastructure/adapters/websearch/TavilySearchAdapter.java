@@ -23,8 +23,8 @@ public class TavilySearchAdapter {
     public TavilySearchAdapter(WebSearchProperties properties) {
         this.apiKey = properties.getTavilyApiKey();
         this.restClient = RestClient.builder()
-            .baseUrl(TAVILY_API_URL)
-            .build();
+                .baseUrl(TAVILY_API_URL)
+                .build();
     }
 
     public List<WebSearchResult> search(String query, int maxResults) {
@@ -35,18 +35,18 @@ public class TavilySearchAdapter {
 
         try {
             Map<String, Object> request = Map.of(
-                "api_key", apiKey,
-                "query", query,
-                "max_results", maxResults,
-                "search_depth", "basic"
+                    "api_key", apiKey,
+                    "query", query,
+                    "max_results", maxResults,
+                    "search_depth", "basic"
             );
 
             @SuppressWarnings("unchecked")
             Map<String, Object> response = restClient.post()
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(request)
-                .retrieve()
-                .body(Map.class);
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(request)
+                    .retrieve()
+                    .body(Map.class);
 
             if (response == null || !response.containsKey("results")) {
                 return Collections.emptyList();
@@ -55,13 +55,13 @@ public class TavilySearchAdapter {
             @SuppressWarnings("unchecked")
             List<Map<String, String>> results = (List<Map<String, String>>) response.get("results");
             return results.stream()
-                .map(r -> new WebSearchResult(
-                    r.getOrDefault("title", ""),
-                    r.getOrDefault("url", ""),
-                    r.getOrDefault("content", ""),
-                    r.getOrDefault("content", "")
-                ))
-                .toList();
+                    .map(r -> new WebSearchResult(
+                            r.getOrDefault("title", ""),
+                            r.getOrDefault("url", ""),
+                            r.getOrDefault("content", ""),
+                            r.getOrDefault("content", "")
+                    ))
+                    .toList();
         } catch (Exception e) {
             log.error("Tavily search failed for query: {}", query, e);
             return Collections.emptyList();

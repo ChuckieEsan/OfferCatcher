@@ -12,7 +12,7 @@ import java.io.IOException;
 
 /**
  * RabbitMQ 消息处理辅助类
- *
+ * <p>
  * 提供消息重试、降级和死信队列处理。
  * 对应 Python: app/infrastructure/messaging/message_helper.py MQMessageHelper
  */
@@ -48,9 +48,9 @@ public class MQMessageHelper {
         byte[] body = objectMapper.writeValueAsBytes(task);
 
         var props = new com.rabbitmq.client.AMQP.BasicProperties.Builder()
-            .deliveryMode(2) // persistent
-            .headers(java.util.Map.of("x-retry-count", newRetryCount))
-            .build();
+                .deliveryMode(2) // persistent
+                .headers(java.util.Map.of("x-retry-count", newRetryCount))
+                .build();
 
         channel.basicPublish("", queueName, props, body);
         channel.basicAck(deliveryTag, false);

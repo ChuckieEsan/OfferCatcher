@@ -13,7 +13,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 @Service
 public class OnnxEmbeddingAdapter {
@@ -39,7 +41,7 @@ public class OnnxEmbeddingAdapter {
             Path tokenizerFile = Path.of(modelPath, "onnx", "tokenizer.json");
             env = OrtEnvironment.getEnvironment();
             session = env.createSession(modelFile.toString(),
-                new OrtSession.SessionOptions());
+                    new OrtSession.SessionOptions());
             tokenizer = HuggingFaceTokenizer.newInstance(tokenizerFile);
             initialized = true;
             log.info("ONNX Embedding model loaded: {}, vectorSize={}", modelPath, properties.getVectorSize());
@@ -89,8 +91,8 @@ public class OnnxEmbeddingAdapter {
                  OnnxTensor maskTensor = OnnxTensor.createTensor(env, paddedAttentionMask)) {
 
                 Map<String, OnnxTensor> inputs = Map.of(
-                    "input_ids", inputTensor,
-                    "attention_mask", maskTensor
+                        "input_ids", inputTensor,
+                        "attention_mask", maskTensor
                 );
 
                 OrtSession.Result result = session.run(inputs);

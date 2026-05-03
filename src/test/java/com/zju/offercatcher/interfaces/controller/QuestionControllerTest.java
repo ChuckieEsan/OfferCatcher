@@ -4,8 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zju.offercatcher.application.service.QuestionApplicationService;
 import com.zju.offercatcher.domain.question.aggregates.Question;
 import com.zju.offercatcher.domain.shared.enums.QuestionType;
-import com.zju.offercatcher.interfaces.config.GlobalExceptionHandler;
-import com.zju.offercatcher.interfaces.config.UserIdResolver;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -22,17 +20,21 @@ import java.util.Optional;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(QuestionController.class)
 class QuestionControllerTest {
 
-    @Autowired MockMvc mvc;
-    @Autowired ObjectMapper mapper;
-    @MockitoBean QuestionApplicationService questionService;
+    @Autowired
+    MockMvc mvc;
+    @Autowired
+    ObjectMapper mapper;
+    @MockitoBean
+    QuestionApplicationService questionService;
 
     Question sampleQuestion = Question.createPrivate(
-        "user-1", "HashMap 的实现原理？", "阿里巴巴", "Java", QuestionType.KNOWLEDGE, List.of("HashMap"));
+            "user-1", "HashMap 的实现原理？", "阿里巴巴", "Java", QuestionType.KNOWLEDGE, List.of("HashMap"));
 
     @Nested
     @DisplayName("POST /api/v1/questions")
@@ -42,35 +44,35 @@ class QuestionControllerTest {
         @DisplayName("创建成功返回 201")
         void createSuccess() throws Exception {
             when(questionService.createQuestion(anyString(), anyString(), anyString(), anyString(),
-                any(), anyList())).thenReturn(sampleQuestion);
+                    any(), anyList())).thenReturn(sampleQuestion);
 
             String body = mapper.writeValueAsString(Map.of(
-                "questionText", "HashMap 的实现原理？",
-                "company", "阿里巴巴",
-                "position", "Java",
-                "questionType", "knowledge",
-                "coreEntities", List.of("HashMap")
+                    "questionText", "HashMap 的实现原理？",
+                    "company", "阿里巴巴",
+                    "position", "Java",
+                    "questionType", "knowledge",
+                    "coreEntities", List.of("HashMap")
             ));
 
             mvc.perform(post("/api/v1/questions")
-                    .header("X-User-Id", "user-1")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(body))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.questionHash").exists())
-                .andExpect(jsonPath("$.company").value("阿里巴巴"));
+                            .header("X-User-Id", "user-1")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(body))
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.questionHash").exists())
+                    .andExpect(jsonPath("$.company").value("阿里巴巴"));
         }
 
         @Test
         @DisplayName("缺少 X-User-Id 返回 400")
         void missingUserId() throws Exception {
             String body = mapper.writeValueAsString(Map.of(
-                "questionText", "Test", "company", "A", "position", "B", "questionType", "knowledge"));
+                    "questionText", "Test", "company", "A", "position", "B", "questionType", "knowledge"));
 
             mvc.perform(post("/api/v1/questions")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(body))
-                .andExpect(status().isBadRequest());
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(body))
+                    .andExpect(status().isBadRequest());
         }
     }
 
@@ -84,8 +86,8 @@ class QuestionControllerTest {
             when(questionService.getQuestion(1L)).thenReturn(Optional.of(sampleQuestion));
 
             mvc.perform(get("/api/v1/questions/1"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.questionHash").exists());
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.questionHash").exists());
         }
 
         @Test
@@ -94,7 +96,7 @@ class QuestionControllerTest {
             when(questionService.getQuestion(999L)).thenReturn(Optional.empty());
 
             mvc.perform(get("/api/v1/questions/999"))
-                .andExpect(status().isNotFound());
+                    .andExpect(status().isNotFound());
         }
     }
 
@@ -106,14 +108,14 @@ class QuestionControllerTest {
         @DisplayName("更新成功返回 200")
         void updateSuccess() throws Exception {
             when(questionService.updateQuestion(eq(1L), anyString(), any(), any(), any()))
-                .thenReturn(Optional.of(sampleQuestion));
+                    .thenReturn(Optional.of(sampleQuestion));
 
             String body = mapper.writeValueAsString(Map.of("answer", "新答案"));
 
             mvc.perform(put("/api/v1/questions/1")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(body))
-                .andExpect(status().isOk());
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(body))
+                    .andExpect(status().isOk());
         }
     }
 
@@ -125,12 +127,12 @@ class QuestionControllerTest {
         @DisplayName("列表查询返回 200")
         void listSuccess() throws Exception {
             when(questionService.listQuestions(anyString(), any(), any(), any(), any(), any(), any(), anyInt(), anyInt()))
-                .thenReturn(List.of(sampleQuestion));
+                    .thenReturn(List.of(sampleQuestion));
 
             mvc.perform(get("/api/v1/questions")
-                    .header("X-User-Id", "user-1"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.questions.length()").value(1));
+                            .header("X-User-Id", "user-1"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.questions.length()").value(1));
         }
     }
 
@@ -146,10 +148,10 @@ class QuestionControllerTest {
             String body = mapper.writeValueAsString(Map.of("questionIds", List.of(1, 2)));
 
             mvc.perform(post("/api/v1/questions/batch/answers")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(body))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.answers['1']").value("答案1"));
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(body))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.answers['1']").value("答案1"));
         }
     }
 }

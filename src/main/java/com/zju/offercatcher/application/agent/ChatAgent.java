@@ -8,20 +8,16 @@ import com.zju.offercatcher.domain.chat.aggregates.Conversation;
 import com.zju.offercatcher.domain.chat.entities.Message;
 import com.zju.offercatcher.domain.memory.repositories.SessionSummaryRepository;
 import com.zju.offercatcher.domain.shared.enums.MessageRole;
-import com.zju.offercatcher.infrastructure.config.LLMModelFactory;
-import com.zju.offercatcher.infrastructure.tools.*;
 import com.zju.offercatcher.infrastructure.adapters.memory.UserLongTermMemory;
 import com.zju.offercatcher.infrastructure.common.PromptLoader;
-import io.agentscope.core.memory.LongTermMemoryMode;
+import com.zju.offercatcher.infrastructure.config.LLMModelFactory;
+import com.zju.offercatcher.infrastructure.tools.*;
 import io.agentscope.core.ReActAgent;
 import io.agentscope.core.agent.Event;
 import io.agentscope.core.agent.EventType;
 import io.agentscope.core.agent.StreamOptions;
-import io.agentscope.core.message.Msg;
-import io.agentscope.core.message.MsgRole;
-import io.agentscope.core.message.TextBlock;
-import io.agentscope.core.message.ThinkingBlock;
-import io.agentscope.core.message.ToolResultBlock;
+import io.agentscope.core.memory.LongTermMemoryMode;
+import io.agentscope.core.message.*;
 import io.agentscope.core.model.GenerateOptions;
 import io.agentscope.core.model.OpenAIChatModel;
 import io.agentscope.core.tool.ToolExecutionContext;
@@ -44,16 +40,16 @@ import java.util.concurrent.Executor;
 
 /**
  * 对话 Agent 服务
- *
+ * <p>
  * 核心 ReActAgent，处理用户消息，支持：
  * - 多工具调用（search_questions, search_web, knowledge graph, memory）
  * - SSE 流式输出
  * - 记忆上下文注入
  * - 用户隔离（通过 ToolExecutionContext）
- *
+ * <p>
  * 对应 Python:
- *   app/application/agents/chat/agent.py
- *   app/application/agents/chat/workflow.py
+ * app/application/agents/chat/agent.py
+ * app/application/agents/chat/workflow.py
  */
 @Service
 public class ChatAgent {
@@ -76,18 +72,18 @@ public class ChatAgent {
     private final Toolkit cachedToolkit;
 
     public ChatAgent(ChatApplicationService chatService,
-                             MemoryApplicationService memoryService,
-                             MemoryRetrievalAgent retrievalAgent,
-                             SessionSummaryRepository sessionSummaryRepository,
-                             MemoryExtractionAgent memoryAgent,
-                             PromptLoader promptLoader,
-                             LLMModelFactory modelFactory,
-                             SearchQuestionsTool searchQuestionsTool,
-                             WebSearchTool webSearchTool,
-                             KnowledgeGraphTools knowledgeGraphTools,
-                             MemoryTools memoryTools,
-                             @Qualifier("workerExecutor") Executor workerExecutor,
-                             ObjectMapper objectMapper) {
+                     MemoryApplicationService memoryService,
+                     MemoryRetrievalAgent retrievalAgent,
+                     SessionSummaryRepository sessionSummaryRepository,
+                     MemoryExtractionAgent memoryAgent,
+                     PromptLoader promptLoader,
+                     LLMModelFactory modelFactory,
+                     SearchQuestionsTool searchQuestionsTool,
+                     WebSearchTool webSearchTool,
+                     KnowledgeGraphTools knowledgeGraphTools,
+                     MemoryTools memoryTools,
+                     @Qualifier("workerExecutor") Executor workerExecutor,
+                     ObjectMapper objectMapper) {
         this.chatService = chatService;
         this.memoryService = memoryService;
         this.retrievalAgent = retrievalAgent;
@@ -112,13 +108,13 @@ public class ChatAgent {
 
     /**
      * 流式对话
-     *
+     * <p>
      * 返回 SSE 就绪的 Flux<String>，每个元素为一条 SSE data 帧。
      * 后处理（保存消息、生成标题、记忆提取）异步执行，不阻塞流式输出。
      */
     public Flux<String> chatStream(String message, Long conversationId, String userId) {
         log.info("ChatStream: conversation={}, user={}, message={}", conversationId, userId,
-            message.substring(0, Math.min(50, message.length())));
+                message.substring(0, Math.min(50, message.length())));
 
         // 1. Ensure conversation exists and save user message
         Conversation conversation = chatService.getConversation(userId, conversationId).orElse(null);
@@ -141,12 +137,12 @@ public class ChatAgent {
 
         // 4. Stream with chunk events only (avoid duplicate output from result events)
         StreamOptions streamOptions = StreamOptions.builder()
-            .includeReasoningChunk(true)
-            .includeReasoningResult(false)   // 不输出完整思考结果，避免重复
-            .includeActingChunk(true)
-            .includeSummaryChunk(true)
-            .includeSummaryResult(false)    // 不输出完整回答结果，避免重复
-            .build();
+                .includeReasoningChunk(true)
+                .includeReasoningResult(false)   // 不输出完整思考结果，避免重复
+                .includeActingChunk(true)
+                .includeSummaryChunk(true)
+                .includeSummaryResult(false)    // 不输出完整回答结果，避免重复
+                .build();
 
         Sinks.Many<Event> sink = Sinks.many().unicast().onBackpressureBuffer();
         StringBuilder formalResponse = new StringBuilder();
@@ -154,55 +150,55 @@ public class ChatAgent {
         List<Map<String, Object>> toolCallRecords = new ArrayList<>();
 
         agent.stream(input, streamOptions)
-            .doOnNext(event -> {
-                sink.tryEmitNext(event);
-                collectTextContent(event, formalResponse, reasoningResponse, toolCallRecords);
-            })
-            .doOnComplete(() -> {
-                // Emit final event before completing
-                sink.tryEmitNext(new Event(EventType.AGENT_RESULT,
-                    Msg.builder().role(MsgRole.ASSISTANT).textContent("").build(), true));
-                sink.tryEmitComplete();
+                .doOnNext(event -> {
+                    sink.tryEmitNext(event);
+                    collectTextContent(event, formalResponse, reasoningResponse, toolCallRecords);
+                })
+                .doOnComplete(() -> {
+                    // Emit final event before completing
+                    sink.tryEmitNext(new Event(EventType.AGENT_RESULT,
+                            Msg.builder().role(MsgRole.ASSISTANT).textContent("").build(), true));
+                    sink.tryEmitComplete();
 
-                // Async post-processing — does NOT block stream completion
-                CompletableFuture.runAsync(() -> postProcess(userId, finalConversationId,
-                    formalResponse.toString(), reasoningResponse.toString(), toolCallRecords),
-                    workerExecutor);
-            })
-            .doOnError(error -> {
-                log.error("Chat stream error: {}", error.getMessage(), error);
-                sink.tryEmitError(error);
-            })
-            .subscribeOn(Schedulers.boundedElastic())
-            .subscribe();
+                    // Async post-processing — does NOT block stream completion
+                    CompletableFuture.runAsync(() -> postProcess(userId, finalConversationId,
+                                    formalResponse.toString(), reasoningResponse.toString(), toolCallRecords),
+                            workerExecutor);
+                })
+                .doOnError(error -> {
+                    log.error("Chat stream error: {}", error.getMessage(), error);
+                    sink.tryEmitError(error);
+                })
+                .subscribeOn(Schedulers.boundedElastic())
+                .subscribe();
 
         return sink.asFlux()
-            .map(event -> toSSEFrame(event))
-            .filter(frame -> !frame.isEmpty());
+                .map(event -> toSSEFrame(event))
+                .filter(frame -> !frame.isEmpty());
     }
 
     // ==================== Event Text Collection ====================
 
     /**
      * 分离收集 thinking、正式回答和工具调用记录。
-     *
+     * <p>
      * 用 AgentScope 原生的 ContentBlock 类型来判断，而非 event.getType()——
      * 对于无工具调用的对话，AgentScope 的 reasoning() 阶段所有事件都是 REASONING 类型。
-     *
+     * <p>
      * ThinkingBlock → reasoningResponse
      * TextBlock      → formalResponse（跳过合成 Result 事件，避免重复累加）
      * ToolResultBlock → toolCallRecords
      */
     private void collectTextContent(Event event, StringBuilder formalResponse,
-                                     StringBuilder reasoningResponse,
-                                     List<Map<String, Object>> toolCallRecords) {
+                                    StringBuilder reasoningResponse,
+                                    List<Map<String, Object>> toolCallRecords) {
         Msg msg = event.getMessage();
         if (msg == null) return;
 
         EventType eventType = event.getType();
         // AGENT_RESULT 和 HINT 是合成事件，包含已累加的完整内容，不应再收集
         boolean isSyntheticResult = eventType == EventType.AGENT_RESULT
-            || eventType == EventType.HINT;
+                || eventType == EventType.HINT;
 
         // ThinkingBlock → reasoning
         List<ThinkingBlock> thinkingBlocks = msg.getContentBlocks(ThinkingBlock.class);
@@ -238,14 +234,14 @@ public class ChatAgent {
         for (ToolResultBlock result : results) {
             String toolName = result.getName() != null ? result.getName() : "unknown";
             String resultText = result.getOutput() != null
-                ? result.getOutput().stream()
+                    ? result.getOutput().stream()
                     .map(b -> b instanceof io.agentscope.core.message.TextBlock tb ? tb.getText() : "")
                     .reduce("", (a, b) -> a + b)
-                : message.getTextContent();
+                    : message.getTextContent();
 
             // Truncate result to avoid excessive DB storage
             String truncatedResult = resultText != null && resultText.length() > 500
-                ? resultText.substring(0, 500) + "…" : resultText;
+                    ? resultText.substring(0, 500) + "…" : resultText;
 
             Map<String, Object> record = new LinkedHashMap<>();
             record.put("tool", toolName);
@@ -269,7 +265,7 @@ public class ChatAgent {
 
     /**
      * 将 Event 转为 SSE frame。
-     *
+     * <p>
      * 用 AgentScope 原生的 ContentBlock 类型来区分输出类型。
      * 注意：跳过 Result 类型事件中的 TextBlock（完整内容已通过 Chunk 累加输出，避免重复）。
      */
@@ -282,7 +278,7 @@ public class ChatAgent {
         EventType eventType = event.getType();
         // AGENT_RESULT 和 HINT 是合成事件，包含已累加的完整内容，不应再输出
         boolean isSyntheticResult = eventType == EventType.AGENT_RESULT
-            || eventType == EventType.HINT;
+                || eventType == EventType.HINT;
 
         // 优先根据 ContentBlock 类型判断实际输出类型
         if (!msg.getContentBlocks(ThinkingBlock.class).isEmpty()) {
@@ -322,16 +318,16 @@ public class ChatAgent {
     // ==================== Post-Processing (Async) ====================
 
     private void postProcess(String userId, Long conversationId, String formalResponse,
-                               String reasoningResponse, List<Map<String, Object>> toolCallRecords) {
+                             String reasoningResponse, List<Map<String, Object>> toolCallRecords) {
         try {
             if (formalResponse.isBlank() && reasoningResponse.isBlank()) return;
 
             String reasoning = reasoningResponse.isBlank() ? null : reasoningResponse.toString();
             String toolCallsJson = toolCallRecords.isEmpty() ? null
-                : objectMapper.writeValueAsString(toolCallRecords);
+                    : objectMapper.writeValueAsString(toolCallRecords);
 
             chatService.addMessage(userId, conversationId, MessageRole.ASSISTANT,
-                formalResponse.toString(), reasoning, toolCallsJson);
+                    formalResponse.toString(), reasoning, toolCallsJson);
 
             Conversation conv = chatService.getConversation(userId, conversationId).orElse(null);
             if (conv == null) return;
@@ -341,7 +337,7 @@ public class ChatAgent {
                 try {
                     TitleGeneratorAgent titleGen = new TitleGeneratorAgent(modelFactory, promptLoader);
                     chatService.generateTitle(userId, conversationId,
-                        msgs -> titleGen.generateTitle(msgs));
+                            msgs -> titleGen.generateTitle(msgs));
                 } catch (Exception e) {
                     log.warn("Title generation failed: {}", e.getMessage());
                 }
@@ -359,28 +355,28 @@ public class ChatAgent {
 
     private ReActAgent createReActAgent(String userId, Long conversationId) {
         ToolExecutionContext toolContext = ToolExecutionContext.builder()
-            .register("userContext", new UserToolContext(userId))
-            .build();
+                .register("userContext", new UserToolContext(userId))
+                .build();
 
         String systemPrompt = buildSystemPrompt();
 
         return ReActAgent.builder()
-            .name("offer-catcher-chat")
-            .description("AI 面试助手，帮助用户准备技术面试")
-            .sysPrompt(systemPrompt)
-            .model(cachedModel)
-            .toolkit(cachedToolkit)
-            .toolExecutionContext(toolContext)
-            .maxIters(10)
-            .longTermMemory(new UserLongTermMemory(memoryService, retrievalAgent,
-                memoryAgent, sessionSummaryRepository, chatService,
-                workerExecutor, userId, conversationId))
-            .longTermMemoryMode(LongTermMemoryMode.STATIC_CONTROL)
-            .generateOptions(GenerateOptions.builder()
-                .temperature(0.3)
-                .maxTokens(2048)
-                .build())
-            .build();
+                .name("offer-catcher-chat")
+                .description("AI 面试助手，帮助用户准备技术面试")
+                .sysPrompt(systemPrompt)
+                .model(cachedModel)
+                .toolkit(cachedToolkit)
+                .toolExecutionContext(toolContext)
+                .maxIters(10)
+                .longTermMemory(new UserLongTermMemory(memoryService, retrievalAgent,
+                        memoryAgent, sessionSummaryRepository, chatService,
+                        workerExecutor, userId, conversationId))
+                .longTermMemoryMode(LongTermMemoryMode.STATIC_CONTROL)
+                .generateOptions(GenerateOptions.builder()
+                        .temperature(0.3)
+                        .maxTokens(2048)
+                        .build())
+                .build();
     }
 
     // ==================== System Prompt ====================

@@ -10,7 +10,8 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * InterviewQuestion 实体测试
@@ -30,8 +31,8 @@ class InterviewQuestionTest {
         @DisplayName("应成功创建面试题目")
         void shouldCreateQuestionSuccessfully() {
             InterviewQuestion question = InterviewQuestion.create(
-                QUESTION_ID, QUESTION_HASH, QUESTION_TEXT, "knowledge", DifficultyLevel.MEDIUM,
-                List.of("Java", "多态", "继承")
+                    QUESTION_ID, QUESTION_HASH, QUESTION_TEXT, "knowledge", DifficultyLevel.MEDIUM,
+                    List.of("Java", "多态", "继承")
             );
 
             assertThat(question.getQuestionId()).isEqualTo(QUESTION_ID);
@@ -46,24 +47,24 @@ class InterviewQuestionTest {
         @DisplayName("questionId 为空应抛出异常")
         void shouldThrowExceptionWhenQuestionIdIsNull() {
             assertThatThrownBy(() -> InterviewQuestion.create(null, QUESTION_HASH, QUESTION_TEXT, "knowledge", DifficultyLevel.MEDIUM, List.of()))
-                .isInstanceOf(DomainException.class)
-                .hasMessageContaining("questionId");
+                    .isInstanceOf(DomainException.class)
+                    .hasMessageContaining("questionId");
         }
 
         @Test
         @DisplayName("questionHash 为空应抛出异常")
         void shouldThrowExceptionWhenQuestionHashIsBlank() {
             assertThatThrownBy(() -> InterviewQuestion.create(QUESTION_ID, null, QUESTION_TEXT, "knowledge", DifficultyLevel.MEDIUM, List.of()))
-                .isInstanceOf(DomainException.class)
-                .hasMessageContaining("questionHash");
+                    .isInstanceOf(DomainException.class)
+                    .hasMessageContaining("questionHash");
         }
 
         @Test
         @DisplayName("questionText 为空应抛出异常")
         void shouldThrowExceptionWhenQuestionTextIsNull() {
             assertThatThrownBy(() -> InterviewQuestion.create(QUESTION_ID, QUESTION_HASH, null, "knowledge", DifficultyLevel.MEDIUM, List.of()))
-                .isInstanceOf(DomainException.class)
-                .hasMessageContaining("questionText");
+                    .isInstanceOf(DomainException.class)
+                    .hasMessageContaining("questionText");
         }
     }
 
@@ -101,8 +102,8 @@ class InterviewQuestionTest {
             InterviewQuestion question = InterviewQuestion.create(QUESTION_ID, QUESTION_HASH, QUESTION_TEXT, "knowledge", DifficultyLevel.MEDIUM, List.of());
 
             assertThatThrownBy(() -> question.answer("答案", 101, "反馈"))
-                .isInstanceOf(DomainException.class)
-                .hasMessageContaining("评分");
+                    .isInstanceOf(DomainException.class)
+                    .hasMessageContaining("评分");
         }
 
         @Test
@@ -112,8 +113,8 @@ class InterviewQuestionTest {
             question.answer("答案1", 80, "反馈1");
 
             assertThatThrownBy(() -> question.answer("答案2", 90, "反馈2"))
-                .isInstanceOf(InvalidStateException.class)
-                .hasMessageContaining("已经回答");
+                    .isInstanceOf(InvalidStateException.class)
+                    .hasMessageContaining("已经回答");
         }
     }
 
@@ -139,7 +140,7 @@ class InterviewQuestionTest {
             question.answer("答案", 80, "反馈");
 
             assertThatThrownBy(() -> question.skip())
-                .isInstanceOf(InvalidStateException.class);
+                    .isInstanceOf(InvalidStateException.class);
         }
     }
 

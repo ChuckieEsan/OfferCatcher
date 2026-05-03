@@ -20,14 +20,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Import({InterviewSessionRepositoryImpl.class})
 class InterviewSessionRepositoryImplTest {
 
-    @Autowired InterviewSessionRepositoryImpl repo;
-    @Autowired InterviewSessionJpaRepository jpaRepo;
+    @Autowired
+    InterviewSessionRepositoryImpl repo;
+    @Autowired
+    InterviewSessionJpaRepository jpaRepo;
 
     @Test
     @DisplayName("save 应持久化面试会话")
     void save() {
         InterviewSession s = InterviewSession.create("user-1", "字节跳动", "Java 后端",
-            DifficultyLevel.MEDIUM, 5);
+                DifficultyLevel.MEDIUM, 5);
         repo.save(s);
 
         Optional<InterviewSessionJpaEntity> saved = jpaRepo.findById(s.getSessionId());
@@ -40,7 +42,7 @@ class InterviewSessionRepositoryImplTest {
     @DisplayName("findById 应重建完整 InterviewSession")
     void findById() {
         InterviewSession s = InterviewSession.create("user-1", "阿里", "架构师",
-            DifficultyLevel.HARD, 3);
+                DifficultyLevel.HARD, 3);
         repo.save(s);
 
         Optional<InterviewSession> result = repo.findById(s.getSessionId());
@@ -64,11 +66,11 @@ class InterviewSessionRepositoryImplTest {
     @DisplayName("findByUserIdAndStatus 应按状态过滤")
     void findByUserIdAndStatus() {
         InterviewSession active = InterviewSession.create("user-1", "阿里", "Java",
-            DifficultyLevel.MEDIUM, 3);
+                DifficultyLevel.MEDIUM, 3);
         repo.save(active);
 
         InterviewSession paused = InterviewSession.create("user-1", "字节", "Go",
-            DifficultyLevel.EASY, 5);
+                DifficultyLevel.EASY, 5);
         paused.pause();
         repo.save(paused);
 
@@ -81,7 +83,7 @@ class InterviewSessionRepositoryImplTest {
     @DisplayName("deleteById 应删除且验证所有权")
     void deleteById() {
         InterviewSession s = InterviewSession.create("user-1", "阿里", "Java",
-            DifficultyLevel.MEDIUM, 3);
+                DifficultyLevel.MEDIUM, 3);
         repo.save(s);
 
         repo.deleteById(s.getSessionId(), "user-1");

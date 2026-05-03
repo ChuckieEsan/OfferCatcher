@@ -16,7 +16,7 @@ import java.util.List;
 
 /**
  * 对话标题生成 Agent
- *
+ * <p>
  * 分析对话内容，生成简洁标题（不超过 20 字）。
  * 对应 Python: app/application/agents/title_generator/agent.py
  */
@@ -40,21 +40,21 @@ public class TitleGeneratorAgent {
 
         String conversationContent = buildConversationContent(messages);
         String prompt = promptLoader.render("title_generator.md",
-            "conversation_content", conversationContent);
+                "conversation_content", conversationContent);
 
         ReActAgent agent = ReActAgent.builder()
-            .name("title-generator")
-            .model(llm)
-            .maxIters(0)
-            .generateOptions(GenerateOptions.builder()
-                .temperature(0.3)
-                .maxTokens(50)
-                .build())
-            .build();
+                .name("title-generator")
+                .model(llm)
+                .maxIters(0)
+                .generateOptions(GenerateOptions.builder()
+                        .temperature(0.3)
+                        .maxTokens(50)
+                        .build())
+                .build();
 
         try {
             Msg response = agent.call(List.of(
-                Msg.builder().role(MsgRole.USER).textContent(prompt).build()
+                    Msg.builder().role(MsgRole.USER).textContent(prompt).build()
             )).block();
 
             String title = response != null ? response.getTextContent().trim() : "新对话";

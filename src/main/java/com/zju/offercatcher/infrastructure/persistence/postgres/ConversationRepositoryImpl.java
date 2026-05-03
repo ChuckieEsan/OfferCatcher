@@ -22,7 +22,7 @@ public class ConversationRepositoryImpl implements ConversationRepository {
     private final MessageJpaRepository messageJpaRepository;
 
     public ConversationRepositoryImpl(ConversationJpaRepository conversationJpaRepository,
-                                       MessageJpaRepository messageJpaRepository) {
+                                      MessageJpaRepository messageJpaRepository) {
         this.conversationJpaRepository = conversationJpaRepository;
         this.messageJpaRepository = messageJpaRepository;
     }
@@ -32,14 +32,14 @@ public class ConversationRepositoryImpl implements ConversationRepository {
         int offset = Math.max(0, page - 1) * size;
         List<ConversationJpaEntity> entities = conversationJpaRepository.findByUserIdPaginated(userId, size, offset);
         return entities.stream()
-            .map(this::loadConversationWithMessages)
-            .toList();
+                .map(this::loadConversationWithMessages)
+                .toList();
     }
 
     @Override
     public Optional<Conversation> findById(Long conversationId) {
         return conversationJpaRepository.findByConversationId(conversationId)
-            .map(this::loadConversationWithMessages);
+                .map(this::loadConversationWithMessages);
     }
 
     @Override
@@ -47,8 +47,8 @@ public class ConversationRepositoryImpl implements ConversationRepository {
         int offset = Math.max(0, page - 1) * size;
         List<ConversationJpaEntity> entities = conversationJpaRepository.findByUserIdAndStatusPaginated(userId, status, size, offset);
         return entities.stream()
-            .map(this::loadConversationWithMessages)
-            .toList();
+                .map(this::loadConversationWithMessages)
+                .toList();
     }
 
     @Override
@@ -60,9 +60,9 @@ public class ConversationRepositoryImpl implements ConversationRepository {
         Long conversationId = conversation.getConversationId();
 
         List<MessageJpaEntity> messageEntities = conversation.getMessages()
-            .stream()
-            .map(m -> MessageJpaEntity.fromDomain(m, conversationId))
-            .toList();
+                .stream()
+                .map(m -> MessageJpaEntity.fromDomain(m, conversationId))
+                .toList();
         messageJpaRepository.saveAll(messageEntities);
     }
 
@@ -94,16 +94,16 @@ public class ConversationRepositoryImpl implements ConversationRepository {
     private Conversation loadConversationWithMessages(ConversationJpaEntity entity) {
         List<MessageJpaEntity> messageEntities = messageJpaRepository.findByConversationId(entity.getConversationId());
         List<Message> messages = messageEntities.stream()
-            .map(MessageJpaEntity::toDomain)
-            .toList();
+                .map(MessageJpaEntity::toDomain)
+                .toList();
         return Conversation.rebuild(
-            entity.getConversationId(),
-            entity.getUserId(),
-            entity.getTitle(),
-            entity.getStatus(),
-            messages,
-            entity.getCreatedAt(),
-            entity.getUpdatedAt()
+                entity.getConversationId(),
+                entity.getUserId(),
+                entity.getTitle(),
+                entity.getStatus(),
+                messages,
+                entity.getCreatedAt(),
+                entity.getUpdatedAt()
         );
     }
 }

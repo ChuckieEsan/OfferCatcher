@@ -8,7 +8,7 @@ import java.util.Map;
 
 /**
  * Qdrant Payload 转换器
- *
+ * <p>
  * 极简设计：只转换 userId 和 visibility 用于向量搜索预过滤。
  * 元数据从 PostgreSQL 读取，不从 Qdrant Payload 读取。
  */
@@ -26,13 +26,13 @@ public final class QdrantPayloadMapper {
 
         // 用户归属（用于预过滤私有题目）
         payload.put(QdrantPayloadFields.USER_ID, Value.newBuilder()
-            .setStringValue(question.getUserId())
-            .build());
+                .setStringValue(question.getUserId())
+                .build());
 
         // 可见性（用于预过滤公共/私有题目）
         payload.put(QdrantPayloadFields.VISIBILITY, Value.newBuilder()
-            .setStringValue(question.getVisibility().getValue())
-            .build());
+                .setStringValue(question.getVisibility().getValue())
+                .build());
 
         return payload;
     }

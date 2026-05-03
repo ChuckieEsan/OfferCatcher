@@ -22,9 +22,9 @@ import java.util.stream.Collectors;
 
 /**
  * Question Repository 实现
- *
+ * <p>
  * 整合 Qdrant（向量检索）、PostgreSQL（元数据存储）和 Neo4j（知识图谱）。
- *
+ * <p>
  * 设计原则：
  * - Qdrant 存 embedding + userId + visibility（用于向量检索和预过滤）
  * - PostgreSQL 存所有元数据
@@ -60,7 +60,7 @@ public class QdrantQuestionRepositoryImpl implements QuestionRepository {
 
     @Override
     public List<QuestionWithScore> searchUserVisible(String userId, float[] queryVector,
-                                                      Map<String, Object> filters, int limit) {
+                                                     Map<String, Object> filters, int limit) {
         List<VectorSearchHit> hits = vectorStore.search(queryVector, userId, limit);
 
         if (hits.isEmpty()) {
@@ -68,26 +68,26 @@ public class QdrantQuestionRepositoryImpl implements QuestionRepository {
         }
 
         List<Long> ids = hits.stream()
-            .map(hit -> Long.parseLong(hit.id()))
-            .toList();
+                .map(hit -> Long.parseLong(hit.id()))
+                .toList();
 
         List<QuestionJpaEntity> entities = jpaRepository.findByIds(ids);
         Map<Long, Question> questionMap = entities.stream()
-            .map(QuestionJpaEntity::toDomain)
-            .collect(Collectors.toMap(Question::getId, q -> q));
+                .map(QuestionJpaEntity::toDomain)
+                .collect(Collectors.toMap(Question::getId, q -> q));
 
         return hits.stream()
-            .map(hit -> {
-                Long id = Long.parseLong(hit.id());
-                Question question = questionMap.get(id);
-                if (question == null) {
-                    log.warn("Question not found in PostgreSQL: id={}", id);
-                    return null;
-                }
-                return new QuestionWithScore(question, hit.score());
-            })
-            .filter(Objects::nonNull)
-            .toList();
+                .map(hit -> {
+                    Long id = Long.parseLong(hit.id());
+                    Question question = questionMap.get(id);
+                    if (question == null) {
+                        log.warn("Question not found in PostgreSQL: id={}", id);
+                        return null;
+                    }
+                    return new QuestionWithScore(question, hit.score());
+                })
+                .filter(Objects::nonNull)
+                .toList();
     }
 
     @Override
@@ -99,22 +99,22 @@ public class QdrantQuestionRepositoryImpl implements QuestionRepository {
         }
 
         List<Long> ids = hits.stream()
-            .map(hit -> Long.parseLong(hit.id()))
-            .toList();
+                .map(hit -> Long.parseLong(hit.id()))
+                .toList();
 
         List<QuestionJpaEntity> entities = jpaRepository.findByIds(ids);
         Map<Long, Question> questionMap = entities.stream()
-            .map(QuestionJpaEntity::toDomain)
-            .collect(Collectors.toMap(Question::getId, q -> q));
+                .map(QuestionJpaEntity::toDomain)
+                .collect(Collectors.toMap(Question::getId, q -> q));
 
         return hits.stream()
-            .map(hit -> {
-                Long id = Long.parseLong(hit.id());
-                Question question = questionMap.get(id);
-                return question != null ? new QuestionWithScore(question, hit.score()) : null;
-            })
-            .filter(Objects::nonNull)
-            .toList();
+                .map(hit -> {
+                    Long id = Long.parseLong(hit.id());
+                    Question question = questionMap.get(id);
+                    return question != null ? new QuestionWithScore(question, hit.score()) : null;
+                })
+                .filter(Objects::nonNull)
+                .toList();
     }
 
     @Override
@@ -126,22 +126,22 @@ public class QdrantQuestionRepositoryImpl implements QuestionRepository {
         }
 
         List<Long> ids = hits.stream()
-            .map(hit -> Long.parseLong(hit.id()))
-            .toList();
+                .map(hit -> Long.parseLong(hit.id()))
+                .toList();
 
         List<QuestionJpaEntity> entities = jpaRepository.findByIds(ids);
         Map<Long, Question> questionMap = entities.stream()
-            .map(QuestionJpaEntity::toDomain)
-            .collect(Collectors.toMap(Question::getId, q -> q));
+                .map(QuestionJpaEntity::toDomain)
+                .collect(Collectors.toMap(Question::getId, q -> q));
 
         return hits.stream()
-            .map(hit -> {
-                Long id = Long.parseLong(hit.id());
-                Question question = questionMap.get(id);
-                return question != null ? new QuestionWithScore(question, hit.score()) : null;
-            })
-            .filter(Objects::nonNull)
-            .toList();
+                .map(hit -> {
+                    Long id = Long.parseLong(hit.id());
+                    Question question = questionMap.get(id);
+                    return question != null ? new QuestionWithScore(question, hit.score()) : null;
+                })
+                .filter(Objects::nonNull)
+                .toList();
     }
 
     @Override
@@ -154,21 +154,21 @@ public class QdrantQuestionRepositoryImpl implements QuestionRepository {
     @Override
     public Optional<Question> findById(Long id) {
         return jpaRepository.findById(id)
-            .map(QuestionJpaEntity::toDomain);
+                .map(QuestionJpaEntity::toDomain);
     }
 
     @Override
     public Optional<Question> findByQuestionHash(String questionHash) {
         return jpaRepository.findByQuestionHash(questionHash)
-            .map(QuestionJpaEntity::toDomain);
+                .map(QuestionJpaEntity::toDomain);
     }
 
     @Override
     public List<Question> findByIds(List<Long> ids) {
         return jpaRepository.findByIds(ids)
-            .stream()
-            .map(QuestionJpaEntity::toDomain)
-            .toList();
+                .stream()
+                .map(QuestionJpaEntity::toDomain)
+                .toList();
     }
 
     @Override
@@ -213,8 +213,8 @@ public class QdrantQuestionRepositoryImpl implements QuestionRepository {
         vectorStore.updateVisibility(id, Visibility.PUBLIC);
 
         jpaRepository.findById(id)
-            .map(QuestionJpaEntity::toDomain)
-            .ifPresent(this::syncToNeo4j);
+                .map(QuestionJpaEntity::toDomain)
+                .ifPresent(this::syncToNeo4j);
     }
 
     // ==================== 批量操作 ====================
@@ -223,8 +223,8 @@ public class QdrantQuestionRepositoryImpl implements QuestionRepository {
     @Transactional
     public void saveAll(List<Question> questions) {
         List<QuestionJpaEntity> entities = questions.stream()
-            .map(QuestionJpaEntity::fromDomain)
-            .toList();
+                .map(QuestionJpaEntity::fromDomain)
+                .toList();
         jpaRepository.saveAll(entities);
 
         if (embeddingAdapter.isInitialized()) {
@@ -238,10 +238,11 @@ public class QdrantQuestionRepositoryImpl implements QuestionRepository {
             } catch (RuntimeException e) {
                 // 部分 upsert 成功 → PG 事务回滚，需清理已写入的 Qdrant entries
                 log.error("Qdrant batch upsert failed after {} of {} questions, cleaning up stale entries",
-                    upsertedIds.size(), questions.size(), e);
+                        upsertedIds.size(), questions.size(), e);
                 if (!upsertedIds.isEmpty()) {
-                    try { vectorStore.deleteBatch(upsertedIds); }
-                    catch (RuntimeException cleanupE) {
+                    try {
+                        vectorStore.deleteBatch(upsertedIds);
+                    } catch (RuntimeException cleanupE) {
                         log.error("Cleanup of stale Qdrant entries also failed: {}", cleanupE.getMessage());
                     }
                 }
@@ -260,18 +261,18 @@ public class QdrantQuestionRepositoryImpl implements QuestionRepository {
     public List<Question> findByUserId(String userId, int page, int size) {
         int offset = Math.max(0, page - 1) * size;
         return jpaRepository.findByUserIdPaginated(userId, size, offset)
-            .stream()
-            .map(QuestionJpaEntity::toDomain)
-            .toList();
+                .stream()
+                .map(QuestionJpaEntity::toDomain)
+                .toList();
     }
 
     @Override
     public List<Question> findPublicQuestions(int page, int size) {
         int offset = Math.max(0, page - 1) * size;
         return jpaRepository.findPublicQuestionsPaginated(size, offset)
-            .stream()
-            .map(QuestionJpaEntity::toDomain)
-            .toList();
+                .stream()
+                .map(QuestionJpaEntity::toDomain)
+                .toList();
     }
 
     @Override
@@ -282,33 +283,33 @@ public class QdrantQuestionRepositoryImpl implements QuestionRepository {
     @Override
     public List<Question> findByKeyword(String userId, String keyword, int page, int size) {
         return jpaRepository.searchPrivateByKeyword(userId, keyword)
-            .stream()
-            .map(QuestionJpaEntity::toDomain)
-            .toList();
+                .stream()
+                .map(QuestionJpaEntity::toDomain)
+                .toList();
     }
 
     @Override
     public List<Question> findByCompanyForUser(String userId, String company, int page, int size) {
         return jpaRepository.findByCompanyForUser(userId, company)
-            .stream()
-            .map(QuestionJpaEntity::toDomain)
-            .toList();
+                .stream()
+                .map(QuestionJpaEntity::toDomain)
+                .toList();
     }
 
     @Override
     public List<Question> findByCoreEntityLike(String userId, String keyword, int limit) {
         return jpaRepository.findByCoreEntityLike(userId, keyword, limit)
-            .stream()
-            .map(QuestionJpaEntity::toDomain)
-            .toList();
+                .stream()
+                .map(QuestionJpaEntity::toDomain)
+                .toList();
     }
 
     @Override
     public List<Question> findByCoreEntitySimilar(String userId, String keyword, int limit) {
         return jpaRepository.findByCoreEntitySimilar(userId, keyword, limit)
-            .stream()
-            .map(QuestionJpaEntity::toDomain)
-            .toList();
+                .stream()
+                .map(QuestionJpaEntity::toDomain)
+                .toList();
     }
 
     @Override
@@ -341,6 +342,7 @@ public class QdrantQuestionRepositoryImpl implements QuestionRepository {
 
     /**
      * 清理 Qdrant 中在 PostgreSQL 已不存在的 stale entries。
+     *
      * @return 被清理的 stale entry 数量
      */
     public int syncQdrantWithPostgres() {
@@ -348,18 +350,18 @@ public class QdrantQuestionRepositoryImpl implements QuestionRepository {
         Set<Long> pgIds = new HashSet<>(jpaRepository.findAllIds());
 
         List<Long> staleIds = qdrantIds.stream()
-            .filter(id -> !pgIds.contains(id))
-            .toList();
+                .filter(id -> !pgIds.contains(id))
+                .toList();
 
         if (staleIds.isEmpty()) {
             log.info("Qdrant-PG sync: no stale entries found (qdrant={}, pg={})",
-                qdrantIds.size(), pgIds.size());
+                    qdrantIds.size(), pgIds.size());
             return 0;
         }
 
         log.warn("Qdrant-PG sync: found {} stale entries (qdrant={}, pg={}), ids={}",
-            staleIds.size(), qdrantIds.size(), pgIds.size(),
-            staleIds.stream().map(Object::toString).limit(20).toList());
+                staleIds.size(), qdrantIds.size(), pgIds.size(),
+                staleIds.stream().map(Object::toString).limit(20).toList());
 
         vectorStore.deleteBatch(staleIds);
         return staleIds.size();
@@ -370,14 +372,14 @@ public class QdrantQuestionRepositoryImpl implements QuestionRepository {
     private void syncToNeo4j(Question question) {
         try {
             neo4jClient.recordQuestionEntities(
-                question.getCompany(),
-                question.getCoreEntities()
+                    question.getCompany(),
+                    question.getCoreEntities()
             );
             log.debug("Synced to Neo4j: question={}, company={}",
-                question.getId(), question.getCompany());
+                    question.getId(), question.getCompany());
         } catch (Exception e) {
             log.warn("Failed to sync question {} to Neo4j: {}",
-                question.getId(), e.getMessage());
+                    question.getId(), e.getMessage());
         }
     }
 }

@@ -26,19 +26,21 @@
 </mastery_levels>
 
 <state_machine_rules>
+
 - 当前等级为 LEVEL_0，分数大于等于 60 -> 升级到 LEVEL_1
 - 当前等级为 LEVEL_1，分数大于等于 85 -> 升级到 LEVEL_2
 - 当前等级为 LEVEL_2，保持不变
 - 分数小于 60 -> 保持当前等级
-</state_machine_rules>
+  </state_machine_rules>
 
 <question_info>
+
 - 题目：{{ question_text }}
 - 标准答案：{{ standard_answer }}
 - 当前熟练度等级：{{ current_level }}
 - 公司：{{ company }}
 - 岗位：{{ position }}
-</question_info>
+  </question_info>
 
 <user_answer>
 {{ user_answer }}

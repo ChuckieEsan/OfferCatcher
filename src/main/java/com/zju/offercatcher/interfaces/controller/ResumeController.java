@@ -23,7 +23,7 @@ public class ResumeController {
     private final ResumeAnalysisAgent analysisAgent;
 
     public ResumeController(ResumeParseService parseService,
-                             ResumeAnalysisAgent analysisAgent) {
+                            ResumeAnalysisAgent analysisAgent) {
         this.parseService = parseService;
         this.analysisAgent = analysisAgent;
     }

@@ -15,7 +15,7 @@ import java.util.List;
 
 /**
  * Memory JPA 实体
- *
+ * <p>
  * 存储用户记忆主文档和引用文件列表。
  */
 @Entity

@@ -1,7 +1,6 @@
 package com.zju.offercatcher.application.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zju.offercatcher.infrastructure.adapters.cache.CacheAdapter;
 import com.zju.offercatcher.infrastructure.common.CacheKeys;
@@ -13,7 +12,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 public class StatsApplicationService {
@@ -53,7 +51,7 @@ public class StatsApplicationService {
             }
 
             OverviewStats stats = new OverviewStats(all.size(), companies.size(), positions.size(),
-                byType, byMastery, hasAnswer, noAnswer);
+                    byType, byMastery, hasAnswer, noAnswer);
             return toJson(stats);
         }, STATS_TTL);
 
@@ -67,7 +65,7 @@ public class StatsApplicationService {
             Map<String, int[]> companyData = new LinkedHashMap<>();
             for (QuestionJpaEntity q : all) {
                 String company = q.getCompany() != null && !q.getCompany().isBlank()
-                    ? q.getCompany() : "未知";
+                        ? q.getCompany() : "未知";
                 int[] data = companyData.computeIfAbsent(company, k -> new int[3]);
                 data[0]++;
                 if (q.getMasteryLevel().getLevel() >= 2) data[1]++;
@@ -75,9 +73,9 @@ public class StatsApplicationService {
             }
 
             List<CompanyStats> stats = companyData.entrySet().stream()
-                .map(e -> new CompanyStats(e.getKey(), e.getValue()[0], e.getValue()[1], e.getValue()[2]))
-                .sorted((a, b) -> Integer.compare(b.count(), a.count()))
-                .toList();
+                    .map(e -> new CompanyStats(e.getKey(), e.getValue()[0], e.getValue()[1], e.getValue()[2]))
+                    .sorted((a, b) -> Integer.compare(b.count(), a.count()))
+                    .toList();
             return toJson(stats);
         }, STATS_TTL);
 
@@ -91,14 +89,14 @@ public class StatsApplicationService {
             Map<String, Integer> positionData = new LinkedHashMap<>();
             for (QuestionJpaEntity q : all) {
                 String position = q.getPosition() != null && !q.getPosition().isBlank()
-                    ? q.getPosition() : "未知";
+                        ? q.getPosition() : "未知";
                 positionData.merge(position, 1, Integer::sum);
             }
 
             List<PositionStats> stats = positionData.entrySet().stream()
-                .map(e -> new PositionStats(e.getKey(), e.getValue()))
-                .sorted((a, b) -> Integer.compare(b.count(), a.count()))
-                .toList();
+                    .map(e -> new PositionStats(e.getKey(), e.getValue()))
+                    .sorted((a, b) -> Integer.compare(b.count(), a.count()))
+                    .toList();
             return toJson(stats);
         }, STATS_TTL);
 
@@ -124,10 +122,10 @@ public class StatsApplicationService {
             }
 
             List<EntityStats> stats = entityData.entrySet().stream()
-                .map(e -> new EntityStats(e.getKey(), e.getValue()))
-                .sorted((a, b) -> Integer.compare(b.count(), a.count()))
-                .limit(limit)
-                .toList();
+                    .map(e -> new EntityStats(e.getKey(), e.getValue()))
+                    .sorted((a, b) -> Integer.compare(b.count(), a.count()))
+                    .limit(limit)
+                    .toList();
             return toJson(stats);
         }, STATS_TTL);
 
@@ -150,9 +148,9 @@ public class StatsApplicationService {
             }
 
             List<ClusterStats> stats = clusterData.entrySet().stream()
-                .map(e -> new ClusterStats(e.getKey(), e.getValue()))
-                .sorted((a, b) -> Integer.compare(b.count(), a.count()))
-                .toList();
+                    .map(e -> new ClusterStats(e.getKey(), e.getValue()))
+                    .sorted((a, b) -> Integer.compare(b.count(), a.count()))
+                    .toList();
             return toJson(stats);
         }, STATS_TTL);
 
@@ -180,7 +178,7 @@ public class StatsApplicationService {
         if (json == null) return List.of();
         try {
             return objectMapper.readValue(json,
-                objectMapper.getTypeFactory().constructCollectionType(List.class, elementClass));
+                    objectMapper.getTypeFactory().constructCollectionType(List.class, elementClass));
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Failed to deserialize stats list", e);
         }

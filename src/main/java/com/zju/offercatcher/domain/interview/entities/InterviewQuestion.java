@@ -1,5 +1,7 @@
 package com.zju.offercatcher.domain.interview.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.zju.offercatcher.domain.shared.enums.DifficultyLevel;
 import com.zju.offercatcher.domain.shared.enums.InterviewPhase;
 import com.zju.offercatcher.domain.shared.enums.QuestionStatus;
@@ -11,14 +13,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-
 /**
  * 面试题目实体
- *
+ * <p>
  * InterviewQuestion 是 InterviewSession 聚合内的实体，表示面试中的单道题目。
- *
+ * <p>
  * 设计原则：
  * - 通过 InterviewSession 创建
  * - 包含答题状态、评分、反馈
@@ -52,43 +51,43 @@ public class InterviewQuestion {
      * 创建面试题目（工厂方法）
      */
     public static InterviewQuestion create(Long questionId, String questionHash, String questionText,
-                                            String questionType, DifficultyLevel difficulty,
-                                            List<String> knowledgePoints) {
+                                           String questionType, DifficultyLevel difficulty,
+                                           List<String> knowledgePoints) {
         validateQuestionId(questionId);
         validateQuestionHash(questionHash);
         validateQuestionText(questionText);
         return new InterviewQuestion(questionId, questionHash, questionText, questionType, difficulty,
-            knowledgePoints, null, null, null, null, null,
-            new ArrayList<>(), 0, new ArrayList<>(), QuestionStatus.PENDING, null, null);
+                knowledgePoints, null, null, null, null, null,
+                new ArrayList<>(), 0, new ArrayList<>(), QuestionStatus.PENDING, null, null);
     }
 
     /**
      * 从持久化存储重建（用于 Repository 实现）
      */
     public static InterviewQuestion rebuild(Long questionId, String questionHash, String questionText,
-                                             String questionType, DifficultyLevel difficulty,
-                                             List<String> knowledgePoints,
-                                             String userAnswer, Integer score, String feedback,
-                                             Integer masteryBefore, Integer masteryAfter,
-                                             List<String> followUps, int currentFollowUpIdx,
-                                             List<String> hintsGiven, QuestionStatus status,
-                                             LocalDateTime answeredAt) {
+                                            String questionType, DifficultyLevel difficulty,
+                                            List<String> knowledgePoints,
+                                            String userAnswer, Integer score, String feedback,
+                                            Integer masteryBefore, Integer masteryAfter,
+                                            List<String> followUps, int currentFollowUpIdx,
+                                            List<String> hintsGiven, QuestionStatus status,
+                                            LocalDateTime answeredAt) {
         return rebuild(questionId, questionHash, questionText, questionType, difficulty,
-            knowledgePoints, userAnswer, score, feedback, masteryBefore, masteryAfter,
-            followUps, currentFollowUpIdx, hintsGiven, status, answeredAt, null);
+                knowledgePoints, userAnswer, score, feedback, masteryBefore, masteryAfter,
+                followUps, currentFollowUpIdx, hintsGiven, status, answeredAt, null);
     }
 
     public static InterviewQuestion rebuild(Long questionId, String questionHash, String questionText,
-                                             String questionType, DifficultyLevel difficulty,
-                                             List<String> knowledgePoints,
-                                             String userAnswer, Integer score, String feedback,
-                                             Integer masteryBefore, Integer masteryAfter,
-                                             List<String> followUps, int currentFollowUpIdx,
-                                             List<String> hintsGiven, QuestionStatus status,
-                                             LocalDateTime answeredAt, InterviewPhase phase) {
+                                            String questionType, DifficultyLevel difficulty,
+                                            List<String> knowledgePoints,
+                                            String userAnswer, Integer score, String feedback,
+                                            Integer masteryBefore, Integer masteryAfter,
+                                            List<String> followUps, int currentFollowUpIdx,
+                                            List<String> hintsGiven, QuestionStatus status,
+                                            LocalDateTime answeredAt, InterviewPhase phase) {
         InterviewQuestion q = new InterviewQuestion(questionId, questionHash, questionText, questionType,
-            difficulty, knowledgePoints, userAnswer, score, feedback, masteryBefore, masteryAfter,
-            followUps, currentFollowUpIdx, hintsGiven, status, answeredAt, null);
+                difficulty, knowledgePoints, userAnswer, score, feedback, masteryBefore, masteryAfter,
+                followUps, currentFollowUpIdx, hintsGiven, status, answeredAt, null);
         q.phase = phase;
         return q;
     }
@@ -99,8 +98,8 @@ public class InterviewQuestion {
      * 回答题目
      *
      * @param userAnswer 用户答案
-     * @param score 评分 (0-100)
-     * @param feedback AI 反馈
+     * @param score      评分 (0-100)
+     * @param feedback   AI 反馈
      */
     public void answer(String userAnswer, int score, String feedback) {
         if (status.isAnswered()) {

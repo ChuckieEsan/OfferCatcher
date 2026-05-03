@@ -1,6 +1,9 @@
 package com.zju.offercatcher.infrastructure.persistence.postgres;
 
-import com.zju.offercatcher.domain.shared.enums.*;
+import com.zju.offercatcher.domain.shared.enums.MasteryLevel;
+import com.zju.offercatcher.domain.shared.enums.QuestionType;
+import com.zju.offercatcher.domain.shared.enums.SourceType;
+import com.zju.offercatcher.domain.shared.enums.Visibility;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -10,11 +13,10 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Question JPA 实体
- *
+ * <p>
  * 存储题目所有元数据，与 Qdrant 中的向量关联。
  * Qdrant 只存 userId 和 visibility，其他元数据都在此实体中。
  */
@@ -107,22 +109,22 @@ public class QuestionJpaEntity {
      */
     public com.zju.offercatcher.domain.question.aggregates.Question toDomain() {
         return com.zju.offercatcher.domain.question.aggregates.Question.rebuild(
-            id,
-            questionHash,
-            userId,
-            questionText,
-            questionType,
-            company,
-            position,
-            coreEntities,
-            answer,
-            masteryLevel,
-            clusterIds,
-            new HashMap<>(),
-            visibility,
-            sourceType,
-            createdAt,
-            updatedAt
+                id,
+                questionHash,
+                userId,
+                questionText,
+                questionType,
+                company,
+                position,
+                coreEntities,
+                answer,
+                masteryLevel,
+                clusterIds,
+                new HashMap<>(),
+                visibility,
+                sourceType,
+                createdAt,
+                updatedAt
         );
     }
 

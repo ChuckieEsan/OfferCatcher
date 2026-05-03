@@ -26,21 +26,21 @@ public class FavoriteRepositoryImpl implements FavoriteRepository {
     public List<Favorite> findByUserId(String userId, int page, int size) {
         int offset = Math.max(0, page - 1) * size;
         return jpaRepository.findByUserIdPaginated(userId, size, offset)
-            .stream()
-            .map(FavoriteJpaEntity::toDomain)
-            .toList();
+                .stream()
+                .map(FavoriteJpaEntity::toDomain)
+                .toList();
     }
 
     @Override
     public Optional<Favorite> findByUserIdAndQuestionId(String userId, Long questionId) {
         return jpaRepository.findByUserIdAndQuestionId(userId, questionId)
-            .map(FavoriteJpaEntity::toDomain);
+                .map(FavoriteJpaEntity::toDomain);
     }
 
     @Override
     public Optional<Favorite> findById(Long favoriteId) {
         return jpaRepository.findByFavoriteId(favoriteId)
-            .map(FavoriteJpaEntity::toDomain);
+                .map(FavoriteJpaEntity::toDomain);
     }
 
     @Override

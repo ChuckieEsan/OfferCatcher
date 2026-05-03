@@ -7,7 +7,6 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 @Repository
@@ -40,10 +39,10 @@ public class ExtractTaskRepositoryImpl {
             entities = jpaRepo.findByUserId(userId);
         }
         return entities.stream()
-            .skip(offset)
-            .limit(limit)
-            .map(ExtractTaskJpaEntity::toDomain)
-            .toList();
+                .skip(offset)
+                .limit(limit)
+                .map(ExtractTaskJpaEntity::toDomain)
+                .toList();
     }
 
     public int countByUserId(String userId, String status) {
@@ -56,8 +55,8 @@ public class ExtractTaskRepositoryImpl {
 
     public List<ExtractTask> findPendingTasks(int limit) {
         return jpaRepo.findPendingTasks(limit).stream()
-            .map(ExtractTaskJpaEntity::toDomain)
-            .toList();
+                .map(ExtractTaskJpaEntity::toDomain)
+                .toList();
     }
 
     @Transactional
@@ -72,7 +71,7 @@ public class ExtractTaskRepositoryImpl {
     @Transactional
     public ExtractTask updateResult(Long taskId, ExtractedQuestionItem result) {
         ExtractTaskJpaEntity entity = jpaRepo.findById(taskId)
-            .orElseThrow(() -> new IllegalArgumentException("Task not found: " + taskId));
+                .orElseThrow(() -> new IllegalArgumentException("Task not found: " + taskId));
         entity.setExtractedInterview(result);
         entity.setStatus(ExtractTaskStatus.COMPLETED);
         entity.setUpdatedAt(java.time.LocalDateTime.now());
@@ -83,7 +82,7 @@ public class ExtractTaskRepositoryImpl {
     public ExtractTask updateEdit(Long taskId, String userId, String company,
                                   String position, List<ExtractedQuestionItem.QuestionItem> questions) {
         ExtractTaskJpaEntity entity = jpaRepo.findByIdAndUserId(taskId, userId)
-            .orElse(null);
+                .orElse(null);
         if (entity == null || entity.getStatus() != ExtractTaskStatus.COMPLETED) {
             return null;
         }

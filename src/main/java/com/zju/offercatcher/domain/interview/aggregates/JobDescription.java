@@ -2,8 +2,8 @@ package com.zju.offercatcher.domain.interview.aggregates;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.zju.offercatcher.domain.interview.valueobjects.SkillRequirement;
-import com.zju.offercatcher.domain.shared.exception.DomainException;
 import com.zju.offercatcher.domain.shared.SnowflakeIdGenerator;
+import com.zju.offercatcher.domain.shared.exception.DomainException;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -12,7 +12,7 @@ import java.util.List;
 
 /**
  * 岗位描述（JD）聚合根
- *
+ * <p>
  * 存储原始 JD 文本和 LLM 解析后的结构化技能要求。
  * 一个 JD 可以被多次面试复用，关联一对一 InterviewSession。
  */
@@ -33,28 +33,28 @@ public class JobDescription {
         validate(userId, rawText);
         Long id = SnowflakeIdGenerator.generate();
         return new JobDescription(id, userId, rawText, new ArrayList<>(),
-            new ArrayList<>(), new ArrayList<>(), null, null, null, LocalDateTime.now());
+                new ArrayList<>(), new ArrayList<>(), null, null, null, LocalDateTime.now());
     }
 
     public static JobDescription rebuild(Long id, String userId, String rawText,
-                                          List<SkillRequirement> requiredSkills,
-                                          List<SkillRequirement> preferredSkills,
-                                          List<String> softSkills,
-                                          String company, String position,
-                                          String experienceRequirement,
-                                          LocalDateTime createdAt) {
+                                         List<SkillRequirement> requiredSkills,
+                                         List<SkillRequirement> preferredSkills,
+                                         List<String> softSkills,
+                                         String company, String position,
+                                         String experienceRequirement,
+                                         LocalDateTime createdAt) {
         return new JobDescription(id, userId, rawText,
-            requiredSkills != null ? new ArrayList<>(requiredSkills) : new ArrayList<>(),
-            preferredSkills != null ? new ArrayList<>(preferredSkills) : new ArrayList<>(),
-            softSkills != null ? new ArrayList<>(softSkills) : new ArrayList<>(),
-            company, position, experienceRequirement, createdAt);
+                requiredSkills != null ? new ArrayList<>(requiredSkills) : new ArrayList<>(),
+                preferredSkills != null ? new ArrayList<>(preferredSkills) : new ArrayList<>(),
+                softSkills != null ? new ArrayList<>(softSkills) : new ArrayList<>(),
+                company, position, experienceRequirement, createdAt);
     }
 
     public void updateParsedResult(List<SkillRequirement> requiredSkills,
-                                    List<SkillRequirement> preferredSkills,
-                                    List<String> softSkills,
-                                    String company, String position,
-                                    String experienceRequirement) {
+                                   List<SkillRequirement> preferredSkills,
+                                   List<String> softSkills,
+                                   String company, String position,
+                                   String experienceRequirement) {
         this.requiredSkills = requiredSkills != null ? requiredSkills : new ArrayList<>();
         this.preferredSkills = preferredSkills != null ? preferredSkills : new ArrayList<>();
         this.softSkills = softSkills != null ? softSkills : new ArrayList<>();
@@ -79,7 +79,7 @@ public class JobDescription {
             sb.append("必须掌握的技能：\n");
             for (SkillRequirement s : requiredSkills) {
                 sb.append("  - ").append(s.name())
-                    .append("（").append(s.level()).append("）");
+                        .append("（").append(s.level()).append("）");
                 if (s.evidence() != null && !s.evidence().isBlank()) {
                     sb.append("：").append(s.evidence());
                 }
@@ -90,7 +90,7 @@ public class JobDescription {
             sb.append("加分技能：\n");
             for (SkillRequirement s : preferredSkills) {
                 sb.append("  - ").append(s.name())
-                    .append("（").append(s.level()).append("）\n");
+                        .append("（").append(s.level()).append("）\n");
             }
         }
         if (!softSkills.isEmpty()) {
@@ -114,16 +114,45 @@ public class JobDescription {
 
     // ==================== Getters ====================
 
-    public Long getId() { return id; }
-    public String getUserId() { return userId; }
-    public String getRawText() { return rawText; }
-    public List<SkillRequirement> getRequiredSkills() { return Collections.unmodifiableList(requiredSkills); }
-    public List<SkillRequirement> getPreferredSkills() { return Collections.unmodifiableList(preferredSkills); }
-    public List<String> getSoftSkills() { return Collections.unmodifiableList(softSkills); }
-    public String getCompany() { return company; }
-    public String getPosition() { return position; }
-    public String getExperienceRequirement() { return experienceRequirement; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
+    public Long getId() {
+        return id;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public String getRawText() {
+        return rawText;
+    }
+
+    public List<SkillRequirement> getRequiredSkills() {
+        return Collections.unmodifiableList(requiredSkills);
+    }
+
+    public List<SkillRequirement> getPreferredSkills() {
+        return Collections.unmodifiableList(preferredSkills);
+    }
+
+    public List<String> getSoftSkills() {
+        return Collections.unmodifiableList(softSkills);
+    }
+
+    public String getCompany() {
+        return company;
+    }
+
+    public String getPosition() {
+        return position;
+    }
+
+    public String getExperienceRequirement() {
+        return experienceRequirement;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
 
     // ==================== Constructor ====================
 

@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
  */
 @Entity
 @Table(name = "messages", indexes = {
-    @Index(name = "idx_messages_conversation_created", columnList = "conversation_id, created_at")
+        @Index(name = "idx_messages_conversation_created", columnList = "conversation_id, created_at")
 })
 @Getter
 @Setter
@@ -56,7 +56,7 @@ public class MessageJpaEntity {
 
     public com.zju.offercatcher.domain.chat.entities.Message toDomain() {
         return com.zju.offercatcher.domain.chat.entities.Message.rebuild(
-            messageId, role, content, reasoning, toolCalls, createdAt
+                messageId, role, content, reasoning, toolCalls, createdAt
         );
     }
 }

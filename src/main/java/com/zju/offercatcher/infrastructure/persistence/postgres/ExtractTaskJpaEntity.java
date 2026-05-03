@@ -70,6 +70,6 @@ public class ExtractTaskJpaEntity {
 
     public ExtractTask toDomain() {
         return ExtractTask.rebuild(taskId, userId, sourceType, sourceContent,
-            sourceImages, status, extractedInterview, createdAt, updatedAt);
+                sourceImages, status, extractedInterview, createdAt, updatedAt);
     }
 }

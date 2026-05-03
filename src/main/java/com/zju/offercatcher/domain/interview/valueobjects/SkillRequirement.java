@@ -8,9 +8,9 @@ package com.zju.offercatcher.domain.interview.valueobjects;
  * @param evidence JD 原文证据
  */
 public record SkillRequirement(
-    String name,
-    String level,
-    String evidence
+        String name,
+        String level,
+        String evidence
 ) {
     public SkillRequirement {
         if (name == null || name.isBlank()) {

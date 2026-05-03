@@ -19,7 +19,7 @@ import java.util.Optional;
 
 /**
  * 答案生成 MQ Consumer
- *
+ * <p>
  * 消费 RabbitMQ 消息，调用 AnswerSpecialistAgent 异步生成标准答案。
  * 对应 Python: app/application/workers/answer_worker.py process_answer_task()
  */
@@ -34,8 +34,8 @@ public class AnswerTaskMQConsumer {
     private final MQMessageHelper messageHelper;
 
     public AnswerTaskMQConsumer(QuestionRepository questionRepository,
-                              AnswerSpecialistAgent answerAgent,
-                              MQMessageHelper messageHelper) {
+                                AnswerSpecialistAgent answerAgent,
+                                MQMessageHelper messageHelper) {
         this.questionRepository = questionRepository;
         this.answerAgent = answerAgent;
         this.messageHelper = messageHelper;
@@ -45,7 +45,7 @@ public class AnswerTaskMQConsumer {
     public void handle(MQTaskMessage task, Channel channel,
                        @Header(AmqpHeaders.DELIVERY_TAG) long deliveryTag,
                        @Header(value = "x-retry-count", required = false, defaultValue = "0") int retryCount)
-        throws IOException {
+            throws IOException {
 
         Long questionId = task.questionId();
         try {

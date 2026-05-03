@@ -4,8 +4,8 @@ import com.zju.offercatcher.application.agent.VisionExtractorAgent;
 import com.zju.offercatcher.domain.question.aggregates.ExtractTask;
 import com.zju.offercatcher.domain.question.aggregates.ExtractTaskStatus;
 import com.zju.offercatcher.domain.question.valueobjects.ExtractedQuestionItem;
-import com.zju.offercatcher.domain.shared.exception.NotFoundException;
 import com.zju.offercatcher.domain.shared.exception.InvalidStateException;
+import com.zju.offercatcher.domain.shared.exception.NotFoundException;
 import com.zju.offercatcher.infrastructure.persistence.postgres.ExtractTaskJpaEntity;
 import com.zju.offercatcher.infrastructure.persistence.postgres.ExtractTaskJpaRepository;
 import org.slf4j.Logger;
@@ -17,7 +17,7 @@ import java.util.List;
 
 /**
  * 提取任务应用服务。
- *
+ * <p>
  * 任务生命周期管理：提交 -> 处理 -> 编辑 -> 确认入库。
  * 对应 Python: app/application/services/extract_task_service.py
  */
@@ -31,8 +31,8 @@ public class ExtractTaskApplicationService {
     private final VisionExtractorAgent visionExtractor;
 
     public ExtractTaskApplicationService(ExtractTaskJpaRepository taskJpaRepo,
-                                          IngestFlowApplicationService ingestFlowApplicationService,
-                                          VisionExtractorAgent visionExtractor) {
+                                         IngestFlowApplicationService ingestFlowApplicationService,
+                                         VisionExtractorAgent visionExtractor) {
         this.taskJpaRepo = taskJpaRepo;
         this.ingestFlowApplicationService = ingestFlowApplicationService;
         this.visionExtractor = visionExtractor;
@@ -50,7 +50,7 @@ public class ExtractTaskApplicationService {
     @Transactional
     public ExtractTask processAndComplete(Long taskId, String userId) {
         ExtractTaskJpaEntity entity = taskJpaRepo.findByIdAndUserId(taskId, userId)
-            .orElseThrow(() -> new NotFoundException("ExtractTask", taskId));
+                .orElseThrow(() -> new NotFoundException("ExtractTask", taskId));
 
         ExtractTask task = entity.toDomain();
         task.startProcessing();
@@ -87,9 +87,9 @@ public class ExtractTaskApplicationService {
             entities = taskJpaRepo.findByUserId(userId);
         }
         return entities.stream()
-            .skip(offset).limit(pageSize)
-            .map(ExtractTaskJpaEntity::toDomain)
-            .toList();
+                .skip(offset).limit(pageSize)
+                .map(ExtractTaskJpaEntity::toDomain)
+                .toList();
     }
 
     public int count(String userId, String status) {
@@ -102,16 +102,16 @@ public class ExtractTaskApplicationService {
 
     public ExtractTask get(Long taskId, String userId) {
         return taskJpaRepo.findByIdAndUserId(taskId, userId)
-            .map(ExtractTaskJpaEntity::toDomain)
-            .orElseThrow(() -> new NotFoundException("ExtractTask", taskId));
+                .map(ExtractTaskJpaEntity::toDomain)
+                .orElseThrow(() -> new NotFoundException("ExtractTask", taskId));
     }
 
     @Transactional
     public ExtractTask edit(Long taskId, String userId,
-                             String company, String position,
-                             List<ExtractedQuestionItem.QuestionItem> questions) {
+                            String company, String position,
+                            List<ExtractedQuestionItem.QuestionItem> questions) {
         ExtractTaskJpaEntity entity = taskJpaRepo.findByIdAndUserId(taskId, userId)
-            .orElseThrow(() -> new NotFoundException("ExtractTask", taskId));
+                .orElseThrow(() -> new NotFoundException("ExtractTask", taskId));
 
         if (entity.getStatus() != ExtractTaskStatus.COMPLETED) {
             throw new InvalidStateException("Cannot edit from status: " + entity.getStatus().name());
@@ -125,7 +125,7 @@ public class ExtractTaskApplicationService {
     @Transactional
     public IngestFlowApplicationService.IngestResult confirm(Long taskId, String userId) {
         ExtractTaskJpaEntity entity = taskJpaRepo.findByIdAndUserId(taskId, userId)
-            .orElseThrow(() -> new NotFoundException("ExtractTask", taskId));
+                .orElseThrow(() -> new NotFoundException("ExtractTask", taskId));
 
         if (entity.getStatus() != ExtractTaskStatus.COMPLETED) {
             throw new InvalidStateException("Cannot confirm from status: " + entity.getStatus().name());
@@ -149,7 +149,7 @@ public class ExtractTaskApplicationService {
     @Transactional
     public void cancel(Long taskId, String userId) {
         ExtractTaskJpaEntity entity = taskJpaRepo.findByIdAndUserId(taskId, userId)
-            .orElseThrow(() -> new NotFoundException("ExtractTask", taskId));
+                .orElseThrow(() -> new NotFoundException("ExtractTask", taskId));
 
         ExtractTask task = entity.toDomain();
         task.cancel();

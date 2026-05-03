@@ -2,7 +2,7 @@ package com.zju.offercatcher.domain.shared.enums;
 
 /**
  * 面试题目状态枚举
- *
+ * <p>
  * 用于管理面试过程中单道题目的状态流转。
  */
 public enum QuestionStatus {

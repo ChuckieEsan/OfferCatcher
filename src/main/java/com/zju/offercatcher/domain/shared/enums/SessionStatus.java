@@ -2,7 +2,7 @@ package com.zju.offercatcher.domain.shared.enums;
 
 /**
  * 面试会话状态枚举
- *
+ * <p>
  * 用于管理面试会话的生命周期状态。
  */
 public enum SessionStatus {

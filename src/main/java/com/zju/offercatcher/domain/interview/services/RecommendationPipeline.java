@@ -1,10 +1,10 @@
 package com.zju.offercatcher.domain.interview.services;
 
 import com.zju.offercatcher.domain.interview.aggregates.JobDescription;
+import com.zju.offercatcher.domain.interview.services.CoverageAnalyzer.CoverageReport;
 import com.zju.offercatcher.domain.interview.valueobjects.CandidateQuestion;
 import com.zju.offercatcher.domain.interview.valueobjects.RecallChannel;
 import com.zju.offercatcher.domain.interview.valueobjects.SkillRequirement;
-import com.zju.offercatcher.domain.interview.services.CoverageAnalyzer.CoverageReport;
 import com.zju.offercatcher.domain.question.aggregates.Question;
 import com.zju.offercatcher.domain.question.repositories.QuestionRepository;
 import com.zju.offercatcher.domain.question.valueobjects.QuestionWithScore;
@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 
 /**
  * JD 驱动出题推荐 Pipeline。
- *
+ * <p>
  * 串联召回 → 排序 → 重排（MMR + 覆盖约束）→ 截断。
  * 纯领域逻辑，不依赖框架。嵌入计算通过函数接口注入。
  */
@@ -29,8 +29,8 @@ public class RecommendationPipeline {
     private final Function<SkillRequirement, List<String>> keywordExpander;
 
     public RecommendationPipeline(QuestionRepository questionRepository,
-                                   Function<String, float[]> embedder,
-                                   Function<SkillRequirement, List<String>> keywordExpander) {
+                                  Function<String, float[]> embedder,
+                                  Function<SkillRequirement, List<String>> keywordExpander) {
         this.questionRepository = questionRepository;
         this.embedder = embedder;
         this.keywordExpander = keywordExpander;
@@ -72,40 +72,45 @@ public class RecommendationPipeline {
      * 推荐并输出覆盖报告。
      */
     public RecommendationResult recommendWithCoverage(JobDescription jd, String userId,
-                                                       int totalQuestions) {
+                                                      int totalQuestions) {
         List<CandidateQuestion> questions = recommend(jd, userId, totalQuestions);
         CoverageAnalyzer analyzer = new CoverageAnalyzer();
         CoverageReport report = analyzer.analyze(questions, jd.getRequiredSkills());
         return new RecommendationResult(questions, report);
     }
 
-    public record RecommendationResult(List<CandidateQuestion> questions, CoverageReport coverage) {}
+    public record RecommendationResult(List<CandidateQuestion> questions, CoverageReport coverage) {
+    }
 
     // ==================== 召回通道 ====================
 
-    /** 通道1: pg_trgm 三元组相似度 + 查询改写 */
+    /**
+     * 通道1: pg_trgm 三元组相似度 + 查询改写
+     */
     private void recallChannel1(String userId, SkillRequirement skill,
-                                 Map<Long, CandidateQuestion> candidates) {
+                                Map<Long, CandidateQuestion> candidates) {
         Set<String> seen = new HashSet<>();
         for (String keyword : expandKeywords(skill)) {
             List<Question> hits = questionRepository.findByCoreEntitySimilar(userId, keyword, 3);
             for (Question q : hits) {
                 if (seen.add(q.getId().toString())) {
                     candidates.putIfAbsent(q.getId(), new CandidateQuestion(
-                        q.getId(), q.getQuestionText(), q.getQuestionType().getValue(),
-                        DifficultyLevel.MEDIUM, q.getCoreEntities(),
-                        0.9, jaccard(skill, q.getCoreEntities()),
-                        RecallChannel.PG_TRGM.getWeight(), RecallChannel.PG_TRGM, skill.name(),
-                        q.getMasteryLevel().getLevel()
+                            q.getId(), q.getQuestionText(), q.getQuestionType().getValue(),
+                            DifficultyLevel.MEDIUM, q.getCoreEntities(),
+                            0.9, jaccard(skill, q.getCoreEntities()),
+                            RecallChannel.PG_TRGM.getWeight(), RecallChannel.PG_TRGM, skill.name(),
+                            q.getMasteryLevel().getLevel()
                     ));
                 }
             }
         }
     }
 
-    /** 通道2: 嵌入语义召回 + 查询改写 */
+    /**
+     * 通道2: 嵌入语义召回 + 查询改写
+     */
     private void recallChannel2(String userId, SkillRequirement skill,
-                                 Map<Long, CandidateQuestion> candidates) {
+                                Map<Long, CandidateQuestion> candidates) {
         List<String> keywords = expandKeywords(skill);
         int limit = Math.min(3, keywords.size());
         for (int i = 0; i < limit; i++) {
@@ -116,32 +121,34 @@ public class RecommendationPipeline {
                 Question q = qs.question();
                 double cosine = qs.score();
                 candidates.merge(q.getId(), new CandidateQuestion(
-                    q.getId(), q.getQuestionText(), q.getQuestionType().getValue(),
-                    DifficultyLevel.MEDIUM,
-                    q.getCoreEntities(),
-                    cosine, jaccard(skill, q.getCoreEntities()),
-                    RecallChannel.SEMANTIC.getWeight(), RecallChannel.SEMANTIC, skill.name(),
-                    q.getMasteryLevel().getLevel()
+                        q.getId(), q.getQuestionText(), q.getQuestionType().getValue(),
+                        DifficultyLevel.MEDIUM,
+                        q.getCoreEntities(),
+                        cosine, jaccard(skill, q.getCoreEntities()),
+                        RecallChannel.SEMANTIC.getWeight(), RecallChannel.SEMANTIC, skill.name(),
+                        q.getMasteryLevel().getLevel()
                 ), (old, neu) -> old.combinedScore() >= neu.combinedScore() ? old : neu);
             }
         }
     }
 
-    /** 通道3: 公司+岗位泛召回兜底 */
+    /**
+     * 通道3: 公司+岗位泛召回兜底
+     */
     private void recallChannel3(String userId, String company, String position,
-                                 Map<Long, CandidateQuestion> candidates) {
+                                Map<Long, CandidateQuestion> candidates) {
         String context = "公司：" + (company != null ? company : "综合")
-            + " | 岗位：" + (position != null ? position : "综合") + " | 面试题";
+                + " | 岗位：" + (position != null ? position : "综合") + " | 面试题";
         float[] vector = embedder.apply(context);
         List<QuestionWithScore> hits = questionRepository.searchUserVisible(userId, vector, 10);
         for (QuestionWithScore qs : hits) {
             Question q = qs.question();
             candidates.putIfAbsent(q.getId(), new CandidateQuestion(
-                q.getId(), q.getQuestionText(), q.getQuestionType().getValue(),
-                DifficultyLevel.MEDIUM,
-                q.getCoreEntities(),
-                qs.score(), 0.0, RecallChannel.GENERAL.getWeight(), RecallChannel.GENERAL, null,
-                q.getMasteryLevel().getLevel()
+                    q.getId(), q.getQuestionText(), q.getQuestionType().getValue(),
+                    DifficultyLevel.MEDIUM,
+                    q.getCoreEntities(),
+                    qs.score(), 0.0, RecallChannel.GENERAL.getWeight(), RecallChannel.GENERAL, null,
+                    q.getMasteryLevel().getLevel()
             ));
         }
     }
@@ -152,10 +159,10 @@ public class RecommendationPipeline {
      * MMR 贪婪选取 + requiredSkill 覆盖硬约束。
      */
     List<CandidateQuestion> mmrRerank(List<CandidateQuestion> scored,
-                                       List<SkillRequirement> requiredSkills,
-                                       int N) {
+                                      List<SkillRequirement> requiredSkills,
+                                      int N) {
         Set<String> uncovered = requiredSkills.stream()
-            .map(SkillRequirement::name).collect(Collectors.toCollection(HashSet::new));
+                .map(SkillRequirement::name).collect(Collectors.toCollection(HashSet::new));
         List<CandidateQuestion> selected = new ArrayList<>();
         List<CandidateQuestion> pool = new ArrayList<>(scored);
 
@@ -164,9 +171,9 @@ public class RecommendationPipeline {
             // 优先满足未覆盖的 required skill
             if (!uncovered.isEmpty()) {
                 best = pool.stream()
-                    .filter(c -> uncovered.contains(c.matchedSkillName()))
-                    .max(Comparator.comparingDouble(CandidateQuestion::combinedScore))
-                    .orElse(null);
+                        .filter(c -> uncovered.contains(c.matchedSkillName()))
+                        .max(Comparator.comparingDouble(CandidateQuestion::combinedScore))
+                        .orElse(null);
             } else {
                 best = null;
             }
@@ -191,11 +198,11 @@ public class RecommendationPipeline {
     }
 
     private CandidateQuestion selectByMMR(List<CandidateQuestion> pool,
-                                           List<CandidateQuestion> selected) {
+                                          List<CandidateQuestion> selected) {
         CandidateQuestion best = null;
         double bestMMR = Double.NEGATIVE_INFINITY;
         String lastType = selected.isEmpty() ? null
-            : selected.get(selected.size() - 1).questionType();
+                : selected.get(selected.size() - 1).questionType();
 
         for (CandidateQuestion c : pool) {
             // 题型打散：跳过与上一题同类型
@@ -203,7 +210,7 @@ public class RecommendationPipeline {
                 continue;
             }
             double maxSim = selected.isEmpty() ? 0
-                : selected.stream()
+                    : selected.stream()
                     .mapToDouble(s -> jaccardImpl(s.coreEntities(), c.coreEntities()))
                     .max().orElse(0);
             double mmr = MMR_LAMBDA * c.combinedScore() - (1 - MMR_LAMBDA) * maxSim;
@@ -220,12 +227,12 @@ public class RecommendationPipeline {
     }
 
     private CandidateQuestion selectByMMRNoTypeFilter(List<CandidateQuestion> pool,
-                                                       List<CandidateQuestion> selected) {
+                                                      List<CandidateQuestion> selected) {
         CandidateQuestion best = null;
         double bestMMR = Double.NEGATIVE_INFINITY;
         for (CandidateQuestion c : pool) {
             double maxSim = selected.isEmpty() ? 0
-                : selected.stream()
+                    : selected.stream()
                     .mapToDouble(s -> jaccardImpl(s.coreEntities(), c.coreEntities()))
                     .max().orElse(0);
             double mmr = MMR_LAMBDA * c.combinedScore() - (1 - MMR_LAMBDA) * maxSim;

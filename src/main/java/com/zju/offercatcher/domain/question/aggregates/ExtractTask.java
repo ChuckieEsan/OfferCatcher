@@ -9,7 +9,7 @@ import java.util.List;
 
 /**
  * 面经提取任务聚合根。
- *
+ * <p>
  * 管理面经提取的完整生命周期：提交 -> 处理 -> 完成 -> 确认入库。
  * 用户确认后才触发 Question 入库。
  */
@@ -45,8 +45,8 @@ public class ExtractTask {
                                      String sourceContent, List<String> sourceImages) {
         LocalDateTime now = LocalDateTime.now();
         return new ExtractTask(null, userId, sourceType,
-            sourceContent != null ? sourceContent : "",
-            sourceImages, ExtractTaskStatus.PENDING, null, now, now);
+                sourceContent != null ? sourceContent : "",
+                sourceImages, ExtractTaskStatus.PENDING, null, now, now);
     }
 
     public static ExtractTask rebuild(Long taskId, String userId, String sourceType,
@@ -55,8 +55,8 @@ public class ExtractTask {
                                       ExtractedQuestionItem extractedInterview,
                                       LocalDateTime createdAt, LocalDateTime updatedAt) {
         return new ExtractTask(taskId, userId, sourceType,
-            sourceContent != null ? sourceContent : "",
-            sourceImages, status, extractedInterview, createdAt, updatedAt);
+                sourceContent != null ? sourceContent : "",
+                sourceImages, status, extractedInterview, createdAt, updatedAt);
     }
 
     public void startProcessing() {

@@ -30,9 +30,9 @@ public class JobDescriptionController {
 
     @PostMapping("/parse")
     public ResponseEntity<JobDescriptionDto> parse(@UserId String userId,
-                                                    @RequestBody JobDescriptionDto.ParseRequest request) {
+                                                   @RequestBody JobDescriptionDto.ParseRequest request) {
         log.info("JD parse request: userId={}, length={}", userId,
-            request.jdText() != null ? request.jdText().length() : 0);
+                request.jdText() != null ? request.jdText().length() : 0);
         JobDescription jd = parserAgent.parseAndSave(userId, request.jdText());
         return ResponseEntity.ok(JobDescriptionDto.from(jd));
     }
@@ -46,8 +46,8 @@ public class JobDescriptionController {
     @GetMapping("/{id}")
     public ResponseEntity<JobDescriptionDto> get(@UserId String userId, @PathVariable Long id) {
         JobDescription jd = jobDescriptionRepository.findById(id)
-            .filter(j -> j.isOwnedBy(userId))
-            .orElseThrow(() -> new DomainException("JD not found: " + id, "JD_NOT_FOUND"));
+                .filter(j -> j.isOwnedBy(userId))
+                .orElseThrow(() -> new DomainException("JD not found: " + id, "JD_NOT_FOUND"));
         return ResponseEntity.ok(JobDescriptionDto.from(jd));
     }
 

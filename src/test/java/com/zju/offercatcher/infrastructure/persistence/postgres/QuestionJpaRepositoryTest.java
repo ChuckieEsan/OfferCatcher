@@ -20,10 +20,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 class QuestionJpaRepositoryTest {
 
-    @Autowired QuestionJpaRepository repo;
+    @Autowired
+    QuestionJpaRepository repo;
 
     QuestionJpaEntity makeEntity(Long id, String questionHash, String userId, String questionText,
-                                  String company, String position, String answer) {
+                                 String company, String position, String answer) {
         QuestionJpaEntity e = new QuestionJpaEntity();
         e.setId(id);
         e.setQuestionHash(questionHash);
@@ -64,7 +65,7 @@ class QuestionJpaRepositoryTest {
         List<QuestionJpaEntity> result = repo.findUnansweredQuestions(10);
         assertThat(result).hasSize(2);
         assertThat(result.stream().map(QuestionJpaEntity::getQuestionHash))
-            .containsExactlyInAnyOrder("q1", "q3");
+                .containsExactlyInAnyOrder("q1", "q3");
     }
 
     @Test

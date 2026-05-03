@@ -1,10 +1,10 @@
 package com.zju.offercatcher.interfaces.controller;
 
 import com.zju.offercatcher.application.agent.VisionExtractorAgent;
-import com.zju.offercatcher.domain.question.valueobjects.ExtractedQuestionItem;
 import com.zju.offercatcher.application.service.ExtractTaskApplicationService;
 import com.zju.offercatcher.application.service.IngestFlowApplicationService;
 import com.zju.offercatcher.domain.question.aggregates.ExtractTask;
+import com.zju.offercatcher.domain.question.valueobjects.ExtractedQuestionItem;
 import com.zju.offercatcher.infrastructure.adapters.ocr.OcrAdapter;
 import com.zju.offercatcher.interfaces.config.UserId;
 import com.zju.offercatcher.interfaces.dto.ExtractDto.*;
@@ -37,8 +37,8 @@ public class ExtractController {
     private final OcrAdapter ocrAdapter;
 
     public ExtractController(ExtractTaskApplicationService taskService,
-                              VisionExtractorAgent visionExtractor,
-                              OcrAdapter ocrAdapter) {
+                             VisionExtractorAgent visionExtractor,
+                             OcrAdapter ocrAdapter) {
         this.taskService = taskService;
         this.visionExtractor = visionExtractor;
         this.ocrAdapter = ocrAdapter;
@@ -57,28 +57,28 @@ public class ExtractController {
 
     @PostMapping("/submit")
     public ResponseEntity<SubmitResponse> submit(@Valid @RequestBody SubmitRequest request,
-                                                  @UserId String userId) {
+                                                 @UserId String userId) {
         log.info("Submit extract task: user={}, type={}", userId, request.sourceType());
         ExtractTask task = taskService.submit(userId, request.sourceType(),
-            request.sourceContent(), request.sourceImages());
+                request.sourceContent(), request.sourceImages());
         return ResponseEntity.status(HttpStatus.CREATED)
-            .body(new SubmitResponse(task.getTaskId(), "任务已提交，请稍后查询结果"));
+                .body(new SubmitResponse(task.getTaskId(), "任务已提交，请稍后查询结果"));
     }
 
     @GetMapping("/tasks")
     public ResponseEntity<TaskListResponse> listTasks(
-        @RequestParam(required = false) String status,
-        @RequestParam(defaultValue = "1") int page,
-        @RequestParam(defaultValue = "20") int pageSize,
-        @UserId String userId) {
+            @RequestParam(required = false) String status,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int pageSize,
+            @UserId String userId) {
         List<ExtractTask> tasks = taskService.list(userId, status, page, pageSize);
         int total = taskService.count(userId, status);
 
         List<TaskListItem> items = tasks.stream().map(t -> new TaskListItem(
-            t.getTaskId(), t.getStatus().name().toLowerCase(), t.getSourceType(),
-            t.getCompanyFromResult(), t.getPositionFromResult(),
-            t.getQuestionCount(),
-            t.getCreatedAt().format(DTF), t.getUpdatedAt().format(DTF)
+                t.getTaskId(), t.getStatus().name().toLowerCase(), t.getSourceType(),
+                t.getCompanyFromResult(), t.getPositionFromResult(),
+                t.getQuestionCount(),
+                t.getCreatedAt().format(DTF), t.getUpdatedAt().format(DTF)
         )).toList();
 
         return ResponseEntity.ok(new TaskListResponse(items, total, page, pageSize));
@@ -92,21 +92,21 @@ public class ExtractController {
 
     @PutMapping("/tasks/{taskId}")
     public ResponseEntity<TaskResponse> updateTask(@PathVariable Long taskId,
-                                                    @Valid @RequestBody UpdateRequest request,
-                                                    @UserId String userId) {
+                                                   @Valid @RequestBody UpdateRequest request,
+                                                   @UserId String userId) {
         ExtractTask task = taskService.edit(taskId, userId,
-            request.company() != null ? request.company() : "",
-            request.position() != null ? request.position() : "",
-            request.questions() != null ? request.questions() : List.of());
+                request.company() != null ? request.company() : "",
+                request.position() != null ? request.position() : "",
+                request.questions() != null ? request.questions() : List.of());
         return ResponseEntity.ok(toTaskResponse(task));
     }
 
     @PostMapping("/tasks/{taskId}/confirm")
     public ResponseEntity<ConfirmResponse> confirm(@PathVariable Long taskId,
-                                                    @UserId String userId) {
+                                                   @UserId String userId) {
         IngestFlowApplicationService.IngestResult result = taskService.confirm(taskId, userId);
         return ResponseEntity.ok(new ConfirmResponse(
-            result.processed, result.failed, result.questionIds));
+                result.processed, result.failed, result.questionIds));
     }
 
     @PostMapping("/tasks/{taskId}/cancel")
@@ -119,14 +119,14 @@ public class ExtractController {
     public ResponseEntity<Void> deleteTask(@PathVariable Long taskId, @UserId String userId) {
         boolean deleted = taskService.delete(taskId, userId);
         return deleted ? ResponseEntity.noContent().build()
-            : ResponseEntity.notFound().build();
+                : ResponseEntity.notFound().build();
     }
 
     // ==================== 图片提取 ====================
 
     @PostMapping("/image")
     public ResponseEntity<ExtractResponse> extractFromUpload(
-        @RequestParam("images") List<MultipartFile> images) {
+            @RequestParam("images") List<MultipartFile> images) {
         log.info("Extract from {} uploaded images", images.size());
 
         List<String> tempPaths = new ArrayList<>();
@@ -158,7 +158,7 @@ public class ExtractController {
 
     @PostMapping("/image/base64")
     public ResponseEntity<ExtractResponse> extractFromBase64(
-        @Valid @RequestBody ImageExtractRequest request) {
+            @Valid @RequestBody ImageExtractRequest request) {
         log.info("Extract from {} base64/URL images", request.images().size());
 
         ExtractedQuestionItem result = visionExtractor.extractFromImages(request.images());
@@ -169,18 +169,18 @@ public class ExtractController {
 
     private ExtractResponse toExtractResponse(ExtractedQuestionItem item) {
         List<ExtractedQuestionDto> questions = item.questions().stream()
-            .map(q -> new ExtractedQuestionDto(q.questionHash(), q.questionText(),
-                q.questionType(), q.coreEntities(), q.metadata()))
-            .toList();
+                .map(q -> new ExtractedQuestionDto(q.questionHash(), q.questionText(),
+                        q.questionType(), q.coreEntities(), q.metadata()))
+                .toList();
         return new ExtractResponse(item.company(), item.position(), questions);
     }
 
     private TaskResponse toTaskResponse(ExtractTask task) {
         return new TaskResponse(
-            task.getTaskId(), task.getUserId(), task.getSourceType(),
-            task.getSourceContent(), task.getSourceImages(),
-            task.getStatus().name().toLowerCase(), task.getExtractedInterview(),
-            task.getCreatedAt().format(DTF), task.getUpdatedAt().format(DTF)
+                task.getTaskId(), task.getUserId(), task.getSourceType(),
+                task.getSourceContent(), task.getSourceImages(),
+                task.getStatus().name().toLowerCase(), task.getExtractedInterview(),
+                task.getCreatedAt().format(DTF), task.getUpdatedAt().format(DTF)
         );
     }
 }

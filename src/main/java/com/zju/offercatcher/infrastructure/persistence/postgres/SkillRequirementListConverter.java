@@ -29,7 +29,8 @@ public class SkillRequirementListConverter implements AttributeConverter<List<Sk
     public List<SkillRequirement> convertToEntityAttribute(String dbData) {
         if (dbData == null || dbData.isBlank()) return Collections.emptyList();
         try {
-            return objectMapper.readValue(dbData, new TypeReference<>() {});
+            return objectMapper.readValue(dbData, new TypeReference<>() {
+            });
         } catch (Exception e) {
             return Collections.emptyList();
         }

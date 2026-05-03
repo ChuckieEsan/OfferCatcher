@@ -12,7 +12,7 @@ public class UnauthorizedOperationException extends DomainException {
 
     public UnauthorizedOperationException(String userId, String resourceId, String operation) {
         super(String.format("用户 %s 无权限对资源 %s 执行操作: %s", userId, resourceId, operation),
-              "UNAUTHORIZED_OPERATION");
+                "UNAUTHORIZED_OPERATION");
         this.userId = userId;
         this.resourceId = resourceId;
         this.operation = operation;

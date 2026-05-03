@@ -4,11 +4,7 @@ import com.zju.offercatcher.domain.memory.entities.SessionSummary;
 import com.zju.offercatcher.domain.question.aggregates.Question;
 import com.zju.offercatcher.domain.shared.enums.Visibility;
 import com.zju.offercatcher.infrastructure.config.QdrantProperties;
-import io.qdrant.client.PointIdFactory;
-import io.qdrant.client.QdrantClient;
-import io.qdrant.client.ValueFactory;
-import io.qdrant.client.VectorFactory;
-import io.qdrant.client.VectorsFactory;
+import io.qdrant.client.*;
 import io.qdrant.client.grpc.Common;
 import io.qdrant.client.grpc.JsonWithInt;
 import io.qdrant.client.grpc.Points;
@@ -22,7 +18,7 @@ import java.util.concurrent.ExecutionException;
 
 /**
  * Qdrant 向量存储服务
- *
+ * <p>
  * 封装与 Qdrant gRPC API 的所有交互：向量上传、搜索、删除、payload 更新。
  */
 @Service
@@ -37,7 +33,7 @@ public class QdrantVectorStore {
         this.qdrantClient = qdrantClient;
         this.qdrantProperties = qdrantProperties;
         log.info("QdrantVectorStore initialized: questions={}, sessionSummaries={}",
-            qdrantProperties.getCollection(), qdrantProperties.getSessionSummaryCollection());
+                qdrantProperties.getCollection(), qdrantProperties.getSessionSummaryCollection());
     }
 
     @PostConstruct
@@ -51,12 +47,12 @@ public class QdrantVectorStore {
             boolean exists = qdrantClient.collectionExistsAsync(collectionName).get();
             if (!exists) {
                 qdrantClient.createCollectionAsync(
-                    collectionName,
-                    io.qdrant.client.grpc.Collections.VectorParams.newBuilder()
-                        .setSize(qdrantProperties.getVectorSize())
-                        .setDistance(io.qdrant.client.grpc.Collections.Distance.Cosine)
-                        .build(),
-                    null
+                        collectionName,
+                        io.qdrant.client.grpc.Collections.VectorParams.newBuilder()
+                                .setSize(qdrantProperties.getVectorSize())
+                                .setDistance(io.qdrant.client.grpc.Collections.Distance.Cosine)
+                                .build(),
+                        null
                 ).get();
                 log.info("Created Qdrant collection: {}", collectionName);
             }
@@ -77,9 +73,9 @@ public class QdrantVectorStore {
 
     public List<VectorSearchHit> searchPublic(float[] queryVector, int limit) {
         Common.Filter filter = Common.Filter.newBuilder()
-            .addMust(io.qdrant.client.ConditionFactory.matchKeyword(
-                QdrantPayloadFields.VISIBILITY, Visibility.PUBLIC.getValue()))
-            .build();
+                .addMust(io.qdrant.client.ConditionFactory.matchKeyword(
+                        QdrantPayloadFields.VISIBILITY, Visibility.PUBLIC.getValue()))
+                .build();
         return doSearch(qdrantProperties.getCollection(), queryVector, filter, limit);
     }
 
@@ -92,11 +88,11 @@ public class QdrantVectorStore {
         Map<String, JsonWithInt.Value> payload = QdrantPayloadMapper.toPayload(question);
 
         Points.PointStruct point = Points.PointStruct.newBuilder()
-            .setId(PointIdFactory.id(question.getId()))
-            .setVectors(VectorsFactory.namedVectors(
-                Map.of("", VectorFactory.vector(embedding))))
-            .putAllPayload(payload)
-            .build();
+                .setId(PointIdFactory.id(question.getId()))
+                .setVectors(VectorsFactory.namedVectors(
+                        Map.of("", VectorFactory.vector(embedding))))
+                .putAllPayload(payload)
+                .build();
 
         try {
             qdrantClient.upsertAsync(qdrantProperties.getCollection(), List.of(point), null).get();
@@ -112,9 +108,9 @@ public class QdrantVectorStore {
     public void delete(Long id) {
         try {
             qdrantClient.deleteAsync(
-                qdrantProperties.getCollection(),
-                List.of(PointIdFactory.id(id)),
-                null
+                    qdrantProperties.getCollection(),
+                    List.of(PointIdFactory.id(id)),
+                    null
             ).get();
             log.debug("Deleted question vector: id={}", id);
         } catch (InterruptedException e) {
@@ -138,9 +134,9 @@ public class QdrantVectorStore {
         int batch = 500;
         while (true) {
             Points.ScrollPoints.Builder builder = Points.ScrollPoints.newBuilder()
-                .setCollectionName(qdrantProperties.getCollection())
-                .setLimit(batch)
-                .setWithPayload(Points.WithPayloadSelector.newBuilder().setEnable(false));
+                    .setCollectionName(qdrantProperties.getCollection())
+                    .setLimit(batch)
+                    .setWithPayload(Points.WithPayloadSelector.newBuilder().setEnable(false));
             if (offset != null) builder.setOffset(offset);
             try {
                 Points.ScrollResponse resp = qdrantClient.scrollAsync(builder.build(), null).get();
@@ -167,8 +163,8 @@ public class QdrantVectorStore {
     public void deleteBatch(Collection<Long> ids) {
         if (ids.isEmpty()) return;
         List<Common.PointId> pointIds = ids.stream()
-            .map(PointIdFactory::id)
-            .toList();
+                .map(PointIdFactory::id)
+                .toList();
         try {
             qdrantClient.deleteAsync(qdrantProperties.getCollection(), pointIds, null).get();
             log.info("Batch deleted {} points from Qdrant", ids.size());
@@ -182,16 +178,16 @@ public class QdrantVectorStore {
 
     public void updateVisibility(Long id, Visibility visibility) {
         Map<String, JsonWithInt.Value> payloadUpdate = Map.of(
-            QdrantPayloadFields.VISIBILITY,
-            ValueFactory.value(visibility.getValue())
+                QdrantPayloadFields.VISIBILITY,
+                ValueFactory.value(visibility.getValue())
         );
 
         try {
             qdrantClient.setPayloadAsync(
-                qdrantProperties.getCollection(),
-                payloadUpdate,
-                PointIdFactory.id(id),
-                null, null, null
+                    qdrantProperties.getCollection(),
+                    payloadUpdate,
+                    PointIdFactory.id(id),
+                    null, null, null
             ).get();
             log.debug("Updated visibility for question: id={} to {}", id, visibility);
         } catch (InterruptedException e) {
@@ -211,19 +207,19 @@ public class QdrantVectorStore {
 
     public void upsertSessionSummary(SessionSummary summary) {
         Map<String, JsonWithInt.Value> payload = Map.of(
-            QdrantPayloadFields.USER_ID, ValueFactory.value(summary.getUserId()),
-            "conversation_id", ValueFactory.value(summary.getConversationId()),
-            "summary", ValueFactory.value(truncate(summary.getSummary(), 500)),
-            "importance_score", ValueFactory.value(summary.getImportanceScore()),
-            "memory_layer", ValueFactory.value(summary.getMemoryLayer().name())
+                QdrantPayloadFields.USER_ID, ValueFactory.value(summary.getUserId()),
+                "conversation_id", ValueFactory.value(summary.getConversationId()),
+                "summary", ValueFactory.value(truncate(summary.getSummary(), 500)),
+                "importance_score", ValueFactory.value(summary.getImportanceScore()),
+                "memory_layer", ValueFactory.value(summary.getMemoryLayer().name())
         );
 
         Points.PointStruct point = Points.PointStruct.newBuilder()
-            .setId(PointIdFactory.id(summary.getId()))
-            .setVectors(VectorsFactory.namedVectors(
-                Map.of("", VectorFactory.vector(summary.getEmbedding()))))
-            .putAllPayload(payload)
-            .build();
+                .setId(PointIdFactory.id(summary.getId()))
+                .setVectors(VectorsFactory.namedVectors(
+                        Map.of("", VectorFactory.vector(summary.getEmbedding()))))
+                .putAllPayload(payload)
+                .build();
 
         try {
             qdrantClient.upsertAsync(qdrantProperties.getSessionSummaryCollection(), List.of(point), null).get();
@@ -239,9 +235,9 @@ public class QdrantVectorStore {
     public void deleteSessionSummary(Long summaryId) {
         try {
             qdrantClient.deleteAsync(
-                qdrantProperties.getSessionSummaryCollection(),
-                List.of(PointIdFactory.id(summaryId)),
-                null
+                    qdrantProperties.getSessionSummaryCollection(),
+                    List.of(PointIdFactory.id(summaryId)),
+                    null
             ).get();
             log.debug("Deleted session summary vector: {}", summaryId);
         } catch (InterruptedException e) {
@@ -261,25 +257,25 @@ public class QdrantVectorStore {
     private List<VectorSearchHit> doSearch(String collection, float[] queryVector,
                                            Common.Filter filter, int limit) {
         Points.SearchPoints request = Points.SearchPoints.newBuilder()
-            .setCollectionName(collection)
-            .addAllVector(floatList(queryVector))
-            .setFilter(filter)
-            .setLimit(limit)
-            .setWithPayload(Points.WithPayloadSelector.newBuilder()
-                .setEnable(true)
-                .build())
-            .build();
+                .setCollectionName(collection)
+                .addAllVector(floatList(queryVector))
+                .setFilter(filter)
+                .setLimit(limit)
+                .setWithPayload(Points.WithPayloadSelector.newBuilder()
+                        .setEnable(true)
+                        .build())
+                .build();
 
         try {
             List<Points.ScoredPoint> results = qdrantClient.searchAsync(request, null).get();
             return results.stream()
-                .map(sp -> {
-                    String id = sp.getId().hasNum()
-                        ? String.valueOf(sp.getId().getNum())
-                        : sp.getId().getUuid().replace("-", "");
-                    return new VectorSearchHit(id, sp.getScore());
-                })
-                .toList();
+                    .map(sp -> {
+                        String id = sp.getId().hasNum()
+                                ? String.valueOf(sp.getId().getNum())
+                                : sp.getId().getUuid().replace("-", "");
+                        return new VectorSearchHit(id, sp.getScore());
+                    })
+                    .toList();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             log.error("Qdrant search interrupted on collection {}", collection, e);

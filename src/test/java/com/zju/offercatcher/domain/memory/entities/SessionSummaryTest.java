@@ -7,9 +7,9 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * SessionSummary 实体测试
@@ -44,24 +44,24 @@ class SessionSummaryTest {
         @DisplayName("conversationId 为空应抛出异常")
         void shouldThrowExceptionWhenConversationIdIsNull() {
             assertThatThrownBy(() -> SessionSummary.create(null, USER_ID, SUMMARY))
-                .isInstanceOf(DomainException.class)
-                .hasMessageContaining("conversationId");
+                    .isInstanceOf(DomainException.class)
+                    .hasMessageContaining("conversationId");
         }
 
         @Test
         @DisplayName("userId 为空应抛出异常")
         void shouldThrowExceptionWhenUserIdIsNull() {
             assertThatThrownBy(() -> SessionSummary.create(CONVERSATION_ID, null, SUMMARY))
-                .isInstanceOf(DomainException.class)
-                .hasMessageContaining("userId");
+                    .isInstanceOf(DomainException.class)
+                    .hasMessageContaining("userId");
         }
 
         @Test
         @DisplayName("summary 为空应抛出异常")
         void shouldThrowExceptionWhenSummaryIsNull() {
             assertThatThrownBy(() -> SessionSummary.create(CONVERSATION_ID, USER_ID, null))
-                .isInstanceOf(DomainException.class)
-                .hasMessageContaining("summary");
+                    .isInstanceOf(DomainException.class)
+                    .hasMessageContaining("summary");
         }
     }
 

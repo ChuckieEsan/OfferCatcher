@@ -9,7 +9,7 @@ import org.springframework.web.method.support.ModelAndViewContainer;
 
 /**
  * 从 X-User-Id 请求头提取用户 ID，注入到 @UserId 注解的参数。
- *
+ * <p>
  * 实现多用户隔离：所有 API 通过此 Resolver 获取当前用户身份。
  */
 @Component
@@ -20,7 +20,7 @@ public class UserIdResolver implements HandlerMethodArgumentResolver {
     @Override
     public boolean supportsParameter(MethodParameter parameter) {
         return parameter.hasParameterAnnotation(UserId.class)
-            && parameter.getParameterType().equals(String.class);
+                && parameter.getParameterType().equals(String.class);
     }
 
     @Override

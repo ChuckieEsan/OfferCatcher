@@ -1,8 +1,8 @@
 package com.zju.offercatcher.interfaces.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.zju.offercatcher.application.service.ChatApplicationService;
 import com.zju.offercatcher.application.agent.ChatAgent;
+import com.zju.offercatcher.application.service.ChatApplicationService;
 import com.zju.offercatcher.domain.chat.aggregates.Conversation;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -20,15 +20,20 @@ import java.util.Optional;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(ChatController.class)
 class ChatControllerTest {
 
-    @Autowired MockMvc mvc;
-    @Autowired ObjectMapper mapper;
-    @MockitoBean ChatApplicationService chatService;
-    @MockitoBean ChatAgent chatAgent;
+    @Autowired
+    MockMvc mvc;
+    @Autowired
+    ObjectMapper mapper;
+    @MockitoBean
+    ChatApplicationService chatService;
+    @MockitoBean
+    ChatAgent chatAgent;
 
     Conversation sampleConv = Conversation.create("user-1", "测试对话");
 
@@ -44,11 +49,11 @@ class ChatControllerTest {
             String body = mapper.writeValueAsString(Map.of("title", "技术面试"));
 
             mvc.perform(post("/api/v1/conversations")
-                    .header("X-User-Id", "user-1")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(body))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.conversationId").exists());
+                            .header("X-User-Id", "user-1")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(body))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.conversationId").exists());
         }
     }
 
@@ -60,12 +65,12 @@ class ChatControllerTest {
         @DisplayName("列表查询返回 200")
         void listSuccess() throws Exception {
             when(chatService.listConversations(anyString(), anyInt(), anyInt()))
-                .thenReturn(List.of(sampleConv));
+                    .thenReturn(List.of(sampleConv));
 
             mvc.perform(get("/api/v1/conversations")
-                    .header("X-User-Id", "user-1"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.conversations.length()").value(1));
+                            .header("X-User-Id", "user-1"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.conversations.length()").value(1));
         }
     }
 
@@ -79,8 +84,8 @@ class ChatControllerTest {
             when(chatService.getConversation("user-1", 1L)).thenReturn(Optional.of(sampleConv));
 
             mvc.perform(get("/api/v1/conversations/1")
-                    .header("X-User-Id", "user-1"))
-                .andExpect(status().isOk());
+                            .header("X-User-Id", "user-1"))
+                    .andExpect(status().isOk());
         }
 
         @Test
@@ -89,8 +94,8 @@ class ChatControllerTest {
             when(chatService.getConversation(anyString(), eq(999L))).thenReturn(Optional.empty());
 
             mvc.perform(get("/api/v1/conversations/999")
-                    .header("X-User-Id", "user-1"))
-                .andExpect(status().isNotFound());
+                            .header("X-User-Id", "user-1"))
+                    .andExpect(status().isNotFound());
         }
     }
 
@@ -106,10 +111,10 @@ class ChatControllerTest {
             String body = mapper.writeValueAsString(Map.of("title", "新标题"));
 
             mvc.perform(put("/api/v1/conversations/1/title")
-                    .header("X-User-Id", "user-1")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(body))
-                .andExpect(status().isOk());
+                            .header("X-User-Id", "user-1")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(body))
+                    .andExpect(status().isOk());
         }
 
         @Test
@@ -118,10 +123,10 @@ class ChatControllerTest {
             String body = mapper.writeValueAsString(Map.of("title", ""));
 
             mvc.perform(put("/api/v1/conversations/1/title")
-                    .header("X-User-Id", "user-1")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(body))
-                .andExpect(status().isBadRequest());
+                            .header("X-User-Id", "user-1")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(body))
+                    .andExpect(status().isBadRequest());
         }
     }
 
@@ -135,8 +140,8 @@ class ChatControllerTest {
             when(chatService.deleteConversation(anyString(), anyLong())).thenReturn(true);
 
             mvc.perform(delete("/api/v1/conversations/1")
-                    .header("X-User-Id", "user-1"))
-                .andExpect(status().isNoContent());
+                            .header("X-User-Id", "user-1"))
+                    .andExpect(status().isNoContent());
         }
     }
 }

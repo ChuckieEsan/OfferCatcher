@@ -1,8 +1,8 @@
 package com.zju.offercatcher.domain.memory.entities;
 
+import com.zju.offercatcher.domain.shared.SnowflakeIdGenerator;
 import com.zju.offercatcher.domain.shared.enums.MemoryLayer;
 import com.zju.offercatcher.domain.shared.exception.DomainException;
-import com.zju.offercatcher.domain.shared.SnowflakeIdGenerator;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -11,10 +11,10 @@ import java.util.List;
 
 /**
  * 会话摘要实体
- *
+ * <p>
  * SessionSummary 是对话产生的记忆摘要，用于语义检索历史。
  * 一个 conversation 可以有多条 summary（每轮有价值的对话都可能产生一条）。
- *
+ * <p>
  * 设计原则：
  * - 包含 embedding 向量（用于 Qdrant 检索）
  * - 支持衰减机制（STM 衰减，LTM 不衰减）
@@ -48,38 +48,38 @@ public class SessionSummary {
         validateSummary(summary);
         Long id = SnowflakeIdGenerator.generate();
         return new SessionSummary(id, conversationId, userId, summary, null,
-            0.5, new ArrayList<>(), MemoryLayer.STM, 0, 0, null,
-            1.0, false, null, LocalDateTime.now());
+                0.5, new ArrayList<>(), MemoryLayer.STM, 0, 0, null,
+                1.0, false, null, LocalDateTime.now());
     }
 
     /**
      * 创建带向量的会话摘要
      */
     public static SessionSummary createWithEmbedding(Long conversationId, String userId,
-                                                       String summary, float[] embedding,
-                                                       double importanceScore, List<String> topics) {
+                                                     String summary, float[] embedding,
+                                                     double importanceScore, List<String> topics) {
         validateConversationId(conversationId);
         validateUserId(userId);
         validateSummary(summary);
         Long id = SnowflakeIdGenerator.generate();
         return new SessionSummary(id, conversationId, userId, summary, embedding,
-            importanceScore, topics != null ? new ArrayList<>(topics) : new ArrayList<>(),
-            MemoryLayer.STM, 0, 0, null, 1.0, false, null, LocalDateTime.now());
+                importanceScore, topics != null ? new ArrayList<>(topics) : new ArrayList<>(),
+                MemoryLayer.STM, 0, 0, null, 1.0, false, null, LocalDateTime.now());
     }
 
     /**
      * 从持久化存储重建
      */
     public static SessionSummary rebuild(Long id, Long conversationId, String userId,
-                                          String summary, float[] embedding, double importanceScore,
-                                          List<String> topics, MemoryLayer memoryLayer,
-                                          int accessCount, int feedbackScore, LocalDateTime lastAccessed,
-                                          double decayFactor, boolean markedForDeletion,
-                                          Long messageCursor, LocalDateTime createdAt) {
+                                         String summary, float[] embedding, double importanceScore,
+                                         List<String> topics, MemoryLayer memoryLayer,
+                                         int accessCount, int feedbackScore, LocalDateTime lastAccessed,
+                                         double decayFactor, boolean markedForDeletion,
+                                         Long messageCursor, LocalDateTime createdAt) {
         return new SessionSummary(id, conversationId, userId, summary, embedding,
-            importanceScore, topics != null ? new ArrayList<>(topics) : new ArrayList<>(),
-            memoryLayer, accessCount, feedbackScore, lastAccessed, decayFactor,
-            markedForDeletion, messageCursor, createdAt);
+                importanceScore, topics != null ? new ArrayList<>(topics) : new ArrayList<>(),
+                memoryLayer, accessCount, feedbackScore, lastAccessed, decayFactor,
+                markedForDeletion, messageCursor, createdAt);
     }
 
     // ==================== 业务方法 ====================
@@ -201,10 +201,10 @@ public class SessionSummary {
     // ==================== 构造函数 ====================
 
     private SessionSummary(Long id, Long conversationId, String userId, String summary,
-                            float[] embedding, double importanceScore, List<String> topics,
-                            MemoryLayer memoryLayer, int accessCount, int feedbackScore,
-                            LocalDateTime lastAccessed, double decayFactor, boolean markedForDeletion,
-                            Long messageCursor, LocalDateTime createdAt) {
+                           float[] embedding, double importanceScore, List<String> topics,
+                           MemoryLayer memoryLayer, int accessCount, int feedbackScore,
+                           LocalDateTime lastAccessed, double decayFactor, boolean markedForDeletion,
+                           Long messageCursor, LocalDateTime createdAt) {
         this.id = id;
         this.conversationId = conversationId;
         this.userId = userId;

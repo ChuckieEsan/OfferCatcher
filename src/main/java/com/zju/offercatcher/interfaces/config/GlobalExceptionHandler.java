@@ -15,7 +15,7 @@ import java.util.Map;
 
 /**
  * 全局异常处理器。
- *
+ * <p>
  * 将领域异常映射为 HTTP 4xx/5xx 的 RFC 7807 ProblemDetail 响应。
  */
 @ControllerAdvice
@@ -46,11 +46,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     @ExceptionHandler({
-        QuestionNotFoundException.class,
-        ConversationNotFoundException.class,
-        FavoriteNotFoundException.class,
-        InterviewSessionNotFoundException.class,
-        MemoryNotFoundException.class
+            QuestionNotFoundException.class,
+            ConversationNotFoundException.class,
+            FavoriteNotFoundException.class,
+            InterviewSessionNotFoundException.class,
+            MemoryNotFoundException.class
     })
     ProblemDetail handleNotFound(DomainException ex) {
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
@@ -59,18 +59,18 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         pd.setProperty("errorCode", ex.getErrorCode());
 
         Map<Class<?>, String> resourceFields = Map.of(
-            QuestionNotFoundException.class, "questionId",
-            ConversationNotFoundException.class, "conversationId",
-            FavoriteNotFoundException.class, "favoriteId",
-            InterviewSessionNotFoundException.class, "sessionId",
-            MemoryNotFoundException.class, "userId"
+                QuestionNotFoundException.class, "questionId",
+                ConversationNotFoundException.class, "conversationId",
+                FavoriteNotFoundException.class, "favoriteId",
+                InterviewSessionNotFoundException.class, "sessionId",
+                MemoryNotFoundException.class, "userId"
         );
         for (var entry : resourceFields.entrySet()) {
             if (entry.getKey().isInstance(ex)) {
                 try {
                     String field = entry.getValue();
                     Object value = ex.getClass().getMethod("get" +
-                        field.substring(0, 1).toUpperCase() + field.substring(1)).invoke(ex);
+                            field.substring(0, 1).toUpperCase() + field.substring(1)).invoke(ex);
                     pd.setProperty(field, value);
                 } catch (Exception ignored) {
                 }
@@ -115,7 +115,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     ProblemDetail handleGeneral(Exception ex) {
         log.error("Unhandled exception", ex);
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(
-            HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error");
+                HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error");
         pd.setTitle("Internal Server Error");
         pd.setType(URI.create("https://offercatcher.zju.edu/errors/internal-error"));
         pd.setProperty("timestamp", Instant.now().toString());

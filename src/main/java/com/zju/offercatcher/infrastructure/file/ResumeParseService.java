@@ -21,7 +21,7 @@ import java.io.InputStream;
  * 简历文件解析服务。
  * 使用 Apache Tika 自动检测文档格式，提取纯文本内容。
  * 支持 PDF、DOCX、TXT 等格式。
- *
+ * <p>
  * 参考 interview-guide: DocumentParseService
  */
 @Service
@@ -54,9 +54,13 @@ public class ResumeParseService {
         ParseContext context = new ParseContext();
         context.set(Parser.class, parser);
         context.set(EmbeddedDocumentExtractor.class, new EmbeddedDocumentExtractor() {
-            public boolean shouldParseEmbedded(Metadata metadata) { return false; }
+            public boolean shouldParseEmbedded(Metadata metadata) {
+                return false;
+            }
+
             public void parseEmbedded(InputStream stream, org.xml.sax.ContentHandler handler,
-                                       Metadata metadata, boolean outputHtml) {}
+                                      Metadata metadata, boolean outputHtml) {
+            }
         });
 
         PDFParserConfig pdfConfig = new PDFParserConfig();
@@ -74,8 +78,8 @@ public class ResumeParseService {
 
     private String cleanText(String text) {
         return text.replaceAll("\\r\\n", "\n")
-            .replaceAll("\\n{3,}", "\n\n")
-            .replaceAll("[ \\t]{3,}", "  ")
-            .strip();
+                .replaceAll("\\n{3,}", "\n\n")
+                .replaceAll("[ \\t]{3,}", "  ")
+                .strip();
     }
 }

@@ -11,7 +11,7 @@ import java.util.Map;
 
 /**
  * 岗位归一化 Worker — 定时执行岗位名称归一化任务
- *
+ * <p>
  * 对应 Python: app/application/workers/position_normalization_worker.py
  */
 @Component
@@ -27,7 +27,7 @@ public class PositionNormalizationWorker {
     }
 
     @Scheduled(initialDelayString = "${offercatcher.position-normalization.initial-delay-ms:60000}",
-               fixedDelayString = "${offercatcher.position-normalization.interval-ms:86400000}")
+            fixedDelayString = "${offercatcher.position-normalization.interval-ms:86400000}")
     public void runNormalization() {
         log.info("PositionNormalizationWorker triggered");
         try {

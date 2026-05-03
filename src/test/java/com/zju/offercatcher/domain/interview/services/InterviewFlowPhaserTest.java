@@ -18,10 +18,10 @@ class InterviewFlowPhaserTest {
     private final InterviewFlowPhaser phaser = new InterviewFlowPhaser();
 
     private static InterviewQuestion makeQ(String text, String type, DifficultyLevel diff,
-                                            List<String> knowledgePoints) {
+                                           List<String> knowledgePoints) {
         return InterviewQuestion.create(
-            (long) text.hashCode(), "hash-" + text.hashCode(),
-            text, type, diff, knowledgePoints
+                (long) text.hashCode(), "hash-" + text.hashCode(),
+                text, type, diff, knowledgePoints
         );
     }
 
@@ -133,9 +133,9 @@ class InterviewFlowPhaserTest {
             List<InterviewQuestion> ordered = phaser.phase(candidates, 15);
 
             assertThat(ordered.get(1).getQuestionText())
-                .isEqualTo("能介绍一下你最近做过的一个项目吗？");
+                    .isEqualTo("能介绍一下你最近做过的一个项目吗？");
             assertThat(ordered.get(2).getQuestionText())
-                .isEqualTo("你对这个岗位的理解是什么？");
+                    .isEqualTo("你对这个岗位的理解是什么？");
         }
     }
 
@@ -158,17 +158,17 @@ class InterviewFlowPhaserTest {
 
             // 跳过前 2 道 opening 题，在 technical 中找到同组题
             List<InterviewQuestion> tech = ordered.stream()
-                .filter(q -> InterviewPhase.TECHNICAL.equals(q.getPhase())).toList();
+                    .filter(q -> InterviewPhase.TECHNICAL.equals(q.getPhase())).toList();
 
             // 同组题目应该 orderly
             List<DifficultyLevel> levels = tech.stream()
-                .filter(q -> q.getKnowledgePoints().contains("分布式事务"))
-                .map(InterviewQuestion::getDifficulty)
-                .toList();
+                    .filter(q -> q.getKnowledgePoints().contains("分布式事务"))
+                    .map(InterviewQuestion::getDifficulty)
+                    .toList();
 
             if (levels.size() >= 2) {
                 assertThat(levels.get(0).ordinal())
-                    .isLessThanOrEqualTo(levels.get(levels.size() - 1).ordinal());
+                        .isLessThanOrEqualTo(levels.get(levels.size() - 1).ordinal());
             }
         }
 
@@ -186,7 +186,7 @@ class InterviewFlowPhaserTest {
             List<InterviewQuestion> ordered = phaser.phase(candidates, 8);
 
             List<InterviewQuestion> tech = ordered.stream()
-                .filter(q -> InterviewPhase.TECHNICAL.equals(q.getPhase())).toList();
+                    .filter(q -> InterviewPhase.TECHNICAL.equals(q.getPhase())).toList();
 
             // 验证没有连续 3 题同组
             for (int i = 0; i < tech.size() - 2; i++) {
@@ -194,8 +194,8 @@ class InterviewFlowPhaserTest {
                 String g2 = tech.get(i + 1).getKnowledgePoints().get(0);
                 String g3 = tech.get(i + 2).getKnowledgePoints().get(0);
                 assertThat(g1.equals(g2) && g2.equals(g3))
-                    .as("不应该有连续 3 题同组: indices %d-%d", i, i + 2)
-                    .isFalse();
+                        .as("不应该有连续 3 题同组: indices %d-%d", i, i + 2)
+                        .isFalse();
             }
         }
     }
@@ -232,7 +232,7 @@ class InterviewFlowPhaserTest {
             for (int n : new int[]{5, 10, 15, 20}) {
                 List<InterviewQuestion> ordered = phaser.phase(candidates, n);
                 long openingCount = ordered.stream()
-                    .filter(q -> InterviewPhase.OPENING.equals(q.getPhase())).count();
+                        .filter(q -> InterviewPhase.OPENING.equals(q.getPhase())).count();
                 assertThat(openingCount).isGreaterThanOrEqualTo(2);
             }
         }
@@ -255,7 +255,7 @@ class InterviewFlowPhaserTest {
         @DisplayName("候选数少于总题数时返回全部候选")
         void fewerCandidatesThanTotal() {
             List<InterviewQuestion> candidates = List.of(
-                makeQ("只有一题", "knowledge", DifficultyLevel.EASY, List.of("Topic"))
+                    makeQ("只有一题", "knowledge", DifficultyLevel.EASY, List.of("Topic"))
             );
 
             List<InterviewQuestion> ordered = phaser.phase(candidates, 10);
@@ -273,7 +273,7 @@ class InterviewFlowPhaserTest {
             List<InterviewQuestion> ordered = phaser.phase(candidates, 8);
 
             long techCount = ordered.stream()
-                .filter(q -> InterviewPhase.TECHNICAL.equals(q.getPhase())).count();
+                    .filter(q -> InterviewPhase.TECHNICAL.equals(q.getPhase())).count();
             // 只有 behavioral 题池，无 technical 池，TECHNICAL 应为 0
             assertThat(techCount).isEqualTo(0);
         }

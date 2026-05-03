@@ -15,15 +15,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class FavoriteApplicationServiceTest {
 
-    @Mock FavoriteRepository favoriteRepository;
-    @InjectMocks FavoriteApplicationService service;
+    @Mock
+    FavoriteRepository favoriteRepository;
+    @InjectMocks
+    FavoriteApplicationService service;
 
     @Nested
     @DisplayName("addFavorite")
@@ -66,7 +69,7 @@ class FavoriteApplicationServiceTest {
         void notFound() {
             when(favoriteRepository.findById(999L)).thenReturn(Optional.empty());
             assertThatThrownBy(() -> service.removeFavorite(999L, "user-1"))
-                .isInstanceOf(FavoriteNotFoundException.class);
+                    .isInstanceOf(FavoriteNotFoundException.class);
         }
     }
 

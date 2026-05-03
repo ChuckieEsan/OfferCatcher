@@ -3,28 +3,25 @@ package com.zju.offercatcher.application.agent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zju.offercatcher.application.agent.dto.ScoreResult;
-import com.zju.offercatcher.infrastructure.common.PromptLoader;
 import com.zju.offercatcher.application.service.InterviewApplicationService;
 import com.zju.offercatcher.application.service.QuestionApplicationService;
 import com.zju.offercatcher.domain.interview.aggregates.InterviewSession;
 import com.zju.offercatcher.domain.interview.aggregates.JobDescription;
 import com.zju.offercatcher.domain.interview.entities.InterviewQuestion;
-import com.zju.offercatcher.domain.interview.services.InterviewFlowPhaser;
-
-import com.zju.offercatcher.domain.interview.services.CoverageAnalyzer;
-import com.zju.offercatcher.domain.interview.services.RecommendationPipeline;
-import com.zju.offercatcher.domain.interview.valueobjects.CandidateQuestion;
 import com.zju.offercatcher.domain.interview.repositories.JobDescriptionRepository;
-import com.zju.offercatcher.domain.question.aggregates.Question;
+import com.zju.offercatcher.domain.interview.services.CoverageAnalyzer;
+import com.zju.offercatcher.domain.interview.services.InterviewFlowPhaser;
+import com.zju.offercatcher.domain.interview.services.RecommendationPipeline;
 import com.zju.offercatcher.domain.question.repositories.QuestionRepository;
 import com.zju.offercatcher.domain.question.valueobjects.QuestionWithScore;
-import com.zju.offercatcher.domain.shared.enums.*;
+import com.zju.offercatcher.domain.shared.enums.DifficultyLevel;
+import com.zju.offercatcher.domain.shared.enums.MasteryLevel;
 import com.zju.offercatcher.domain.shared.exception.DomainException;
 import com.zju.offercatcher.infrastructure.adapters.embedding.OnnxEmbeddingAdapter;
+import com.zju.offercatcher.infrastructure.common.PromptLoader;
 import com.zju.offercatcher.infrastructure.config.InterviewProperties;
 import com.zju.offercatcher.infrastructure.config.LLMModelFactory;
 import io.agentscope.core.ReActAgent;
-import io.agentscope.core.agent.Event;
 import io.agentscope.core.agent.StreamOptions;
 import io.agentscope.core.message.Msg;
 import io.agentscope.core.message.MsgRole;
@@ -43,7 +40,7 @@ import java.util.stream.Collectors;
 
 /**
  * 面试 Agent 服务
- *
+ * <p>
  * 编排模拟面试流程：创建会话、出题、评分、追问、结束。
  * 对应 Python: app/application/agents/interview/agent.py
  */
@@ -53,15 +50,15 @@ public class InterviewAgent {
     private static final Logger log = LoggerFactory.getLogger(InterviewAgent.class);
 
     private static final Map<String, String> COMPANY_STYLES = Map.of(
-        "字节跳动", "务实、注重细节和深度",
-        "阿里巴巴", "注重价值观匹配和系统性思维",
-        "腾讯", "温和但有深度，注重实际应用",
-        "百度", "注重技术细节和底层原理",
-        "美团", "务实、注重业务理解",
-        "京东", "注重系统设计和稳定性",
-        "快手", "注重创新和快速响应",
-        "拼多多", "注重效率和成本意识",
-        "小红书", "注重用户体验和创新"
+            "字节跳动", "务实、注重细节和深度",
+            "阿里巴巴", "注重价值观匹配和系统性思维",
+            "腾讯", "温和但有深度，注重实际应用",
+            "百度", "注重技术细节和底层原理",
+            "美团", "务实、注重业务理解",
+            "京东", "注重系统设计和稳定性",
+            "快手", "注重创新和快速响应",
+            "拼多多", "注重效率和成本意识",
+            "小红书", "注重用户体验和创新"
     );
 
     private final InterviewApplicationService interviewService;
@@ -77,16 +74,16 @@ public class InterviewAgent {
     private final int maxFollowUps;
 
     public InterviewAgent(InterviewApplicationService interviewService,
-                                  QuestionApplicationService questionService,
-                                  QuestionRepository questionRepository,
-                                  JobDescriptionRepository jdRepository,
-                                  OnnxEmbeddingAdapter embeddingAdapter,
-                                  SkillKeywordExpanderAgent keywordExpander,
-                                  ScorerAgent scorerAgent,
-                                  PromptLoader promptLoader,
-                                  ObjectMapper objectMapper,
-                                  LLMModelFactory modelFactory,
-                                  InterviewProperties interviewProperties) {
+                          QuestionApplicationService questionService,
+                          QuestionRepository questionRepository,
+                          JobDescriptionRepository jdRepository,
+                          OnnxEmbeddingAdapter embeddingAdapter,
+                          SkillKeywordExpanderAgent keywordExpander,
+                          ScorerAgent scorerAgent,
+                          PromptLoader promptLoader,
+                          ObjectMapper objectMapper,
+                          LLMModelFactory modelFactory,
+                          InterviewProperties interviewProperties) {
         this.interviewService = interviewService;
         this.questionService = questionService;
         this.questionRepository = questionRepository;
@@ -102,20 +99,20 @@ public class InterviewAgent {
     }
 
     public InterviewSession createSession(String userId, String company, String position,
-                                           DifficultyLevel difficulty, int totalQuestions,
-                                           Long jdId, String resumeContext) {
+                                          DifficultyLevel difficulty, int totalQuestions,
+                                          Long jdId, String resumeContext) {
         String jdContext = null;
         JobDescription jd = null;
         if (jdId != null) {
             jd = jdRepository.findById(jdId)
-                .filter(j -> j.isOwnedBy(userId))
-                .orElseThrow(() -> new DomainException("JD not found: " + jdId, "JD_NOT_FOUND"));
+                    .filter(j -> j.isOwnedBy(userId))
+                    .orElseThrow(() -> new DomainException("JD not found: " + jdId, "JD_NOT_FOUND"));
             jdContext = jd.toInterviewContext();
             log.info("Interview session with JD: id={}, company={}, position={}",
-                jdId, jd.getCompany(), jd.getPosition());
+                    jdId, jd.getCompany(), jd.getPosition());
         }
         InterviewSession session = interviewService.createSession(
-            userId, company, position, difficulty, totalQuestions, jdContext);
+                userId, company, position, difficulty, totalQuestions, jdContext);
         if (jd != null) session.setJdId(jd.getId());
         if (resumeContext != null && !resumeContext.isBlank()) {
             session.setResumeContext(resumeContext);
@@ -203,48 +200,48 @@ public class InterviewAgent {
 
         String systemPrompt = getSystemPrompt(session);
         String userPrompt = promptLoader.render("interview_hint.md",
-            "question_text", currentQuestion.getQuestionText());
+                "question_text", currentQuestion.getQuestionText());
 
         ReActAgent agent = ReActAgent.builder()
-            .name("interview-hint")
-            .sysPrompt(systemPrompt)
-            .model(llm)
-            .maxIters(0)
-            .generateOptions(GenerateOptions.builder()
-                .temperature(0.3)
-                .maxTokens(512)
-                .build())
-            .build();
+                .name("interview-hint")
+                .sysPrompt(systemPrompt)
+                .model(llm)
+                .maxIters(0)
+                .generateOptions(GenerateOptions.builder()
+                        .temperature(0.3)
+                        .maxTokens(512)
+                        .build())
+                .build();
 
         StreamOptions streamOptions = StreamOptions.builder()
-            .includeReasoningChunk(true)
-            .includeSummaryChunk(true)
-            .build();
+                .includeReasoningChunk(true)
+                .includeSummaryChunk(true)
+                .build();
 
         return agent.stream(
-                List.of(Msg.builder().role(MsgRole.USER).textContent(userPrompt).build()),
-                streamOptions)
-            .filter(event -> {
-                Msg msg = event.getMessage();
-                if (msg == null) return false;
-                // Filter events with actual content (ThinkingBlock or TextBlock)
-                return !msg.getContentBlocks(ThinkingBlock.class).isEmpty()
-                    || !msg.getContentBlocks(TextBlock.class).isEmpty()
-                    || (msg.getTextContent() != null && !msg.getTextContent().isEmpty());
-            })
-            .map(event -> {
-                Msg msg = event.getMessage();
-                if (msg == null) return toSSEFrame(Map.of("type", "text", "content", ""));
+                        List.of(Msg.builder().role(MsgRole.USER).textContent(userPrompt).build()),
+                        streamOptions)
+                .filter(event -> {
+                    Msg msg = event.getMessage();
+                    if (msg == null) return false;
+                    // Filter events with actual content (ThinkingBlock or TextBlock)
+                    return !msg.getContentBlocks(ThinkingBlock.class).isEmpty()
+                            || !msg.getContentBlocks(TextBlock.class).isEmpty()
+                            || (msg.getTextContent() != null && !msg.getTextContent().isEmpty());
+                })
+                .map(event -> {
+                    Msg msg = event.getMessage();
+                    if (msg == null) return toSSEFrame(Map.of("type", "text", "content", ""));
 
-                // ThinkingBlock → reasoning type for frontend distinction
-                if (!msg.getContentBlocks(ThinkingBlock.class).isEmpty()) {
-                    String thinking = msg.getContentBlocks(ThinkingBlock.class).get(0).getThinking();
-                    return toSSEFrame(Map.of("type", "reasoning", "content", thinking != null ? thinking : ""));
-                }
-                // TextBlock → text type (the actual answer)
-                String text = msg.getTextContent();
-                return toSSEFrame(Map.of("type", "text", "content", text != null ? text : ""));
-            });
+                    // ThinkingBlock → reasoning type for frontend distinction
+                    if (!msg.getContentBlocks(ThinkingBlock.class).isEmpty()) {
+                        String thinking = msg.getContentBlocks(ThinkingBlock.class).get(0).getThinking();
+                        return toSSEFrame(Map.of("type", "reasoning", "content", thinking != null ? thinking : ""));
+                    }
+                    // TextBlock → text type (the actual answer)
+                    String text = msg.getTextContent();
+                    return toSSEFrame(Map.of("type", "text", "content", text != null ? text : ""));
+                });
     }
 
     // ==================== Question Preloading ====================
@@ -266,43 +263,43 @@ public class InterviewAgent {
         }
         for (InterviewQuestion iq : ordered) session.addQuestion(iq);
         log.info("Preloaded {} questions phases: {}",
-            ordered.size(), ordered.stream().map(InterviewQuestion::getPhase).distinct().toList());
+                ordered.size(), ordered.stream().map(InterviewQuestion::getPhase).distinct().toList());
     }
 
     private List<InterviewQuestion> jdDrivenPreload(InterviewSession session, JobDescription jd) {
         RecommendationPipeline pipeline = new RecommendationPipeline(
-            questionRepository, embeddingAdapter::embed, keywordExpander::expand);
+                questionRepository, embeddingAdapter::embed, keywordExpander::expand);
         var result = pipeline.recommendWithCoverage(
-            jd, session.getUserId(), session.getTotalQuestions());
+                jd, session.getUserId(), session.getTotalQuestions());
         log.info("JD-driven: {} candidates, coverage={}/{}, missing={}",
-            result.questions().size(),
-            result.coverage().coveredSkills(), result.coverage().totalSkills(),
-            result.coverage().missing().stream()
-                .map(CoverageAnalyzer.SkillCoverage::skillName).toList());
+                result.questions().size(),
+                result.coverage().coveredSkills(), result.coverage().totalSkills(),
+                result.coverage().missing().stream()
+                        .map(CoverageAnalyzer.SkillCoverage::skillName).toList());
         return result.questions().stream()
-            .map(c -> InterviewQuestion.create(c.questionId(), "jd-" + c.questionId(),
-                c.questionText(), c.questionType(), c.difficulty(), c.coreEntities()))
-            .collect(Collectors.toList());
+                .map(c -> InterviewQuestion.create(c.questionId(), "jd-" + c.questionId(),
+                        c.questionText(), c.questionType(), c.difficulty(), c.coreEntities()))
+                .collect(Collectors.toList());
     }
 
     private List<InterviewQuestion> masteryWeightedPreload(InterviewSession session) {
         String context = "公司：" + session.getCompany() + " | 岗位：" + session.getPosition() + " | 面试题";
         float[] queryVector = embeddingAdapter.embed(context);
         Map<MasteryLevel, Integer> weights = Map.of(
-            MasteryLevel.LEVEL_0, 60, MasteryLevel.LEVEL_1, 30, MasteryLevel.LEVEL_2, 10);
+                MasteryLevel.LEVEL_0, 60, MasteryLevel.LEVEL_1, 30, MasteryLevel.LEVEL_2, 10);
         List<QuestionWithScore> all = new ArrayList<>();
         for (var e : weights.entrySet()) {
             int desired = session.getTotalQuestions() * e.getValue() / 100;
             if (desired > 0) {
                 Map<String, Object> f = Map.of("company", session.getCompany(),
-                    "position", session.getPosition(), "masteryLevel", e.getKey().getLevel());
+                        "position", session.getPosition(), "masteryLevel", e.getKey().getLevel());
                 all.addAll(questionRepository.searchUserVisible(session.getUserId(), queryVector, f, desired * 2));
             }
         }
         return all.stream().map(qs -> InterviewQuestion.create(
-            qs.question().getId(), qs.question().getQuestionHash(), qs.question().getQuestionText(),
-            qs.question().getQuestionType().getValue(), session.getDifficulty(), qs.question().getCoreEntities()))
-            .collect(Collectors.toList());
+                        qs.question().getId(), qs.question().getQuestionHash(), qs.question().getQuestionText(),
+                        qs.question().getQuestionType().getValue(), session.getDifficulty(), qs.question().getCoreEntities()))
+                .collect(Collectors.toList());
     }
 
     // ==================== System Prompt ====================
@@ -310,9 +307,9 @@ public class InterviewAgent {
     private String getSystemPrompt(InterviewSession session) {
         String style = COMPANY_STYLES.getOrDefault(session.getCompany(), "专业、友好、有深度");
         String prompt = promptLoader.render("interviewer_system.md",
-            "company", session.getCompany(),
-            "position", session.getPosition(),
-            "style", style
+                "company", session.getCompany(),
+                "position", session.getPosition(),
+                "style", style
         );
         // 注入 JD 上下文（如果有），不注入用户记忆
         String jdCtx = buildInterviewContext(session);
@@ -324,7 +321,7 @@ public class InterviewAgent {
 
     /**
      * 构建面试专用上下文。
-     *
+     * <p>
      * 注意：不包含 MEMORY.md、preferences、behaviors、session_summaries。
      * 仅包含 JD 解析结果（如果有）和当前面试阶段信息。
      */
@@ -374,38 +371,38 @@ public class InterviewAgent {
 
     private String jsonCompleted(InterviewSession session) {
         return toSSEFrame(Map.of(
-            "type", "completed",
-            "message", "面试已结束，感谢你的参与！",
-            "session_id", session.getSessionId()
+                "type", "completed",
+                "message", "面试已结束，感谢你的参与！",
+                "session_id", session.getSessionId()
         ));
     }
 
     private String jsonNextQuestion(InterviewQuestion next, int idx, int score) {
         return toSSEFrame(Map.of(
-            "type", "next_question_ready",
-            "question_idx", idx,
-            "next_question", next != null ? next.getQuestionText() : "",
-            "score", score
+                "type", "next_question_ready",
+                "question_idx", idx,
+                "next_question", next != null ? next.getQuestionText() : "",
+                "score", score
         ));
     }
 
     private String jsonForceNext(InterviewQuestion next, int idx, int score) {
         return toSSEFrame(Map.of(
-            "type", "force_next",
-            "message", "该题目已追问 " + maxFollowUps + " 次，进入下一题",
-            "question_idx", idx,
-            "next_question", next != null ? next.getQuestionText() : "",
-            "score", score
+                "type", "force_next",
+                "message", "该题目已追问 " + maxFollowUps + " 次，进入下一题",
+                "question_idx", idx,
+                "next_question", next != null ? next.getQuestionText() : "",
+                "score", score
         ));
     }
 
     private String jsonFollowUp(int score, int followUpCount) {
         return toSSEFrame(Map.of(
-            "type", "follow_up",
-            "score", score,
-            "follow_up_count", followUpCount,
-            "max_follow_ups", maxFollowUps,
-            "remaining_chances", maxFollowUps - followUpCount
+                "type", "follow_up",
+                "score", score,
+                "follow_up_count", followUpCount,
+                "max_follow_ups", maxFollowUps,
+                "remaining_chances", maxFollowUps - followUpCount
         ));
     }
 }

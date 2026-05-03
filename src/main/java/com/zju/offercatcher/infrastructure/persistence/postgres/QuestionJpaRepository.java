@@ -12,7 +12,7 @@ import java.util.Optional;
 
 /**
  * Question JPA Repository
- *
+ * <p>
  * 用于 PostgreSQL 元数据存储。
  */
 @Repository
@@ -106,30 +106,30 @@ public interface QuestionJpaRepository extends JpaRepository<QuestionJpaEntity, 
      * 使用 native query 因为 coreEntities 存储在 @ElementCollection 关联表中。
      */
     @Query(value = """
-        SELECT DISTINCT q.* FROM questions q
-        JOIN question_entities qe ON q.id = qe.question_id
-        WHERE (q.visibility = 'PUBLIC' OR q.user_id = :userId)
-          AND qe.entity ILIKE CONCAT('%', :keyword, '%')
-        LIMIT :limit
-        """, nativeQuery = true)
+            SELECT DISTINCT q.* FROM questions q
+            JOIN question_entities qe ON q.id = qe.question_id
+            WHERE (q.visibility = 'PUBLIC' OR q.user_id = :userId)
+              AND qe.entity ILIKE CONCAT('%', :keyword, '%')
+            LIMIT :limit
+            """, nativeQuery = true)
     List<QuestionJpaEntity> findByCoreEntityLike(@Param("userId") String userId,
-                                                  @Param("keyword") String keyword,
-                                                  @Param("limit") int limit);
+                                                 @Param("keyword") String keyword,
+                                                 @Param("limit") int limit);
 
     /**
      * 按核心考点三元组相似度搜索（pg_trgm 扩展）。
      * JD 推荐通道1 增强：ILIKE 命中不足时通过 similarity 补召。
      */
     @Query(value = """
-        SELECT DISTINCT q.*, similarity(qe.entity, :keyword) AS sim
-        FROM questions q
-        JOIN question_entities qe ON q.id = qe.question_id
-        WHERE (q.visibility = 'PUBLIC' OR q.user_id = :userId)
-          AND similarity(qe.entity, :keyword) > 0.3
-        ORDER BY sim DESC
-        LIMIT :limit
-        """, nativeQuery = true)
+            SELECT DISTINCT q.*, similarity(qe.entity, :keyword) AS sim
+            FROM questions q
+            JOIN question_entities qe ON q.id = qe.question_id
+            WHERE (q.visibility = 'PUBLIC' OR q.user_id = :userId)
+              AND similarity(qe.entity, :keyword) > 0.3
+            ORDER BY sim DESC
+            LIMIT :limit
+            """, nativeQuery = true)
     List<QuestionJpaEntity> findByCoreEntitySimilar(@Param("userId") String userId,
-                                                     @Param("keyword") String keyword,
-                                                     @Param("limit") int limit);
+                                                    @Param("keyword") String keyword,
+                                                    @Param("limit") int limit);
 }

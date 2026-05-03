@@ -11,33 +11,36 @@ import java.util.List;
 public interface SearchDto {
 
     record SearchRequest(
-        @NotBlank String query,
-        String company,
-        String position,
-        @Min(1) int k,
-        float scoreThreshold,
-        Integer masteryLevel,
-        String questionType,
-        List<String> coreEntities,
-        List<String> clusterIds
-    ) {}
+            @NotBlank String query,
+            String company,
+            String position,
+            @Min(1) int k,
+            float scoreThreshold,
+            Integer masteryLevel,
+            String questionType,
+            List<String> coreEntities,
+            List<String> clusterIds
+    ) {
+    }
 
     record SearchResponse(
-        List<SearchResultItem> results,
-        int total
-    ) {}
+            List<SearchResultItem> results,
+            int total
+    ) {
+    }
 
     record SearchResultItem(
-        String questionId,
-        String questionText,
-        String company,
-        String position,
-        String masteryLevel,
-        String questionType,
-        List<String> coreEntities,
-        List<String> clusterIds,
-        String questionAnswer,
-        Object metadata,
-        float score
-    ) {}
+            String questionId,
+            String questionText,
+            String company,
+            String position,
+            String masteryLevel,
+            String questionType,
+            List<String> coreEntities,
+            List<String> clusterIds,
+            String questionAnswer,
+            Object metadata,
+            float score
+    ) {
+    }
 }

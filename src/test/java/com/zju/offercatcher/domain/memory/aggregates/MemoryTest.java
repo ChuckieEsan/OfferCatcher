@@ -9,7 +9,8 @@ import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Memory 聚合根测试
@@ -41,16 +42,16 @@ class MemoryTest {
         @DisplayName("userId 为空应抛出异常")
         void shouldThrowExceptionWhenUserIdIsNull() {
             assertThatThrownBy(() -> Memory.create(null, CONTENT))
-                .isInstanceOf(DomainException.class)
-                .hasMessageContaining("userId");
+                    .isInstanceOf(DomainException.class)
+                    .hasMessageContaining("userId");
         }
 
         @Test
         @DisplayName("content 为空应抛出异常")
         void shouldThrowExceptionWhenContentIsNull() {
             assertThatThrownBy(() -> Memory.create(USER_ID, null))
-                .isInstanceOf(DomainException.class)
-                .hasMessageContaining("content");
+                    .isInstanceOf(DomainException.class)
+                    .hasMessageContaining("content");
         }
     }
 

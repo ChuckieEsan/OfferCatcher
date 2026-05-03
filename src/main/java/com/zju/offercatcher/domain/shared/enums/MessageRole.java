@@ -2,7 +2,7 @@ package com.zju.offercatcher.domain.shared.enums;
 
 /**
  * 消息角色枚举
- *
+ * <p>
  * 用于区分对话消息的角色类型。
  */
 public enum MessageRole {

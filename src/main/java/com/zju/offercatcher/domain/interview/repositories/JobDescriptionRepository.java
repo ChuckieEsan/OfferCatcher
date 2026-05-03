@@ -7,7 +7,10 @@ import java.util.Optional;
 
 public interface JobDescriptionRepository {
     Optional<JobDescription> findById(Long id);
+
     List<JobDescription> findByUserId(String userId);
+
     void save(JobDescription jd);
+
     void deleteById(Long id, String userId);
 }

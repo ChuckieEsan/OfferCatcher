@@ -11,7 +11,7 @@ import java.io.IOException;
 
 /**
  * Jackson 全局配置。
- *
+ * <p>
  * 将 Long 序列化为字符串，防止 JavaScript Number 精度溢出。
  * JavaScript Number 安全整数上限为 2^53-1 (9007199254740991)，
  * Snowflake 64-bit ID 超过此范围会导致截断为相同值。
@@ -25,14 +25,14 @@ public class JacksonConfig {
         module.addSerializer(Long.class, new JsonSerializer<>() {
             @Override
             public void serialize(Long value, JsonGenerator gen, SerializerProvider serializers)
-                throws IOException {
+                    throws IOException {
                 gen.writeString(value.toString());
             }
         });
         module.addSerializer(Long.TYPE, new JsonSerializer<>() {
             @Override
             public void serialize(Long value, JsonGenerator gen, SerializerProvider serializers)
-                throws IOException {
+                    throws IOException {
                 gen.writeString(value.toString());
             }
         });

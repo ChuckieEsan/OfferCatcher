@@ -20,9 +20,9 @@ class CoverageAnalyzerTest {
 
     private static CandidateQuestion makeQ(String text, String type, String skill) {
         return new CandidateQuestion(
-            (long) text.hashCode(), text, type,
-            DifficultyLevel.MEDIUM, List.of(skill),
-            0.9, 0.5, 1.0, RecallChannel.PG_TRGM, skill, 0
+                (long) text.hashCode(), text, type,
+                DifficultyLevel.MEDIUM, List.of(skill),
+                0.9, 0.5, 1.0, RecallChannel.PG_TRGM, skill, 0
         );
     }
 
@@ -30,14 +30,14 @@ class CoverageAnalyzerTest {
     @DisplayName("全部覆盖 → coverageRate = 1.0")
     void fullCoverage() {
         List<CandidateQuestion> results = List.of(
-            makeQ("RAG 原理", "KNOWLEDGE", "RAG"),
-            makeQ("Agent 架构", "KNOWLEDGE", "Agent"),
-            makeQ("MCP 协议", "KNOWLEDGE", "MCP")
+                makeQ("RAG 原理", "KNOWLEDGE", "RAG"),
+                makeQ("Agent 架构", "KNOWLEDGE", "Agent"),
+                makeQ("MCP 协议", "KNOWLEDGE", "MCP")
         );
         List<SkillRequirement> required = List.of(
-            new SkillRequirement("RAG", "proficient", ""),
-            new SkillRequirement("Agent", "proficient", ""),
-            new SkillRequirement("MCP", "familiar", "")
+                new SkillRequirement("RAG", "proficient", ""),
+                new SkillRequirement("Agent", "proficient", ""),
+                new SkillRequirement("MCP", "familiar", "")
         );
 
         CoverageReport report = analyzer.analyze(results, required);
@@ -51,12 +51,12 @@ class CoverageAnalyzerTest {
     @DisplayName("部分覆盖 → coverageRate < 1.0，missing 非空")
     void partialCoverage() {
         List<CandidateQuestion> results = List.of(
-            makeQ("RAG 原理", "KNOWLEDGE", "RAG")
+                makeQ("RAG 原理", "KNOWLEDGE", "RAG")
         );
         List<SkillRequirement> required = List.of(
-            new SkillRequirement("RAG", "proficient", ""),
-            new SkillRequirement("Agent", "proficient", ""),
-            new SkillRequirement("MCP", "familiar", "")
+                new SkillRequirement("RAG", "proficient", ""),
+                new SkillRequirement("Agent", "proficient", ""),
+                new SkillRequirement("MCP", "familiar", "")
         );
 
         CoverageReport report = analyzer.analyze(results, required);
@@ -65,7 +65,7 @@ class CoverageAnalyzerTest {
         assertThat(report.isFullyCovered()).isFalse();
         assertThat(report.missing()).hasSize(2);
         assertThat(report.missing().stream().map(SkillCoverage::skillName))
-            .contains("Agent", "MCP");
+                .contains("Agent", "MCP");
     }
 
     @Test
@@ -79,7 +79,7 @@ class CoverageAnalyzerTest {
     @DisplayName("空结果 → 全部 missing")
     void emptyResults() {
         List<SkillRequirement> required = List.of(
-            new SkillRequirement("RAG", "proficient", "")
+                new SkillRequirement("RAG", "proficient", "")
         );
         CoverageReport report = analyzer.analyze(List.of(), required);
 
@@ -91,12 +91,12 @@ class CoverageAnalyzerTest {
     @DisplayName("details 包含每题数量")
     void detailsIncludeMatchCount() {
         List<CandidateQuestion> results = List.of(
-            makeQ("RAG 题1", "KNOWLEDGE", "RAG"),
-            makeQ("RAG 题2", "SCENARIO", "RAG"),
-            makeQ("Agent 题1", "KNOWLEDGE", "Agent")
+                makeQ("RAG 题1", "KNOWLEDGE", "RAG"),
+                makeQ("RAG 题2", "SCENARIO", "RAG"),
+                makeQ("Agent 题1", "KNOWLEDGE", "Agent")
         );
         List<SkillRequirement> required = List.of(
-            new SkillRequirement("RAG", "proficient", "")
+                new SkillRequirement("RAG", "proficient", "")
         );
 
         CoverageReport report = analyzer.analyze(results, required);

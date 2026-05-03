@@ -9,7 +9,7 @@ import java.util.Optional;
 
 /**
  * Memory Repository 实现
- *
+ * <p>
  * 基于 PostgreSQL 的记忆存储实现。
  */
 @Repository
@@ -24,7 +24,7 @@ public class MemoryRepositoryImpl implements MemoryRepository {
     @Override
     public Optional<Memory> findByUserId(String userId) {
         return jpaRepository.findByUserId(userId)
-            .map(MemoryJpaEntity::toDomain);
+                .map(MemoryJpaEntity::toDomain);
     }
 
     @Override

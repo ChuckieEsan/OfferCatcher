@@ -13,8 +13,8 @@ import java.time.LocalDateTime;
  */
 @Entity
 @Table(name = "favorites", indexes = {
-    @Index(name = "idx_favorites_user_created", columnList = "user_id, created_at"),
-    @Index(name = "idx_favorites_user_question", columnList = "user_id, question_id", unique = true)
+        @Index(name = "idx_favorites_user_created", columnList = "user_id, created_at"),
+        @Index(name = "idx_favorites_user_question", columnList = "user_id, question_id", unique = true)
 })
 @Getter
 @Setter

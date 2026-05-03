@@ -11,7 +11,7 @@ import java.util.function.Supplier;
 
 /**
  * 缓存应用服务
- *
+ * <p>
  * 编排缓存用例，包含业务决策逻辑。
  * 对应 Python: app/application/services/cache_service.py
  */
@@ -44,9 +44,9 @@ public class CacheApplicationService {
             cacheAdapter.deletePattern(CacheKeys.questionsCountPattern());
             cacheAdapter.deletePattern(CacheKeys.statsEntitiesPattern());
             cacheAdapter.delete(
-                CacheKeys.statsOverview(),
-                CacheKeys.statsClusters(),
-                CacheKeys.statsCompanies()
+                    CacheKeys.statsOverview(),
+                    CacheKeys.statsClusters(),
+                    CacheKeys.statsCompanies()
             );
             if (id != null) {
                 cacheAdapter.delete(CacheKeys.questionsItem(id));

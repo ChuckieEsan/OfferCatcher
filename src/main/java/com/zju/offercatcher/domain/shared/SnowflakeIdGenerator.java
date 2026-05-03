@@ -6,10 +6,10 @@ import org.springframework.stereotype.Component;
 
 /**
  * Snowflake ID 生成器
- *
+ * <p>
  * 基于 Hutool 的 Snowflake 算法实现，生成 64 位趋势递增 Long ID。
  * 相比 UUID，Snowflake ID 在 B-tree 索引上性能更好（写入有序、占用空间小）。
- *
+ * <p>
  * 64 位结构：1 位保留 + 41 位时间戳 + 5 位 workerId + 5 位 datacenterId + 12 位序列号
  */
 @Component

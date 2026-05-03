@@ -15,7 +15,7 @@ import java.util.List;
 
 /**
  * 重嵌入 Worker。
- *
+ * <p>
  * 当题目文本更新后，重新计算向量并更新 Qdrant。
  * 对应 Python: app/application/workers/reembed_worker.py（批处理脚本）
  */
@@ -56,7 +56,7 @@ public class ReembedWorker {
         }
 
         log.info("Reembed worker found {} updated questions since {}, processing in batches of {}",
-            updated.size(), since, BATCH_SIZE);
+                updated.size(), since, BATCH_SIZE);
 
         int succeeded = 0;
         int failed = 0;
@@ -75,7 +75,7 @@ public class ReembedWorker {
                 }
             }
             log.debug("Reembed batch [{}/{}]: {} succeeded, {} failed so far",
-                end, updated.size(), succeeded, failed);
+                    end, updated.size(), succeeded, failed);
         }
 
         log.info("Reembed complete: {} succeeded, {} failed out of {} total", succeeded, failed, updated.size());

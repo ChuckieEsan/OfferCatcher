@@ -12,8 +12,8 @@ import java.time.LocalDateTime;
  */
 @Entity
 @Table(name = "conversations", indexes = {
-    @Index(name = "idx_conversations_user_created", columnList = "user_id, created_at"),
-    @Index(name = "idx_conversations_user_status", columnList = "user_id, status")
+        @Index(name = "idx_conversations_user_created", columnList = "user_id, created_at"),
+        @Index(name = "idx_conversations_user_status", columnList = "user_id, status")
 })
 @Getter
 @Setter
@@ -53,9 +53,9 @@ public class ConversationJpaEntity {
 
     public com.zju.offercatcher.domain.chat.aggregates.Conversation toDomainWithoutMessages() {
         return com.zju.offercatcher.domain.chat.aggregates.Conversation.rebuild(
-            conversationId, userId, title, status,
-            java.util.Collections.emptyList(),
-            createdAt, updatedAt
+                conversationId, userId, title, status,
+                java.util.Collections.emptyList(),
+                createdAt, updatedAt
         );
     }
 }

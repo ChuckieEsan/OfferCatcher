@@ -21,7 +21,7 @@ import java.util.Map;
 
 /**
  * 结构化输出工具类。
- *
+ * <p>
  * 3 级降级：
  * TOOL_CHOICE（json_schema，OpenAI/Qwen）→ FUNCTION_CALLING（DeepSeek 等）→ PROMPT（兜底）→ 默认值。
  */
@@ -29,7 +29,8 @@ public final class StructuredOutputUtil {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
-    private StructuredOutputUtil() {}
+    private StructuredOutputUtil() {
+    }
 
     /**
      * 带降级的结构化输出调用。
@@ -47,7 +48,7 @@ public final class StructuredOutputUtil {
         // 1. TOOL_CHOICE（主力）
         try {
             T result = doStructuredCall(llm, agentName, sysPrompt, options,
-                StructuredOutputReminder.TOOL_CHOICE, messages, schema);
+                    StructuredOutputReminder.TOOL_CHOICE, messages, schema);
             if (result != null) return result;
             log.warn("{}: TOOL_CHOICE returned null, falling back to FUNCTION_CALLING", agentName);
         } catch (Exception e) {
@@ -66,7 +67,7 @@ public final class StructuredOutputUtil {
         // 3. PROMPT（兜底）
         try {
             T result = doStructuredCall(llm, agentName, sysPrompt, options,
-                StructuredOutputReminder.PROMPT, messages, schema);
+                    StructuredOutputReminder.PROMPT, messages, schema);
             if (result != null) return result;
             log.error("{}: PROMPT returned null, returning default", agentName);
         } catch (Exception e) {
@@ -82,7 +83,7 @@ public final class StructuredOutputUtil {
                                           GenerateOptions options, StructuredOutputReminder mode,
                                           List<Msg> messages, Class<T> schema) {
         ReActAgent.Builder builder = ReActAgent.builder()
-            .name(agentName).model(llm).maxIters(0).structuredOutputReminder(mode);
+                .name(agentName).model(llm).maxIters(0).structuredOutputReminder(mode);
         if (sysPrompt != null && !sysPrompt.isBlank()) builder.sysPrompt(sysPrompt);
         if (options != null) builder.generateOptions(options);
 
@@ -109,7 +110,7 @@ public final class StructuredOutputUtil {
             JacksonModule jacksonModule = new JacksonModule();
             SchemaGeneratorConfigBuilder configBuilder = new SchemaGeneratorConfigBuilder(
                     MAPPER, OptionPreset.PLAIN_JSON)
-                .with(jacksonModule);
+                    .with(jacksonModule);
             schemaNode = new SchemaGenerator(configBuilder.build()).generateSchema(schema);
         } catch (Exception e) {
             log.warn("{}: Failed to generate schema: {}", agentName, e.getMessage());
@@ -122,19 +123,19 @@ public final class StructuredOutputUtil {
         // 2. 注册 schema-only tool
         Toolkit toolkit = new Toolkit();
         toolkit.registerSchema(ToolSchema.builder()
-            .name("output_extracted_data")
-            .description("Output the structured data extracted from the input.")
-            .parameters(parameters)
-            .build());
+                .name("output_extracted_data")
+                .description("Output the structured data extracted from the input.")
+                .parameters(parameters)
+                .build());
 
         // 3. 构建 agent
         String fcSysPrompt = (sysPrompt != null && !sysPrompt.isBlank() ? sysPrompt + "\n\n" : "")
-            + "You MUST call the output_extracted_data function to provide your result.";
+                + "You MUST call the output_extracted_data function to provide your result.";
 
         ReActAgent agent = ReActAgent.builder()
-            .name(agentName).model(llm).toolkit(toolkit).maxIters(1)
-            .sysPrompt(fcSysPrompt).generateOptions(options)
-            .build();
+                .name(agentName).model(llm).toolkit(toolkit).maxIters(1)
+                .sysPrompt(fcSysPrompt).generateOptions(options)
+                .build();
 
         Msg response = agent.call(messages).block();
         if (response == null) return null;

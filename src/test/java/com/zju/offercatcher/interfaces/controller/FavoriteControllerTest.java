@@ -18,14 +18,18 @@ import java.util.Map;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(FavoriteController.class)
 class FavoriteControllerTest {
 
-    @Autowired MockMvc mvc;
-    @Autowired ObjectMapper mapper;
-    @MockitoBean FavoriteApplicationService favoriteService;
+    @Autowired
+    MockMvc mvc;
+    @Autowired
+    ObjectMapper mapper;
+    @MockitoBean
+    FavoriteApplicationService favoriteService;
 
     Favorite sampleFavorite = Favorite.create("user-1", 1L);
 
@@ -41,11 +45,11 @@ class FavoriteControllerTest {
             String body = mapper.writeValueAsString(Map.of("questionId", 1));
 
             mvc.perform(post("/api/v1/favorites")
-                    .header("X-User-Id", "user-1")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(body))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.favoriteId").exists());
+                            .header("X-User-Id", "user-1")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(body))
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.favoriteId").exists());
         }
     }
 
@@ -57,12 +61,12 @@ class FavoriteControllerTest {
         @DisplayName("列表查询返回 200")
         void listSuccess() throws Exception {
             when(favoriteService.listFavorites(anyString(), anyInt(), anyInt()))
-                .thenReturn(List.of(sampleFavorite));
+                    .thenReturn(List.of(sampleFavorite));
 
             mvc.perform(get("/api/v1/favorites")
-                    .header("X-User-Id", "user-1"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.favorites.length()").value(1));
+                            .header("X-User-Id", "user-1"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.favorites.length()").value(1));
         }
     }
 
@@ -74,8 +78,8 @@ class FavoriteControllerTest {
         @DisplayName("删除成功返回 204")
         void removeSuccess() throws Exception {
             mvc.perform(delete("/api/v1/favorites/1")
-                    .header("X-User-Id", "user-1"))
-                .andExpect(status().isNoContent());
+                            .header("X-User-Id", "user-1"))
+                    .andExpect(status().isNoContent());
         }
     }
 
@@ -87,17 +91,17 @@ class FavoriteControllerTest {
         @DisplayName("检查收藏状态返回 200")
         void checkSuccess() throws Exception {
             when(favoriteService.checkFavorited(anyString(), anyList()))
-                .thenReturn(Map.of(1L, true, 2L, false));
+                    .thenReturn(Map.of(1L, true, 2L, false));
 
             String body = mapper.writeValueAsString(Map.of("questionIds", List.of(1, 2)));
 
             mvc.perform(post("/api/v1/favorites/check")
-                    .header("X-User-Id", "user-1")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(body))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.favorited['1']").value(true))
-                .andExpect(jsonPath("$.favorited['2']").value(false));
+                            .header("X-User-Id", "user-1")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(body))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.favorited['1']").value(true))
+                    .andExpect(jsonPath("$.favorited['2']").value(false));
         }
     }
 }

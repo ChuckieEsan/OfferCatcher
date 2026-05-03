@@ -11,15 +11,14 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * 知识图谱工具
- *
+ * <p>
  * 对应 Python:
- *   app/infrastructure/tools/get_knowledge_relations.py
- *   app/infrastructure/tools/get_company_hot_topics.py
- *   app/infrastructure/tools/get_cross_company_trends.py
+ * app/infrastructure/tools/get_knowledge_relations.py
+ * app/infrastructure/tools/get_company_hot_topics.py
+ * app/infrastructure/tools/get_cross_company_trends.py
  */
 @Component
 public class KnowledgeGraphTools {
@@ -36,15 +35,15 @@ public class KnowledgeGraphTools {
     }
 
     @Tool(name = "get_knowledge_relations",
-          description = "查询某个知识点的关联知识点。分析知识点之间的共现关系，帮助用户了解学习路径。")
+            description = "查询某个知识点的关联知识点。分析知识点之间的共现关系，帮助用户了解学习路径。")
     public String getKnowledgeRelations(
-        @ToolParam(name = "entity", required = true,
-                   description = "知识点实体名称")
-        String entity,
-        @ToolParam(name = "limit", required = false,
-                   description = "返回数量限制，默认 5")
-        int limit,
-        ToolExecutionContext context
+            @ToolParam(name = "entity", required = true,
+                    description = "知识点实体名称")
+            String entity,
+            @ToolParam(name = "limit", required = false,
+                    description = "返回数量限制，默认 5")
+            int limit,
+            ToolExecutionContext context
     ) {
         if (limit <= 0) limit = 5;
         final int finalLimit = limit;
@@ -64,7 +63,7 @@ public class KnowledgeGraphTools {
                     String relatedEntity = (String) e.get("related_entity");
                     Object count = e.get("co_occurrence_count");
                     sb.append("- **").append(relatedEntity)
-                      .append("** (共现次数: ").append(count).append(")\n");
+                            .append("** (共现次数: ").append(count).append(")\n");
                 }
                 sb.append("\n建议在学习 '").append(entity).append("' 后，继续深入以上关联知识点。");
                 return sb.toString();
@@ -76,15 +75,15 @@ public class KnowledgeGraphTools {
     }
 
     @Tool(name = "get_company_hot_topics",
-          description = "查询某公司的高频考点。用于分析某公司的面试重点，帮助用户针对性准备。")
+            description = "查询某公司的高频考点。用于分析某公司的面试重点，帮助用户针对性准备。")
     public String getCompanyHotTopics(
-        @ToolParam(name = "company", required = true,
-                   description = "公司名称")
-        String company,
-        @ToolParam(name = "limit", required = false,
-                   description = "返回数量限制，默认 10")
-        int limit,
-        ToolExecutionContext context
+            @ToolParam(name = "company", required = true,
+                    description = "公司名称")
+            String company,
+            @ToolParam(name = "limit", required = false,
+                    description = "返回数量限制，默认 10")
+            int limit,
+            ToolExecutionContext context
     ) {
         if (limit <= 0) limit = 10;
         final int finalLimit = limit;
@@ -105,7 +104,7 @@ public class KnowledgeGraphTools {
                     String entity = (String) e.get("entity");
                     Object count = e.get("count");
                     sb.append(i++).append(". **").append(entity)
-                      .append("** (考察次数: ").append(count).append(")\n");
+                            .append("** (考察次数: ").append(count).append(")\n");
                 }
                 return sb.toString();
             } catch (Exception e) {
@@ -116,15 +115,15 @@ public class KnowledgeGraphTools {
     }
 
     @Tool(name = "get_cross_company_trends",
-          description = "查询跨多家公司考察的热门考点。分析行业高频考点，帮助用户了解行业趋势和重点。")
+            description = "查询跨多家公司考察的热门考点。分析行业高频考点，帮助用户了解行业趋势和重点。")
     public String getCrossCompanyTrends(
-        @ToolParam(name = "min_companies", required = false,
-                   description = "最少覆盖公司数，默认 2")
-        int minCompanies,
-        @ToolParam(name = "limit", required = false,
-                   description = "返回数量限制，默认 20")
-        int limit,
-        ToolExecutionContext context
+            @ToolParam(name = "min_companies", required = false,
+                    description = "最少覆盖公司数，默认 2")
+            int minCompanies,
+            @ToolParam(name = "limit", required = false,
+                    description = "返回数量限制，默认 20")
+            int limit,
+            ToolExecutionContext context
     ) {
         if (minCompanies <= 0) minCompanies = 2;
         if (limit <= 0) limit = 20;
@@ -135,7 +134,7 @@ public class KnowledgeGraphTools {
         return cacheAdapter.getWithLock(cacheKey, () -> {
             try {
                 List<Map<String, Object>> crossEntities =
-                    neo4jClient.getCrossCompanyEntities(finalMinCompanies);
+                        neo4jClient.getCrossCompanyEntities(finalMinCompanies);
 
                 if (crossEntities.isEmpty()) {
                     return "暂无跨 " + finalMinCompanies + "+ 家公司的考点数据。\n可能题库数据不足，或 Neo4j 数据未初始化。";
@@ -144,15 +143,15 @@ public class KnowledgeGraphTools {
                 // Sort by total_count desc and limit
                 @SuppressWarnings("unchecked")
                 List<Map<String, Object>> sorted = crossEntities.stream()
-                    .sorted((a, b) -> {
-                        Object caRaw = a.get("total_count");
-                        Object cbRaw = b.get("total_count");
-                        long ca = caRaw instanceof Number n ? n.longValue() : 0L;
-                        long cb = cbRaw instanceof Number n ? n.longValue() : 0L;
-                        return Long.compare(cb, ca);
-                    })
-                    .limit(finalLimit)
-                    .toList();
+                        .sorted((a, b) -> {
+                            Object caRaw = a.get("total_count");
+                            Object cbRaw = b.get("total_count");
+                            long ca = caRaw instanceof Number n ? n.longValue() : 0L;
+                            long cb = cbRaw instanceof Number n ? n.longValue() : 0L;
+                            return Long.compare(cb, ca);
+                        })
+                        .limit(finalLimit)
+                        .toList();
 
                 StringBuilder sb = new StringBuilder();
                 sb.append("**跨 ").append(finalMinCompanies).append("+ 家公司的热门考点:**\n\n");
@@ -167,11 +166,11 @@ public class KnowledgeGraphTools {
                         companiesStr = String.join(", ", companies);
                     } else {
                         companiesStr = String.join(", ", companies.subList(0, 5))
-                            + " 等" + companies.size() + "家";
+                                + " 等" + companies.size() + "家";
                     }
 
                     sb.append("- **").append(entity).append("**: ")
-                      .append(companiesStr).append(" (共 ").append(totalCount).append(" 次)\n");
+                            .append(companiesStr).append(" (共 ").append(totalCount).append(" 次)\n");
                 }
                 sb.append("\n以上考点是行业高频热点，建议优先准备。");
                 return sb.toString();

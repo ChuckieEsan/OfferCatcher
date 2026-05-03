@@ -18,8 +18,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Import({FavoriteRepositoryImpl.class})
 class FavoriteRepositoryImplTest {
 
-    @Autowired FavoriteRepositoryImpl repo;
-    @Autowired FavoriteJpaRepository jpaRepo;
+    @Autowired
+    FavoriteRepositoryImpl repo;
+    @Autowired
+    FavoriteJpaRepository jpaRepo;
 
     @Test
     @DisplayName("save 应持久化收藏")

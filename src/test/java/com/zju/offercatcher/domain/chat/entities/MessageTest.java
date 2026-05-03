@@ -8,11 +8,12 @@ import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Message 实体测试
- *
+ * <p>
  * 测试消息的核心业务逻辑：
  * - 工厂方法创建
  * - 参数校验
@@ -53,32 +54,32 @@ class MessageTest {
         @DisplayName("messageId 为空应抛出异常")
         void shouldThrowExceptionWhenMessageIdIsNull() {
             assertThatThrownBy(() -> Message.create(null, MessageRole.USER, CONTENT))
-                .isInstanceOf(DomainException.class)
-                .hasMessageContaining("messageId");
+                    .isInstanceOf(DomainException.class)
+                    .hasMessageContaining("messageId");
         }
 
         @Test
         @DisplayName("role 为空应抛出异常")
         void shouldThrowExceptionWhenRoleIsNull() {
             assertThatThrownBy(() -> Message.create(MESSAGE_ID, null, CONTENT))
-                .isInstanceOf(DomainException.class)
-                .hasMessageContaining("role");
+                    .isInstanceOf(DomainException.class)
+                    .hasMessageContaining("role");
         }
 
         @Test
         @DisplayName("content 为空应抛出异常")
         void shouldThrowExceptionWhenContentIsNull() {
             assertThatThrownBy(() -> Message.create(MESSAGE_ID, MessageRole.USER, null))
-                .isInstanceOf(DomainException.class)
-                .hasMessageContaining("content");
+                    .isInstanceOf(DomainException.class)
+                    .hasMessageContaining("content");
         }
 
         @Test
         @DisplayName("content 为空白应抛出异常")
         void shouldThrowExceptionWhenContentIsBlank() {
             assertThatThrownBy(() -> Message.create(MESSAGE_ID, MessageRole.USER, "   "))
-                .isInstanceOf(DomainException.class)
-                .hasMessageContaining("content");
+                    .isInstanceOf(DomainException.class)
+                    .hasMessageContaining("content");
         }
     }
 

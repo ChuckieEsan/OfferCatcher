@@ -1,14 +1,14 @@
 package com.zju.offercatcher.application.service;
 
+import com.zju.offercatcher.domain.question.aggregates.Question;
 import com.zju.offercatcher.domain.question.services.QuestionHashGenerator;
 import com.zju.offercatcher.domain.question.valueobjects.ExtractedQuestionItem;
-import com.zju.offercatcher.domain.question.aggregates.Question;
 import com.zju.offercatcher.domain.shared.enums.QuestionType;
 import com.zju.offercatcher.infrastructure.adapters.embedding.OnnxEmbeddingAdapter;
 import com.zju.offercatcher.infrastructure.messaging.MQTaskMessage;
 import com.zju.offercatcher.infrastructure.messaging.RabbitMQProducer;
-import com.zju.offercatcher.infrastructure.persistence.postgres.QuestionJpaRepository;
 import com.zju.offercatcher.infrastructure.persistence.postgres.QuestionJpaEntity;
+import com.zju.offercatcher.infrastructure.persistence.postgres.QuestionJpaRepository;
 import com.zju.offercatcher.infrastructure.persistence.qdrant.QdrantVectorStore;
 import com.zju.offercatcher.infrastructure.persistence.qdrant.VectorSearchHit;
 import org.slf4j.Logger;
@@ -16,11 +16,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 /**
  * 入库应用服务。
- *
+ * <p>
  * 编排面经入库用例：提取结果 → 去重/复用答案 → 向量化 → 持久化 → MQ推送异步答案生成。
  * 对应 Python: app/application/services/ingestion_service.py
  */
@@ -55,7 +57,7 @@ public class IngestFlowApplicationService {
             try {
                 // 1. 去重：用与 Question.createPrivate 相同的 hash 函数查 DB
                 String hash = QuestionHashGenerator.generate(
-                    userId, extracted.company(), item.questionText());
+                        userId, extracted.company(), item.questionText());
                 Optional<QuestionJpaEntity> existing = questionJpaRepo.findByQuestionHash(hash);
                 if (existing.isPresent()) {
                     log.info("Question already exists, skip: hash={}", hash);
@@ -67,10 +69,10 @@ public class IngestFlowApplicationService {
                 String reusedAnswer = null;
                 if (embeddingAdapter.isInitialized()) {
                     String context = buildContext(extracted.company(), extracted.position(),
-                        item.questionType(), item.coreEntities(), item.questionText());
+                            item.questionType(), item.coreEntities(), item.questionText());
                     float[] vector = embeddingAdapter.embed(context);
                     List<VectorSearchHit> similar = qdrantVectorStore.search(
-                        vector, userId, 1);
+                            vector, userId, 1);
                     if (!similar.isEmpty()) {
                         reusedAnswer = tryReuseAnswer(Long.parseLong(similar.getFirst().id()));
                     }
@@ -78,8 +80,8 @@ public class IngestFlowApplicationService {
 
                 // 3. 创建 Question 聚合
                 Question question = Question.createPrivate(userId, item.questionText(),
-                    extracted.company(), extracted.position(),
-                    QuestionType.fromValue(item.questionType()), item.coreEntities());
+                        extracted.company(), extracted.position(),
+                        QuestionType.fromValue(item.questionType()), item.coreEntities());
                 if (reusedAnswer != null) {
                     question.updateAnswer(reusedAnswer);
                 }
@@ -100,8 +102,8 @@ public class IngestFlowApplicationService {
                 // 5. MQ 推送异步答案生成
                 if (reusedAnswer == null && mqProducer.isPresent()) {
                     MQTaskMessage taskMsg = new MQTaskMessage(
-                        question.getId(), question.getQuestionText(),
-                        extracted.company(), extracted.position(), question.getCoreEntities()
+                            question.getId(), question.getQuestionText(),
+                            extracted.company(), extracted.position(), question.getCoreEntities()
                     );
                     mqProducer.get().publishTask(taskMsg);
                 }
@@ -117,17 +119,17 @@ public class IngestFlowApplicationService {
 
     private String tryReuseAnswer(Long similarQuestionId) {
         return questionJpaRepo.findById(similarQuestionId)
-            .map(QuestionJpaEntity::getAnswer)
-            .filter(a -> a != null && !a.isBlank())
-            .orElse(null);
+                .map(QuestionJpaEntity::getAnswer)
+                .filter(a -> a != null && !a.isBlank())
+                .orElse(null);
     }
 
     private String buildContext(String company, String position, String questionType,
                                 List<String> entities, String questionText) {
         String entitiesStr = (entities != null && !entities.isEmpty())
-            ? String.join(",", entities) : "综合";
+                ? String.join(",", entities) : "综合";
         return String.format("公司：%s | 岗位：%s | 类型：%s | 考点：%s | 题目：%s",
-            company, position, questionType, entitiesStr, questionText);
+                company, position, questionType, entitiesStr, questionText);
     }
 
     public static class IngestResult {

@@ -20,17 +20,17 @@ import java.util.concurrent.Executor;
 
 /**
  * 用户长期记忆实现（对接自有 Postgres + Qdrant + MEMORY.md 体系）。
- *
+ * <p>
  * 不依赖 Mem0/ReMe 等外部服务，通过 AgentScope 的 LongTermMemory 接口标准接入。
  * 使用 STATIC_CONTROL 模式——框架自动在 PreCall 调用 retrieve()、PostCall 调用 record()。
- *
+ * <p>
  * retrieve(): 注入 MEMORY.md 概要 + Short-term Memory 上下文
- *   - Redis 缓存命中 → Agent 精炼的上下文（~1ms）
- *   - 缓存 miss → 降级 importance top-K 查询（<10ms）
- *
+ * - Redis 缓存命中 → Agent 精炼的上下文（~1ms）
+ * - 缓存 miss → 降级 importance top-K 查询（<10ms）
+ * <p>
  * record(): 异步触发记忆检索预热 + 记忆提取
- *   - MemoryRetrievalAgent：基于最后一条消息检索，预热 STM 缓存
- *   - MemoryExtractionAgent：分析对话提取偏好/行为/摘要
+ * - MemoryRetrievalAgent：基于最后一条消息检索，预热 STM 缓存
+ * - MemoryExtractionAgent：分析对话提取偏好/行为/摘要
  */
 public class UserLongTermMemory implements LongTermMemory {
 
@@ -46,12 +46,12 @@ public class UserLongTermMemory implements LongTermMemory {
     private final Long conversationId;
 
     public UserLongTermMemory(MemoryApplicationService memoryService,
-                               MemoryRetrievalAgent retrievalAgent,
-                               MemoryExtractionAgent extractionAgent,
-                               SessionSummaryRepository sessionSummaryRepository,
-                               ChatApplicationService chatService,
-                               Executor workerExecutor,
-                               String userId, Long conversationId) {
+                              MemoryRetrievalAgent retrievalAgent,
+                              MemoryExtractionAgent extractionAgent,
+                              SessionSummaryRepository sessionSummaryRepository,
+                              ChatApplicationService chatService,
+                              Executor workerExecutor,
+                              String userId, Long conversationId) {
         this.memoryService = memoryService;
         this.retrievalAgent = retrievalAgent;
         this.extractionAgent = extractionAgent;
@@ -126,7 +126,7 @@ public class UserLongTermMemory implements LongTermMemory {
                 }
             } catch (Exception e) {
                 log.error("Memory post-processing failed for conversation {}: {}",
-                    conversationId, e.getMessage(), e);
+                        conversationId, e.getMessage(), e);
             }
         }, workerExecutor);
 

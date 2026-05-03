@@ -2,7 +2,7 @@ package com.zju.offercatcher.domain.shared.exception;
 
 /**
  * 记忆未找到异常
- *
+ * <p>
  * 当尝试访问不存在的记忆时抛出。
  */
 public class MemoryNotFoundException extends DomainException {

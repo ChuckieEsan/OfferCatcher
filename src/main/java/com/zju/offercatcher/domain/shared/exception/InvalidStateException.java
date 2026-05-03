@@ -2,7 +2,7 @@ package com.zju.offercatcher.domain.shared.exception;
 
 /**
  * 无效状态转换异常
- *
+ * <p>
  * 当执行不允许的状态转换时抛出。
  */
 public class InvalidStateException extends DomainException {

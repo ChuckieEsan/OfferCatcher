@@ -2,7 +2,7 @@ package com.zju.offercatcher.domain.shared.enums;
 
 /**
  * 记忆层级枚举
- *
+ * <p>
  * STM (Short-term Memory): 短期记忆，可能随时间衰减
  * LTM (Long-term Memory): 长期记忆，长期保留，不衰减
  */

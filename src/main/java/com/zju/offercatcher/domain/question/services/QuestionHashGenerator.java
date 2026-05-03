@@ -7,7 +7,7 @@ import java.security.NoSuchAlgorithmException;
 /**
  * 题目 Hash 生成器
  * 使用 MD5 算法生成唯一 ID，格式：MD5(userId|company|questionText)
- *
+ * <p>
  * ID 包含 userId 确保用户隔离：
  * - 不同用户上传相同题目会生成不同 ID
  * - 系统导入题目使用 userId = "system"
@@ -18,8 +18,9 @@ public final class QuestionHashGenerator {
 
     /**
      * 生成题目唯一 ID
-     * @param userId 用户 ID（用于用户隔离）
-     * @param company 公司名称
+     *
+     * @param userId       用户 ID（用于用户隔离）
+     * @param company      公司名称
      * @param questionText 题目文本
      * @return 32 位 MD5 字符串
      */
@@ -40,7 +41,8 @@ public final class QuestionHashGenerator {
 
     /**
      * 生成系统题目 ID（userId = "system")
-     * @param company 公司名称
+     *
+     * @param company      公司名称
      * @param questionText 题目文本
      * @return 32 位 MD5 字符串
      */

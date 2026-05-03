@@ -3,10 +3,10 @@ package com.zju.offercatcher.application.agent;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zju.offercatcher.application.agent.dto.PositionMappingOutput;
-import com.zju.offercatcher.infrastructure.common.StructuredOutputUtil;
-import com.zju.offercatcher.infrastructure.config.LLMModelFactory;
 import com.zju.offercatcher.domain.question.aggregates.Question;
 import com.zju.offercatcher.domain.question.repositories.QuestionRepository;
+import com.zju.offercatcher.infrastructure.common.StructuredOutputUtil;
+import com.zju.offercatcher.infrastructure.config.LLMModelFactory;
 import com.zju.offercatcher.infrastructure.persistence.postgres.QuestionJpaEntity;
 import com.zju.offercatcher.infrastructure.persistence.postgres.QuestionJpaRepository;
 import io.agentscope.core.message.Msg;
@@ -21,12 +21,15 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
  * 岗位归一化 Agent
- *
+ * <p>
  * 实现岗位名称的完整生命周期管理：聚合 → LLM 归一化 → 迁移。
  * 对应 Python: app/application/services/position_normalization_service.py
  */
@@ -39,31 +42,31 @@ public class PositionNormalizationAgent {
     private static final PositionMappingOutput DEFAULT_OUTPUT = PositionMappingOutput.DEFAULT;
 
     private static final GenerateOptions OPTIONS = GenerateOptions.builder()
-        .temperature(0.3)
-        .maxTokens(2000)
-        .build();
+            .temperature(0.3)
+            .maxTokens(2000)
+            .build();
 
     private static final String NORMALIZATION_PROMPT = """
-        你是一个岗位名称归一化专家。请将以下岗位名称归一化为最少数量的标准类别。
-
-        岗位列表（按出现次数排序）：
-        {position_list}
-
-        **预定义的标准岗位类别**（优先归入这些类别）：
-        - AI应用研发：所有 AI 应用层开发岗位，包括 AI 开发、AI Agent/智能体开发、AI 应用开发、AI 工程师等。这是最常见的 AI 岗位大类，只要涉及 AI + 业务应用的都应归入此类
-        - 后端开发：传统后端开发岗位（Java/Python/Go 等不涉及 AI）
-        - 大模型开发：涉及大模型训练、推理、LLM 底层框架开发的岗位
-        - 大模型算法：涉及算法研究、模型优化、算法工程师的岗位
-        - AI测试开发：涉及 AI 测试、评测、质量保障的岗位
-        - 前端开发：前端相关岗位
-
-        **归一化原则**：
-        1. 大类优先：尽可能归入预定义类别，而非创建新类别
-        2. 语义合并：语义相近的岗位必须合并。AI开发、AI Agent开发、AI应用开发等统一归入 AI应用研发
-        3. 去除修饰：去掉"工程师"、"岗"、"应用"等冗余修饰词
-        4. 统一命名：同一大类使用统一名称，不要保留变体（如不要同时存在 "AI开发" 和 "AI应用研发"）
-
-        请返回 JSON 格式：{"mappings": {"原始岗位名": "标准岗位名", ...}}""";
+            你是一个岗位名称归一化专家。请将以下岗位名称归一化为最少数量的标准类别。
+            
+            岗位列表（按出现次数排序）：
+            {position_list}
+            
+            **预定义的标准岗位类别**（优先归入这些类别）：
+            - AI应用研发：所有 AI 应用层开发岗位，包括 AI 开发、AI Agent/智能体开发、AI 应用开发、AI 工程师等。这是最常见的 AI 岗位大类，只要涉及 AI + 业务应用的都应归入此类
+            - 后端开发：传统后端开发岗位（Java/Python/Go 等不涉及 AI）
+            - 大模型开发：涉及大模型训练、推理、LLM 底层框架开发的岗位
+            - 大模型算法：涉及算法研究、模型优化、算法工程师的岗位
+            - AI测试开发：涉及 AI 测试、评测、质量保障的岗位
+            - 前端开发：前端相关岗位
+            
+            **归一化原则**：
+            1. 大类优先：尽可能归入预定义类别，而非创建新类别
+            2. 语义合并：语义相近的岗位必须合并。AI开发、AI Agent开发、AI应用开发等统一归入 AI应用研发
+            3. 去除修饰：去掉"工程师"、"岗"、"应用"等冗余修饰词
+            4. 统一命名：同一大类使用统一名称，不要保留变体（如不要同时存在 "AI开发" 和 "AI应用研发"）
+            
+            请返回 JSON 格式：{"mappings": {"原始岗位名": "标准岗位名", ...}}""";
 
     private final QuestionJpaRepository questionJpaRepo;
     private final QuestionRepository questionRepository;
@@ -71,8 +74,8 @@ public class PositionNormalizationAgent {
     private Map<String, String> mappings = new LinkedHashMap<>();
 
     public PositionNormalizationAgent(QuestionJpaRepository questionJpaRepo,
-                                         QuestionRepository questionRepository,
-                                         LLMModelFactory modelFactory) {
+                                      QuestionRepository questionRepository,
+                                      LLMModelFactory modelFactory) {
         this.questionJpaRepo = questionJpaRepo;
         this.questionRepository = questionRepository;
         this.llm = modelFactory.createSimple("deepseek", false);
@@ -112,8 +115,8 @@ public class PositionNormalizationAgent {
         }
 
         List<String> unmapped = positions.keySet().stream()
-            .filter(p -> !mappings.containsKey(p))
-            .toList();
+                .filter(p -> !mappings.containsKey(p))
+                .toList();
 
         if (unmapped.isEmpty()) {
             log.info("All {} positions already mapped", positions.size());
@@ -121,8 +124,8 @@ public class PositionNormalizationAgent {
         }
 
         String positionList = unmapped.stream()
-            .limit(50)
-            .collect(Collectors.joining("、"));
+                .limit(50)
+                .collect(Collectors.joining("、"));
 
         String prompt = NORMALIZATION_PROMPT.replace("{position_list}", positionList);
 
@@ -131,8 +134,8 @@ public class PositionNormalizationAgent {
         Msg userMsg = Msg.builder().role(MsgRole.USER).textContent(prompt).build();
 
         PositionMappingOutput output = StructuredOutputUtil.callWithFallback(
-            llm, "position-normalizer", null, OPTIONS,
-            List.of(userMsg), PositionMappingOutput.class, DEFAULT_OUTPUT, log);
+                llm, "position-normalizer", null, OPTIONS,
+                List.of(userMsg), PositionMappingOutput.class, DEFAULT_OUTPUT, log);
 
         Map<String, String> newMappings = output.mappings();
         if (newMappings == null) newMappings = Map.of();
@@ -201,7 +204,8 @@ public class PositionNormalizationAgent {
             if (Files.exists(MAPPINGS_FILE)) {
                 ObjectMapper mapper = new ObjectMapper();
                 String json = Files.readString(MAPPINGS_FILE);
-                mappings = mapper.readValue(json, new TypeReference<LinkedHashMap<String, String>>() {});
+                mappings = mapper.readValue(json, new TypeReference<LinkedHashMap<String, String>>() {
+                });
                 log.info("Loaded {} position mappings", mappings.size());
             }
         } catch (IOException e) {

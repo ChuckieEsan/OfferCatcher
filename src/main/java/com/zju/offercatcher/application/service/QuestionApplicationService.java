@@ -10,11 +10,14 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 /**
  * 题目应用服务
- *
+ * <p>
  * 编排题目的 CRUD 用例。
  * 对应 Python: app/application/services/question_service.py
  */
@@ -28,8 +31,8 @@ public class QuestionApplicationService {
     private final AnswerSpecialistAgent answerAgent;
 
     public QuestionApplicationService(QuestionRepository questionRepository,
-                                       CacheApplicationService cacheService,
-                                       AnswerSpecialistAgent answerAgent) {
+                                      CacheApplicationService cacheService,
+                                      AnswerSpecialistAgent answerAgent) {
         this.questionRepository = questionRepository;
         this.cacheService = cacheService;
         this.answerAgent = answerAgent;
@@ -37,10 +40,10 @@ public class QuestionApplicationService {
 
     @Transactional
     public Question createQuestion(String userId, String questionText, String company,
-                                    String position, QuestionType questionType,
-                                    List<String> coreEntities) {
+                                   String position, QuestionType questionType,
+                                   List<String> coreEntities) {
         Question question = Question.createPrivate(userId, questionText, company, position,
-            questionType, coreEntities);
+                questionType, coreEntities);
         questionRepository.save(question);
         cacheService.invalidateQuestion(null);
         log.info("Created question: {}", question.getQuestionHash());
@@ -53,9 +56,9 @@ public class QuestionApplicationService {
 
     @Transactional
     public Optional<Question> updateQuestion(Long id, String answer,
-                                              MasteryLevel masteryLevel,
-                                              String questionText,
-                                              List<String> coreEntities) {
+                                             MasteryLevel masteryLevel,
+                                             String questionText,
+                                             List<String> coreEntities) {
         Question question = questionRepository.findById(id).orElse(null);
         if (question == null) {
             log.warn("Question not found: {}", id);
@@ -93,9 +96,9 @@ public class QuestionApplicationService {
     }
 
     public List<Question> listQuestions(String userId, String company, String position,
-                                         QuestionType questionType, MasteryLevel masteryLevel,
-                                         String keyword, String clusterId,
-                                         int page, int pageSize) {
+                                        QuestionType questionType, MasteryLevel masteryLevel,
+                                        String keyword, String clusterId,
+                                        int page, int pageSize) {
         List<Question> questions;
 
         if (keyword != null && !keyword.isBlank()) {
@@ -106,28 +109,28 @@ public class QuestionApplicationService {
 
         if (company != null && !company.isBlank()) {
             questions = questions.stream()
-                .filter(q -> company.equals(q.getCompany()))
-                .toList();
+                    .filter(q -> company.equals(q.getCompany()))
+                    .toList();
         }
         if (position != null && !position.isBlank()) {
             questions = questions.stream()
-                .filter(q -> position.equals(q.getPosition()))
-                .toList();
+                    .filter(q -> position.equals(q.getPosition()))
+                    .toList();
         }
         if (questionType != null) {
             questions = questions.stream()
-                .filter(q -> q.getQuestionType() == questionType)
-                .toList();
+                    .filter(q -> q.getQuestionType() == questionType)
+                    .toList();
         }
         if (masteryLevel != null) {
             questions = questions.stream()
-                .filter(q -> q.getMasteryLevel() == masteryLevel)
-                .toList();
+                    .filter(q -> q.getMasteryLevel() == masteryLevel)
+                    .toList();
         }
         if (clusterId != null && !clusterId.isBlank()) {
             questions = questions.stream()
-                .filter(q -> q.getClusterIds().contains(clusterId))
-                .toList();
+                    .filter(q -> q.getClusterIds().contains(clusterId))
+                    .toList();
         }
         return questions;
     }
@@ -176,7 +179,7 @@ public class QuestionApplicationService {
         Map<Long, String> answers = new HashMap<>();
         for (Long id : ids) {
             questionRepository.findById(id)
-                .ifPresent(q -> answers.put(id, q.getAnswer()));
+                    .ifPresent(q -> answers.put(id, q.getAnswer()));
         }
         return answers;
     }

@@ -2,7 +2,7 @@ package com.zju.offercatcher.infrastructure.persistence.qdrant;
 
 /**
  * Qdrant Payload 字段定义
- *
+ * <p>
  * 设计原则：Payload 只存 userId 和 visibility，用于向量搜索时的预过滤。
  * 其他元数据存储在 PostgreSQL，更新时不需同步 Qdrant。
  */

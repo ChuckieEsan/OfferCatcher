@@ -27,15 +27,15 @@ public class WebMvcConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/api/**")
-            .allowedOriginPatterns("http://localhost:*")
-            .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-            .allowedHeaders("*")
-            .allowCredentials(true);
+                .allowedOriginPatterns("http://localhost:*")
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                .allowedHeaders("*")
+                .allowCredentials(true);
     }
 
     /**
      * 配置 MVC 异步请求的线程池，替代默认的 SimpleAsyncTaskExecutor。
-     *
+     * <p>
      * 当 Controller 返回 Flux 等响应式类型时，Spring MVC 使用此线程池
      * 处理异步请求，避免 SimpleAsyncTaskExecutor 无限创建线程。
      */

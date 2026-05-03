@@ -12,11 +12,11 @@ import java.util.Optional;
 
 /**
  * 记忆聚合根
- *
+ * <p>
  * Memory 是记忆领域的聚合根，管理：
  * - 用户记忆主文档（MEMORY.md）
  * - 聚合内的引用文件列表
- *
+ * <p>
  * 聚合边界规则：
  * - MEMORY.md 始终加载，提供概要信息
  * - references 按需加载
@@ -35,7 +35,7 @@ public class Memory {
     /**
      * 创建记忆（工厂方法）
      *
-     * @param userId 用户唯一标识
+     * @param userId  用户唯一标识
      * @param content MEMORY.md 内容
      * @return 新创建的 Memory 聚合根
      */
@@ -50,10 +50,10 @@ public class Memory {
      * 从持久化存储重建（用于 Repository 实现）
      */
     public static Memory rebuild(String userId, String content, MemoryStatus status,
-                                  List<MemoryReference> references, LocalDateTime createdAt, LocalDateTime updatedAt) {
+                                 List<MemoryReference> references, LocalDateTime createdAt, LocalDateTime updatedAt) {
         return new Memory(userId, content, status,
-            references != null ? new ArrayList<>(references) : new ArrayList<>(),
-            createdAt, updatedAt);
+                references != null ? new ArrayList<>(references) : new ArrayList<>(),
+                createdAt, updatedAt);
     }
 
     // ==================== 业务方法 ====================
@@ -71,7 +71,7 @@ public class Memory {
 
     /**
      * 添加引用文件（聚合内操作）
-     *
+     * <p>
      * 如果同名引用已存在，则更新内容；否则添加新引用。
      *
      * @param reference 引用实体
@@ -100,8 +100,8 @@ public class Memory {
      */
     public Optional<MemoryReference> getReference(String referenceName) {
         return references.stream()
-            .filter(r -> r.getReferenceName().equals(referenceName))
-            .findFirst();
+                .filter(r -> r.getReferenceName().equals(referenceName))
+                .findFirst();
     }
 
     /**

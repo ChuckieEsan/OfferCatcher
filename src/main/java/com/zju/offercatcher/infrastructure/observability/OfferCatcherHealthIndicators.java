@@ -16,7 +16,7 @@ import java.sql.Connection;
 
 /**
  * 基础设施健康检查。
- *
+ * <p>
  * 通过 /actuator/health 暴露 PostgreSQL、Qdrant、Redis 的状态。
  * 各 HealthIndicator 仅在对应基础设施 Bean 存在时才注册。
  */
@@ -32,7 +32,7 @@ public class OfferCatcherHealthIndicators {
             try (Connection conn = dataSource.getConnection()) {
                 boolean valid = conn.isValid(3);
                 return valid ? Health.up().withDetail("database", conn.getCatalog()).build()
-                    : Health.down().build();
+                        : Health.down().build();
             } catch (Exception e) {
                 return Health.down(e).build();
             }
@@ -46,9 +46,9 @@ public class OfferCatcherHealthIndicators {
             try {
                 QdrantOuterClass.HealthCheckReply reply = qdrantClient.healthCheckAsync().get();
                 return Health.up()
-                    .withDetail("title", reply.getTitle())
-                    .withDetail("version", reply.getVersion())
-                    .build();
+                        .withDetail("title", reply.getTitle())
+                        .withDetail("version", reply.getVersion())
+                        .build();
             } catch (Exception e) {
                 return Health.down(e).build();
             }

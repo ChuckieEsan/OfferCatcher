@@ -18,9 +18,9 @@ import java.util.List;
  */
 @Entity
 @Table(name = "interview_sessions", indexes = {
-    @Index(name = "idx_sessions_user_created", columnList = "user_id, created_at"),
-    @Index(name = "idx_sessions_user_status", columnList = "user_id, status"),
-    @Index(name = "idx_sessions_user_company", columnList = "user_id, company")
+        @Index(name = "idx_sessions_user_created", columnList = "user_id, created_at"),
+        @Index(name = "idx_sessions_user_status", columnList = "user_id, status"),
+        @Index(name = "idx_sessions_user_company", columnList = "user_id, company")
 })
 @Getter
 @Setter
@@ -102,9 +102,9 @@ public class InterviewSessionJpaEntity {
 
     public com.zju.offercatcher.domain.interview.aggregates.InterviewSession toDomain() {
         return com.zju.offercatcher.domain.interview.aggregates.InterviewSession.rebuild(
-            sessionId, userId, company, position, difficulty, totalQuestions,
-            status, questions, currentQuestionIdx, correctCount, totalScore,
-            startedAt, endedAt, createdAt, updatedAt, jdContext
+                sessionId, userId, company, position, difficulty, totalQuestions,
+                status, questions, currentQuestionIdx, correctCount, totalScore,
+                startedAt, endedAt, createdAt, updatedAt, jdContext
         );
     }
 }

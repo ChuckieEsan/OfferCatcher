@@ -10,8 +10,9 @@ public record QuestionWithScore(Question question, float score) {
 
     /**
      * 创建检索结果
+     *
      * @param question 题目实体
-     * @param score 相似度分数（0-1之间）
+     * @param score    相似度分数（0-1之间）
      */
     public QuestionWithScore {
         if (question == null) {

@@ -5,7 +5,10 @@ import com.zju.offercatcher.interfaces.dto.StatsDto.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
@@ -41,8 +44,8 @@ public class StatsController {
 
     @GetMapping("/entities")
     public ResponseEntity<List<EntityStats>> getEntityStats(
-        @RequestParam(required = false) String company,
-        @RequestParam(defaultValue = "20") int limit) {
+            @RequestParam(required = false) String company,
+            @RequestParam(defaultValue = "20") int limit) {
         log.info("Get entity stats: company={}, limit={}", company, limit);
         return ResponseEntity.ok(statsService.getEntityStats(company, limit));
     }

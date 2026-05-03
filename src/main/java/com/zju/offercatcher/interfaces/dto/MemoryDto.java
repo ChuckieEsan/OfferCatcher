@@ -9,17 +9,20 @@ import jakarta.validation.constraints.Size;
 public interface MemoryDto {
 
     record Response(
-        String userId,
-        String content,
-        String preferences,
-        String behaviors
-    ) {}
+            String userId,
+            String content,
+            String preferences,
+            String behaviors
+    ) {
+    }
 
     record UpdatePreferencesRequest(
-        @NotBlank @Size(max = 5000) String content
-    ) {}
+            @NotBlank @Size(max = 5000) String content
+    ) {
+    }
 
     record UpdateBehaviorsRequest(
-        @NotBlank @Size(max = 5000) String content
-    ) {}
+            @NotBlank @Size(max = 5000) String content
+    ) {
+    }
 }

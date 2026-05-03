@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 
 /**
  * 记忆管理 Agent 服务
- *
+ * <p>
  * 在对话结束后异步执行（由调用方通过 workerExecutor 调度），分析对话内容并更新用户记忆。
  * 使用 ReActAgent 自主调用 MemoryTools。
  * 对应 Python: app/application/agents/memory/agent.py
@@ -76,7 +76,7 @@ public class MemoryExtractionAgent {
 
     /**
      * 异步执行记忆提取
-     *
+     * <p>
      * 对话结束后 fire-and-forget 调用，不阻塞主流程。
      * 使用游标机制避免重复处理已提取过的消息。
      */
@@ -89,8 +89,8 @@ public class MemoryExtractionAgent {
 
             // 2. 过滤游标后的新消息
             List<Message> newMessages = lastCursor == null
-                ? messages
-                : messages.stream()
+                    ? messages
+                    : messages.stream()
                     .filter(m -> m.getMessageId() > lastCursor)
                     .collect(Collectors.toList());
 
@@ -107,7 +107,7 @@ public class MemoryExtractionAgent {
             }
 
             log.info("Memory extraction started for conversation {}, {} new messages (cursor: {})",
-                conversationId, newMessages.size(), lastCursor);
+                    conversationId, newMessages.size(), lastCursor);
 
             String currentPreferences = memoryService.getPreferences(userId);
             String currentBehaviors = memoryService.getBehaviors(userId);
@@ -117,18 +117,18 @@ public class MemoryExtractionAgent {
             String formattedNew = formatMessages(newMessages);
 
             String prompt = promptLoader.render("memory_agent.md",
-                "memory_context", memoryContext,
-                "history_messages", "（无历史消息）",
-                "new_messages", formattedNew,
-                "current_preferences", currentPreferences != null ? currentPreferences : "",
-                "current_behaviors", currentBehaviors != null ? currentBehaviors : "",
-                "conversation_id", String.valueOf(conversationId),
-                "user_id", userId
+                    "memory_context", memoryContext,
+                    "history_messages", "（无历史消息）",
+                    "new_messages", formattedNew,
+                    "current_preferences", currentPreferences != null ? currentPreferences : "",
+                    "current_behaviors", currentBehaviors != null ? currentBehaviors : "",
+                    "conversation_id", String.valueOf(conversationId),
+                    "user_id", userId
             );
 
             ReActAgent agent = createMemoryAgent(userId);
             List<Msg> input = List.of(
-                Msg.builder().role(MsgRole.USER).textContent(prompt).build()
+                    Msg.builder().role(MsgRole.USER).textContent(prompt).build()
             );
 
             agent.call(input).block();
@@ -146,45 +146,45 @@ public class MemoryExtractionAgent {
 
     private void updateCursor(String userId, Long conversationId, Long messageId) {
         redisTemplate.opsForValue().set(
-            CacheKeys.memoryCursor(userId, conversationId),
-            String.valueOf(messageId));
+                CacheKeys.memoryCursor(userId, conversationId),
+                String.valueOf(messageId));
     }
 
     private Long getLatestMessageId(List<Message> messages) {
         return messages.stream()
-            .mapToLong(Message::getMessageId)
-            .max()
-            .orElse(0L);
+                .mapToLong(Message::getMessageId)
+                .max()
+                .orElse(0L);
     }
 
     private boolean hasMemoryWriteMarker(List<Message> messages) {
         return messages.stream()
-            .filter(m -> m.getRole() == MessageRole.ASSISTANT)
-            .anyMatch(m -> m.getContent() != null
-                && m.getContent().contains("<memory_write>"));
+                .filter(m -> m.getRole() == MessageRole.ASSISTANT)
+                .anyMatch(m -> m.getContent() != null
+                        && m.getContent().contains("<memory_write>"));
     }
 
     private ReActAgent createMemoryAgent(String userId) {
         ToolExecutionContext toolContext = ToolExecutionContext.builder()
-            .register("userContext", new UserToolContext(userId))
-            .build();
+                .register("userContext", new UserToolContext(userId))
+                .build();
 
         return ReActAgent.builder()
-            .name("memory-agent")
-            .sysPrompt("""
-                你是记忆管理 Agent，分析对话内容并更新用户记忆。
-                目标是积累可复用的用户偏好和行为模式，而非记录所有对话内容。
-                根据对话内容，调用合适的工具更新记忆。
-                """)
-            .model(cachedModel)
-            .toolkit(cachedToolkit)
-            .toolExecutionContext(toolContext)
-            .maxIters(8)
-            .generateOptions(GenerateOptions.builder()
-                .temperature(0.1)
-                .maxTokens(2048)
-                .build())
-            .build();
+                .name("memory-agent")
+                .sysPrompt("""
+                        你是记忆管理 Agent，分析对话内容并更新用户记忆。
+                        目标是积累可复用的用户偏好和行为模式，而非记录所有对话内容。
+                        根据对话内容，调用合适的工具更新记忆。
+                        """)
+                .model(cachedModel)
+                .toolkit(cachedToolkit)
+                .toolExecutionContext(toolContext)
+                .maxIters(8)
+                .generateOptions(GenerateOptions.builder()
+                        .temperature(0.1)
+                        .maxTokens(2048)
+                        .build())
+                .build();
     }
 
     // ==================== Helpers ====================
@@ -209,8 +209,8 @@ public class MemoryExtractionAgent {
         for (SessionSummary s : summaries) {
             String date = s.getCreatedAt() != null ? s.getCreatedAt().toString() : "unknown";
             sb.append("- ").append(s.getSummary())
-                .append(" [").append(date)
-                .append(", ").append(s.getMemoryLayer().name()).append("]\n");
+                    .append(" [").append(date)
+                    .append(", ").append(s.getMemoryLayer().name()).append("]\n");
         }
         return sb.toString();
     }

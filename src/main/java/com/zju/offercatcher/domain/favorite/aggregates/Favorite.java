@@ -1,15 +1,15 @@
 package com.zju.offercatcher.domain.favorite.aggregates;
 
-import com.zju.offercatcher.domain.shared.exception.DomainException;
 import com.zju.offercatcher.domain.shared.SnowflakeIdGenerator;
+import com.zju.offercatcher.domain.shared.exception.DomainException;
 
 import java.time.LocalDateTime;
 
 /**
  * 收藏聚合根
- *
+ * <p>
  * 记录用户对题目的收藏行为，实现用户隔离。
- *
+ * <p>
  * 设计原则：
  * - 通过 questionId 引用 Question 聚合（跨聚合引用）
  * - 不直接持有 Question 实体
@@ -26,7 +26,7 @@ public class Favorite {
     /**
      * 创建收藏（工厂方法）
      *
-     * @param userId 用户 ID
+     * @param userId     用户 ID
      * @param questionId 题目 ID (Snowflake BIGINT)
      * @return 新创建的 Favorite 聚合根
      */
@@ -41,7 +41,7 @@ public class Favorite {
      * 创建收藏（指定 ID，用于重建）
      *
      * @param favoriteId 收藏 ID
-     * @param userId 用户 ID
+     * @param userId     用户 ID
      * @param questionId 题目 ID (Snowflake BIGINT)
      * @return 新创建的 Favorite 聚合根
      */

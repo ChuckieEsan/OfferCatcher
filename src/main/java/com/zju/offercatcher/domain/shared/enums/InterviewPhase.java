@@ -2,7 +2,7 @@ package com.zju.offercatcher.domain.shared.enums;
 
 /**
  * 面试阶段枚举。
- *
+ * <p>
  * 定义面试题目的阶段归属，用于流程结构化排序。
  */
 public enum InterviewPhase {
@@ -19,6 +19,11 @@ public enum InterviewPhase {
         this.label = label;
     }
 
-    public String getValue() { return value; }
-    public String getLabel() { return label; }
+    public String getValue() {
+        return value;
+    }
+
+    public String getLabel() {
+        return label;
+    }
 }

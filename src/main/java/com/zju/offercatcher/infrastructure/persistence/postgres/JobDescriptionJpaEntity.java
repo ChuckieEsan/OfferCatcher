@@ -2,7 +2,6 @@ package com.zju.offercatcher.infrastructure.persistence.postgres;
 
 import com.zju.offercatcher.domain.interview.aggregates.JobDescription;
 import com.zju.offercatcher.domain.interview.valueobjects.SkillRequirement;
-// SkillRequirementListConverter is in the same package
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -15,7 +14,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "job_descriptions", indexes = {
-    @Index(name = "idx_jd_user_created", columnList = "user_id, created_at")
+        @Index(name = "idx_jd_user_created", columnList = "user_id, created_at")
 })
 @Getter
 @Setter
@@ -76,10 +75,10 @@ public class JobDescriptionJpaEntity {
 
     public JobDescription toDomain() {
         return JobDescription.rebuild(
-            id, userId, rawText,
-            requiredSkills, preferredSkills, softSkills,
-            company, position, experienceRequirement,
-            createdAt
+                id, userId, rawText,
+                requiredSkills, preferredSkills, softSkills,
+                company, position, experienceRequirement,
+                createdAt
         );
     }
 }

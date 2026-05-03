@@ -7,7 +7,8 @@ import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * MemoryReference 实体测试
@@ -36,16 +37,16 @@ class MemoryReferenceTest {
         @DisplayName("referenceName 为空应抛出异常")
         void shouldThrowExceptionWhenReferenceNameIsNull() {
             assertThatThrownBy(() -> MemoryReference.create(null, CONTENT))
-                .isInstanceOf(DomainException.class)
-                .hasMessageContaining("referenceName");
+                    .isInstanceOf(DomainException.class)
+                    .hasMessageContaining("referenceName");
         }
 
         @Test
         @DisplayName("content 为空应抛出异常")
         void shouldThrowExceptionWhenContentIsNull() {
             assertThatThrownBy(() -> MemoryReference.create(REFERENCE_NAME, null))
-                .isInstanceOf(DomainException.class)
-                .hasMessageContaining("content");
+                    .isInstanceOf(DomainException.class)
+                    .hasMessageContaining("content");
         }
     }
 
@@ -71,8 +72,8 @@ class MemoryReferenceTest {
             MemoryReference ref = MemoryReference.create(REFERENCE_NAME, CONTENT);
 
             assertThatThrownBy(() -> ref.updateContent(null))
-                .isInstanceOf(DomainException.class)
-                .hasMessageContaining("content");
+                    .isInstanceOf(DomainException.class)
+                    .hasMessageContaining("content");
         }
     }
 }

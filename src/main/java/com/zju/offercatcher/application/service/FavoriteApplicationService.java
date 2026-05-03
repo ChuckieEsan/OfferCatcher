@@ -42,7 +42,7 @@ public class FavoriteApplicationService {
     @Transactional
     public void removeFavorite(Long favoriteId, String userId) {
         Favorite favorite = favoriteRepository.findById(favoriteId)
-            .orElseThrow(() -> new FavoriteNotFoundException(favoriteId));
+                .orElseThrow(() -> new FavoriteNotFoundException(favoriteId));
         favoriteRepository.deleteById(favoriteId, userId);
         log.info("Favorite removed: {}", favoriteId);
     }
@@ -59,11 +59,11 @@ public class FavoriteApplicationService {
 
     public Map<Long, Boolean> checkFavorited(String userId, List<Long> questionIds) {
         return questionIds.stream()
-            .collect(Collectors.toMap(
-                id -> id,
-                id -> favoriteRepository.existsByUserIdAndQuestionId(userId, id),
-                (a, b) -> a
-            ));
+                .collect(Collectors.toMap(
+                        id -> id,
+                        id -> favoriteRepository.existsByUserIdAndQuestionId(userId, id),
+                        (a, b) -> a
+                ));
     }
 
     public boolean isFavorited(String userId, Long questionId) {

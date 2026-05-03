@@ -27,33 +27,33 @@ public class InterviewSessionRepositoryImpl implements InterviewSessionRepositor
     public List<InterviewSession> findByUserId(String userId, int page, int size) {
         int offset = Math.max(0, page - 1) * size;
         return jpaRepository.findByUserIdPaginated(userId, size, offset)
-            .stream()
-            .map(InterviewSessionJpaEntity::toDomain)
-            .toList();
+                .stream()
+                .map(InterviewSessionJpaEntity::toDomain)
+                .toList();
     }
 
     @Override
     public Optional<InterviewSession> findById(Long sessionId) {
         return jpaRepository.findBySessionId(sessionId)
-            .map(InterviewSessionJpaEntity::toDomain);
+                .map(InterviewSessionJpaEntity::toDomain);
     }
 
     @Override
     public List<InterviewSession> findByUserIdAndStatus(String userId, SessionStatus status, int page, int size) {
         int offset = Math.max(0, page - 1) * size;
         return jpaRepository.findByUserIdAndStatusPaginated(userId, status, size, offset)
-            .stream()
-            .map(InterviewSessionJpaEntity::toDomain)
-            .toList();
+                .stream()
+                .map(InterviewSessionJpaEntity::toDomain)
+                .toList();
     }
 
     @Override
     public List<InterviewSession> findByUserIdAndCompany(String userId, String company, int page, int size) {
         int offset = Math.max(0, page - 1) * size;
         return jpaRepository.findByUserIdAndCompanyPaginated(userId, company, size, offset)
-            .stream()
-            .map(InterviewSessionJpaEntity::toDomain)
-            .toList();
+                .stream()
+                .map(InterviewSessionJpaEntity::toDomain)
+                .toList();
     }
 
     @Override

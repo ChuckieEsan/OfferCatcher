@@ -17,7 +17,7 @@ import java.util.List;
 
 /**
  * 记忆相关工具
- *
+ * <p>
  * 对应 Python: app/infrastructure/tools/memory_tools.py
  */
 @Component
@@ -30,41 +30,41 @@ public class MemoryTools {
     private final OnnxEmbeddingAdapter embeddingAdapter;
 
     public MemoryTools(MemoryApplicationService memoryService,
-                        SessionSummaryRepository sessionSummaryRepository,
-                        OnnxEmbeddingAdapter embeddingAdapter) {
+                       SessionSummaryRepository sessionSummaryRepository,
+                       OnnxEmbeddingAdapter embeddingAdapter) {
         this.memoryService = memoryService;
         this.sessionSummaryRepository = sessionSummaryRepository;
         this.embeddingAdapter = embeddingAdapter;
     }
 
     @Tool(name = "load_memory_reference",
-          description = "加载用户的记忆引用文件（如 preferences.md、behaviors.md）。"
-              + "当 MEMORY.md 中的概要信息不足以回答问题时使用。")
+            description = "加载用户的记忆引用文件（如 preferences.md、behaviors.md）。"
+                    + "当 MEMORY.md 中的概要信息不足以回答问题时使用。")
     public String loadMemoryReference(
-        @ToolParam(name = "reference_name", required = true,
-                   description = "引用文件名称，如 'preferences' 或 'behaviors'")
-        String referenceName,
-        ToolExecutionContext context
+            @ToolParam(name = "reference_name", required = true,
+                    description = "引用文件名称，如 'preferences' 或 'behaviors'")
+            String referenceName,
+            ToolExecutionContext context
     ) {
         String userId = getUserId(context);
         log.debug("load_memory_reference: userId={}, referenceName={}", userId, referenceName);
 
         Memory memory = memoryService.getMemory(userId);
         return memory.getReference(referenceName)
-            .map(MemoryReference::getContent)
-            .orElse("未找到 reference: " + referenceName);
+                .map(MemoryReference::getContent)
+                .orElse("未找到 reference: " + referenceName);
     }
 
     @Tool(name = "search_session_history",
-          description = "搜索用户的历史会话摘要。使用向量语义搜索，找到与查询最相关的历史会话。")
+            description = "搜索用户的历史会话摘要。使用向量语义搜索，找到与查询最相关的历史会话。")
     public String searchSessionHistory(
-        @ToolParam(name = "query", required = true,
-                   description = "搜索查询，如 'Java 多线程面试'")
-        String query,
-        @ToolParam(name = "top_k", required = false,
-                   description = "返回结果数量，默认 3")
-        int topK,
-        ToolExecutionContext context
+            @ToolParam(name = "query", required = true,
+                    description = "搜索查询，如 'Java 多线程面试'")
+            String query,
+            @ToolParam(name = "top_k", required = false,
+                    description = "返回结果数量，默认 3")
+            int topK,
+            ToolExecutionContext context
     ) {
         String userId = getUserId(context);
         int k = topK > 0 ? topK : 3;
@@ -76,7 +76,7 @@ public class MemoryTools {
 
         float[] queryVector = embeddingAdapter.embed(query);
         List<SessionSummary> results = sessionSummaryRepository.searchByVector(
-            userId, queryVector, k);
+                userId, queryVector, k);
 
         if (results.isEmpty()) {
             return "未找到相关历史会话。";
@@ -93,12 +93,12 @@ public class MemoryTools {
     }
 
     @Tool(name = "update_preferences",
-          description = "更新用户的偏好设置（preferences.md）。当用户明确表达偏好或反馈时调用。")
+            description = "更新用户的偏好设置（preferences.md）。当用户明确表达偏好或反馈时调用。")
     public String updatePreferences(
-        @ToolParam(name = "content", required = true,
-                   description = "偏好设置内容（Markdown 格式）")
-        String content,
-        ToolExecutionContext context
+            @ToolParam(name = "content", required = true,
+                    description = "偏好设置内容（Markdown 格式）")
+            String content,
+            ToolExecutionContext context
     ) {
         String userId = getUserId(context);
         log.debug("update_preferences: userId={}", userId);
@@ -108,12 +108,12 @@ public class MemoryTools {
     }
 
     @Tool(name = "update_behaviors",
-          description = "更新用户的行为模式记录（behaviors.md）。当观察到新的用户行为模式时调用。")
+            description = "更新用户的行为模式记录（behaviors.md）。当观察到新的用户行为模式时调用。")
     public String updateBehaviors(
-        @ToolParam(name = "content", required = true,
-                   description = "行为模式内容（Markdown 格式）")
-        String content,
-        ToolExecutionContext context
+            @ToolParam(name = "content", required = true,
+                    description = "行为模式内容（Markdown 格式）")
+            String content,
+            ToolExecutionContext context
     ) {
         String userId = getUserId(context);
         log.debug("update_behaviors: userId={}", userId);

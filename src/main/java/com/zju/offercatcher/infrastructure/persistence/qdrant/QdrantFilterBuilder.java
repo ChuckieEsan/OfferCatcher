@@ -6,7 +6,7 @@ import io.qdrant.client.grpc.Common;
 
 /**
  * Qdrant Filter 构建器
- *
+ * <p>
  * 使用 Qdrant gRPC Java Client API 构建用户隔离预过滤条件。
  * Qdrant 中 should=OR, must=AND。
  */
@@ -19,21 +19,21 @@ public final class QdrantFilterBuilder {
     public static Common.Filter buildUserVisibleFilter(String userId) {
         // Condition 1: visibility = "public"
         Common.Condition publicCond = ConditionFactory.matchKeyword(
-            QdrantPayloadFields.VISIBILITY, Visibility.PUBLIC.getValue());
+                QdrantPayloadFields.VISIBILITY, Visibility.PUBLIC.getValue());
 
         // Condition 2: visibility = "private" AND user_id = userId (nested filter)
         Common.Filter privateFilter = Common.Filter.newBuilder()
-            .addMust(ConditionFactory.matchKeyword(
-                QdrantPayloadFields.VISIBILITY, Visibility.PRIVATE.getValue()))
-            .addMust(ConditionFactory.matchKeyword(
-                QdrantPayloadFields.USER_ID, userId))
-            .build();
+                .addMust(ConditionFactory.matchKeyword(
+                        QdrantPayloadFields.VISIBILITY, Visibility.PRIVATE.getValue()))
+                .addMust(ConditionFactory.matchKeyword(
+                        QdrantPayloadFields.USER_ID, userId))
+                .build();
         Common.Condition privateCond = ConditionFactory.filter(privateFilter);
 
         return Common.Filter.newBuilder()
-            .addShould(publicCond)
-            .addShould(privateCond)
-            .build();
+                .addShould(publicCond)
+                .addShould(privateCond)
+                .build();
     }
 
     /**
@@ -41,11 +41,11 @@ public final class QdrantFilterBuilder {
      */
     public static Common.Filter buildPrivateOnlyFilter(String userId) {
         return Common.Filter.newBuilder()
-            .addMust(ConditionFactory.matchKeyword(
-                QdrantPayloadFields.VISIBILITY, Visibility.PRIVATE.getValue()))
-            .addMust(ConditionFactory.matchKeyword(
-                QdrantPayloadFields.USER_ID, userId))
-            .build();
+                .addMust(ConditionFactory.matchKeyword(
+                        QdrantPayloadFields.VISIBILITY, Visibility.PRIVATE.getValue()))
+                .addMust(ConditionFactory.matchKeyword(
+                        QdrantPayloadFields.USER_ID, userId))
+                .build();
     }
 
     /**
@@ -53,8 +53,8 @@ public final class QdrantFilterBuilder {
      */
     public static Common.Filter buildUserIdFilter(String userId) {
         return Common.Filter.newBuilder()
-            .addMust(ConditionFactory.matchKeyword(QdrantPayloadFields.USER_ID, userId))
-            .build();
+                .addMust(ConditionFactory.matchKeyword(QdrantPayloadFields.USER_ID, userId))
+                .build();
     }
 
     private QdrantFilterBuilder() {

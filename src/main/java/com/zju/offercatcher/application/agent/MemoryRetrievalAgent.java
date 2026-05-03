@@ -24,13 +24,13 @@ import java.util.concurrent.CompletableFuture;
 
 /**
  * 记忆检索 Agent（Short-term Memory 的核心）
- *
+ * <p>
  * 不是 RAG 管道，而是一个独立的 ReActAgent。
  * 拥有 search_session_history 和 load_memory_reference 工具，
  * 自主分析用户意图、多角度检索、精炼输出。
- *
+ * <p>
  * 异步执行（fire-and-forget），结果写入 Redis 供下一轮对话注入。
- *
+ * <p>
  * 对应 Python: app/infrastructure/persistence/memory/memory_retrieval.py
  */
 @Service
@@ -62,17 +62,17 @@ public class MemoryRetrievalAgent {
 
     /**
      * 异步检索并缓存。
-     *
+     * <p>
      * 基于传入的 query（上一轮消息）检索，结果写入 Redis 供下一轮注入。
      * fire-and-forget，不阻塞调用方。
      *
-     * @param userId          用户 ID
-     * @param conversationId  会话 ID
-     * @param query           用户本轮消息
-     * @param recentMessages  最近几轮对话
+     * @param userId         用户 ID
+     * @param conversationId 会话 ID
+     * @param query          用户本轮消息
+     * @param recentMessages 最近几轮对话
      */
     public void retrieveAsync(String userId, Long conversationId,
-                               String query, List<Message> recentMessages) {
+                              String query, List<Message> recentMessages) {
         CompletableFuture.runAsync(() -> {
             try {
                 log.debug("MemoryRetrievalAgent started for conversation {}", conversationId);
@@ -81,23 +81,23 @@ public class MemoryRetrievalAgent {
                 String taskPrompt = buildTaskPrompt(query, recentMessages);
 
                 Msg result = agent.call(List.of(
-                    Msg.builder().role(MsgRole.USER).textContent(taskPrompt).build()
+                        Msg.builder().role(MsgRole.USER).textContent(taskPrompt).build()
                 )).block();
 
                 String context = result != null ? result.getTextContent() : null;
                 if (context != null && !context.isBlank()) {
                     String cacheKey = CacheKeys.memoryContext(userId, conversationId);
                     redisTemplate.opsForValue().set(
-                        cacheKey, context, Duration.ofSeconds(CONTEXT_TTL_SECONDS));
+                            cacheKey, context, Duration.ofSeconds(CONTEXT_TTL_SECONDS));
                     log.info("MemoryRetrievalAgent cached {} chars for conversation {}",
-                        context.length(), conversationId);
+                            context.length(), conversationId);
                 } else {
                     log.debug("MemoryRetrievalAgent produced empty context for conversation {}",
-                        conversationId);
+                            conversationId);
                 }
             } catch (Exception e) {
                 log.error("MemoryRetrievalAgent failed for conversation {}: {}",
-                    conversationId, e.getMessage(), e);
+                        conversationId, e.getMessage(), e);
             }
         });
     }
@@ -109,48 +109,48 @@ public class MemoryRetrievalAgent {
      */
     public String getCachedContext(String userId, Long conversationId) {
         return redisTemplate.opsForValue()
-            .get(CacheKeys.memoryContext(userId, conversationId));
+                .get(CacheKeys.memoryContext(userId, conversationId));
     }
 
     // ==================== Agent 创建 ====================
 
     private ReActAgent createRetrievalAgent(String userId) {
         ToolExecutionContext toolContext = ToolExecutionContext.builder()
-            .register("userContext", new UserToolContext(userId))
-            .build();
+                .register("userContext", new UserToolContext(userId))
+                .build();
 
         return ReActAgent.builder()
-            .name("memory-retrieval")
-            .sysPrompt("""
-                你是记忆检索专家。你的任务：
-                1. 分析用户问题，理解其核心意图
-                2. 使用 search_session_history 从多个角度检索相关历史记忆
-                3. 如果用户问题涉及偏好或行为规则，使用 load_memory_reference
-                4. 整合搜索结果，输出一段精炼的上下文，供主 Agent 使用
-
-                原则：
-                - 从 2-3 个不同角度构造搜索查询，覆盖不同表述方式
-                - 只提取与当前问题真正相关的内容，无关信息不要包含
-                - 如果有用户偏好或行为模式与问题相关，务必引用
-                - 输出控制在 500 tokens 以内
-                - 如果搜索结果相关性低，尝试换个角度重新搜索
-                """)
-            .model(retrievalModel)
-            .toolkit(cachedToolkit)
-            .toolExecutionContext(toolContext)
-            .maxIters(MAX_ITERS)
-            .generateOptions(GenerateOptions.builder()
-                .temperature(0.1)
-                .maxTokens(MAX_OUTPUT_TOKENS)
-                .build())
-            .build();
+                .name("memory-retrieval")
+                .sysPrompt("""
+                        你是记忆检索专家。你的任务：
+                        1. 分析用户问题，理解其核心意图
+                        2. 使用 search_session_history 从多个角度检索相关历史记忆
+                        3. 如果用户问题涉及偏好或行为规则，使用 load_memory_reference
+                        4. 整合搜索结果，输出一段精炼的上下文，供主 Agent 使用
+                        
+                        原则：
+                        - 从 2-3 个不同角度构造搜索查询，覆盖不同表述方式
+                        - 只提取与当前问题真正相关的内容，无关信息不要包含
+                        - 如果有用户偏好或行为模式与问题相关，务必引用
+                        - 输出控制在 500 tokens 以内
+                        - 如果搜索结果相关性低，尝试换个角度重新搜索
+                        """)
+                .model(retrievalModel)
+                .toolkit(cachedToolkit)
+                .toolExecutionContext(toolContext)
+                .maxIters(MAX_ITERS)
+                .generateOptions(GenerateOptions.builder()
+                        .temperature(0.1)
+                        .maxTokens(MAX_OUTPUT_TOKENS)
+                        .build())
+                .build();
     }
 
     private String buildTaskPrompt(String query, List<Message> recentMessages) {
         StringBuilder sb = new StringBuilder();
         sb.append("## 任务\n");
         sb.append("检索与用户问题相关的历史记忆，"
-            + "整合为一段精炼的上下文供主 Agent 使用。\n\n");
+                + "整合为一段精炼的上下文供主 Agent 使用。\n\n");
 
         sb.append("## 用户问题\n");
         sb.append(query).append("\n\n");
@@ -162,7 +162,7 @@ public class MemoryRetrievalAgent {
                 Message m = recentMessages.get(i);
                 String role = m.isUserMessage() ? "用户" : "AI";
                 sb.append(role).append(": ")
-                    .append(truncate(m.getContent(), 200)).append("\n\n");
+                        .append(truncate(m.getContent(), 200)).append("\n\n");
             }
         }
 

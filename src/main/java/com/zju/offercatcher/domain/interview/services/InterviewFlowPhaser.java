@@ -5,36 +5,35 @@ import com.zju.offercatcher.domain.shared.enums.DifficultyLevel;
 import com.zju.offercatcher.domain.shared.enums.InterviewPhase;
 import com.zju.offercatcher.domain.shared.enums.QuestionType;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.*;
 
 /**
  * 面试流程阶段机。
- *
+ * <p>
  * 将候选题目按面试自然节奏分组排序：
- *   Opening（开场热身）→ Technical（技术深挖）→ Behavioral（行为考察）
- *
+ * Opening（开场热身）→ Technical（技术深挖）→ Behavioral（行为考察）
+ * <p>
  * 纯领域逻辑，无框架依赖。
  */
 public class InterviewFlowPhaser {
 
     private static final List<String> OPENING_QUESTIONS = List.of(
-        "请做个简单的自我介绍",
-        "能介绍一下你最近做过的一个项目吗？"
+            "请做个简单的自我介绍",
+            "能介绍一下你最近做过的一个项目吗？"
     );
 
-    /** 技术题类型：KNOWLEDGE / SCENARIO / ALGORITHM */
+    /**
+     * 技术题类型：KNOWLEDGE / SCENARIO / ALGORITHM
+     */
     private static boolean isTechnical(InterviewQuestion q) {
         QuestionType type = QuestionType.fromValue(q.getQuestionType());
         return type == QuestionType.KNOWLEDGE || type == QuestionType.SCENARIO
-            || type == QuestionType.ALGORITHM;
+                || type == QuestionType.ALGORITHM;
     }
 
-    /** 行为题类型：BEHAVIORAL / PROJECT */
+    /**
+     * 行为题类型：BEHAVIORAL / PROJECT
+     */
     private static boolean isBehavioral(InterviewQuestion q) {
         QuestionType type = QuestionType.fromValue(q.getQuestionType());
         return type == QuestionType.BEHAVIORAL || type == QuestionType.PROJECT;
@@ -52,9 +51,9 @@ public class InterviewFlowPhaser {
 
         // 1. 候选集分类
         List<InterviewQuestion> technicalPool = new ArrayList<>(candidates.stream()
-            .filter(InterviewFlowPhaser::isTechnical).toList());
+                .filter(InterviewFlowPhaser::isTechnical).toList());
         List<InterviewQuestion> behavioralPool = new ArrayList<>(candidates.stream()
-            .filter(InterviewFlowPhaser::isBehavioral).toList());
+                .filter(InterviewFlowPhaser::isBehavioral).toList());
 
         // 2. Opening 固定 2 题（自我介绍 + 项目介绍），行为面控制在 1 题
         int openingCount = 2;
@@ -113,7 +112,7 @@ public class InterviewFlowPhaser {
         int remaining = count - opening.size();
         if (remaining > 0) {
             List<InterviewQuestion> supplements = behavioralPool.stream()
-                .limit(remaining).toList();
+                    .limit(remaining).toList();
             opening.addAll(supplements);
             behavioralPool.removeAll(supplements);
         }
@@ -157,12 +156,14 @@ public class InterviewFlowPhaser {
 
     private InterviewQuestion createFixedQuestion(String text) {
         return InterviewQuestion.create(
-            0L, "fixed-" + text.hashCode(), text,
-            "behavioral", DifficultyLevel.EASY, List.of("开场")
+                0L, "fixed-" + text.hashCode(), text,
+                "behavioral", DifficultyLevel.EASY, List.of("开场")
         );
     }
 
-    /** 不同知识分组交替排列，避免同组题目连续出现 */
+    /**
+     * 不同知识分组交替排列，避免同组题目连续出现
+     */
     private List<InterviewQuestion> interleaveGroups(List<List<InterviewQuestion>> groups, int maxCount) {
         List<InterviewQuestion> result = new ArrayList<>();
         int[] indices = new int[groups.size()];

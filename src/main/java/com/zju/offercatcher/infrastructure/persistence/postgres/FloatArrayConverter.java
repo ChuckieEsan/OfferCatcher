@@ -3,17 +3,16 @@ package com.zju.offercatcher.infrastructure.persistence.postgres;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.persistence.AttributeConverter;
+import jakarta.persistence.Converter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import jakarta.persistence.AttributeConverter;
-import jakarta.persistence.Converter;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
  * float[] 向量转换器
- *
+ * <p>
  * 将 float[] 转换为 JSON 字符串存储。
  */
 @Converter
@@ -41,7 +40,8 @@ public class FloatArrayConverter implements AttributeConverter<float[], String> 
             return null;
         }
         try {
-            List<Float> floatList = objectMapper.readValue(json, new TypeReference<List<Float>>() {});
+            List<Float> floatList = objectMapper.readValue(json, new TypeReference<List<Float>>() {
+            });
             float[] result = new float[floatList.size()];
             for (int i = 0; i < floatList.size(); i++) {
                 result[i] = floatList.get(i);

@@ -5,19 +5,22 @@ import com.zju.offercatcher.infrastructure.adapters.asr.XfyunASRAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import org.springframework.web.socket.*;
+import org.springframework.web.socket.CloseStatus;
+import org.springframework.web.socket.TextMessage;
+import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Base64;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 语音识别 WebSocket 端点
- *
+ * <p>
  * 接收前端音频数据，调用讯飞 ASR 进行实时语音转文字。
  * 对应 Python: app/api/routes/speech.py speech_websocket()
- *
+ * <p>
  * 消息格式：
  * - 接收: {"type": "start", "language": "zh_cn"}
  * - 接收: {"type": "audio", "data": "<base64 pcm>"}
@@ -81,13 +84,13 @@ public class SpeechWebSocketHandler extends TextWebSocketHandler {
                         byte[] audioData = rs.audioBuffer.toByteArray();
                         final String[] lastText = {""};
                         asrAdapter.recognizeStream(audioData, rs.language,
-                            text -> {
-                                lastText[0] = text;
-                                sendJsonQuiet(session, Map.of("type", "result", "text", text, "is_final", false));
-                            },
-                            () -> sendJsonQuiet(session, Map.of("type", "result", "text",
-                                lastText[0], "is_final", true)),
-                            error -> sendJsonQuiet(session, Map.of("type", "error", "message", error))
+                                text -> {
+                                    lastText[0] = text;
+                                    sendJsonQuiet(session, Map.of("type", "result", "text", text, "is_final", false));
+                                },
+                                () -> sendJsonQuiet(session, Map.of("type", "result", "text",
+                                        lastText[0], "is_final", true)),
+                                error -> sendJsonQuiet(session, Map.of("type", "error", "message", error))
                         );
                     } else {
                         sendJson(session, Map.of("type", "result", "text", "", "is_final", true));

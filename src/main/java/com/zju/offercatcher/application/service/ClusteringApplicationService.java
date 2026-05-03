@@ -13,11 +13,10 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * 聚类应用服务
- *
+ * <p>
  * 使用 KMeans 进行题目聚类，支持自动选择最优簇数（轮廓系数）。
  * 对应 Python: app/application/services/clustering_service.py
  */
@@ -32,9 +31,9 @@ public class ClusteringApplicationService {
     private final Neo4jClient neo4jClient;
 
     public ClusteringApplicationService(QuestionJpaRepository questionJpaRepo,
-                                         QuestionRepository questionRepository,
-                                         OnnxEmbeddingAdapter embeddingAdapter,
-                                         Neo4jClient neo4jClient) {
+                                        QuestionRepository questionRepository,
+                                        OnnxEmbeddingAdapter embeddingAdapter,
+                                        Neo4jClient neo4jClient) {
         this.questionJpaRepo = questionJpaRepo;
         this.questionRepository = questionRepository;
         this.embeddingAdapter = embeddingAdapter;
@@ -146,7 +145,7 @@ public class ClusteringApplicationService {
         }
 
         log.info("Clustering complete: {} clusters, {} questions updated, silhouette={:.4f}",
-            nClusters, clusteredCount, silScore);
+                nClusters, clusteredCount, silScore);
 
         return new ClusteringResult(entities.size(), clusteredCount, nClusters, silScore);
     }
@@ -164,7 +163,9 @@ public class ClusteringApplicationService {
         Set<Integer> chosen = new HashSet<>();
         for (int c = 0; c < k; c++) {
             int idx;
-            do { idx = rng.nextInt(n); } while (chosen.contains(idx));
+            do {
+                idx = rng.nextInt(n);
+            } while (chosen.contains(idx));
             chosen.add(idx);
             System.arraycopy(vectors.get(idx), 0, centroids[c], 0, dim);
         }
@@ -314,10 +315,10 @@ public class ClusteringApplicationService {
             }
         }
         return counter.entrySet().stream()
-            .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
-            .limit(5)
-            .map(Map.Entry::getKey)
-            .toList();
+                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+                .limit(5)
+                .map(Map.Entry::getKey)
+                .toList();
     }
 
     private String generateClusterId(List<String> knowledgePoints) {
@@ -329,5 +330,6 @@ public class ClusteringApplicationService {
 
     // ==================== Result DTO ====================
 
-    public record ClusteringResult(int totalQuestions, int clusteredCount, int clusterCount, double silhouetteScore) {}
+    public record ClusteringResult(int totalQuestions, int clusteredCount, int clusterCount, double silhouetteScore) {
+    }
 }

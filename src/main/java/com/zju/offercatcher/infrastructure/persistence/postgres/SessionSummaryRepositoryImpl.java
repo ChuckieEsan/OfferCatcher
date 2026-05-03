@@ -26,7 +26,7 @@ public class SessionSummaryRepositoryImpl implements SessionSummaryRepository {
     private final QdrantVectorStore vectorStore;
 
     public SessionSummaryRepositoryImpl(SessionSummaryJpaRepository jpaRepository,
-                                         QdrantVectorStore vectorStore) {
+                                        QdrantVectorStore vectorStore) {
         this.jpaRepository = jpaRepository;
         this.vectorStore = vectorStore;
     }
@@ -35,32 +35,32 @@ public class SessionSummaryRepositoryImpl implements SessionSummaryRepository {
     public List<SessionSummary> findByUserId(String userId, int page, int size) {
         int offset = Math.max(0, page - 1) * size;
         return jpaRepository.findByUserIdPaginated(userId, size, offset)
-            .stream()
-            .map(SessionSummaryJpaEntity::toDomain)
-            .toList();
+                .stream()
+                .map(SessionSummaryJpaEntity::toDomain)
+                .toList();
     }
 
     @Override
     public List<SessionSummary> findByUserIdAndMemoryLayer(String userId, MemoryLayer memoryLayer, int page, int size) {
         int offset = Math.max(0, page - 1) * size;
         return jpaRepository.findByUserIdAndMemoryLayerPaginated(userId, memoryLayer, size, offset)
-            .stream()
-            .map(SessionSummaryJpaEntity::toDomain)
-            .toList();
+                .stream()
+                .map(SessionSummaryJpaEntity::toDomain)
+                .toList();
     }
 
     @Override
     public List<SessionSummary> findByConversationId(Long conversationId) {
         return jpaRepository.findByConversationId(conversationId)
-            .stream()
-            .map(SessionSummaryJpaEntity::toDomain)
-            .toList();
+                .stream()
+                .map(SessionSummaryJpaEntity::toDomain)
+                .toList();
     }
 
     @Override
     public Optional<SessionSummary> findById(Long id) {
         return jpaRepository.findById(id)
-            .map(SessionSummaryJpaEntity::toDomain);
+                .map(SessionSummaryJpaEntity::toDomain);
     }
 
     @Override
@@ -78,8 +78,8 @@ public class SessionSummaryRepositoryImpl implements SessionSummaryRepository {
     @Transactional
     public void saveAll(List<SessionSummary> summaries) {
         List<SessionSummaryJpaEntity> entities = summaries.stream()
-            .map(SessionSummaryJpaEntity::fromDomain)
-            .toList();
+                .map(SessionSummaryJpaEntity::fromDomain)
+                .toList();
         jpaRepository.saveAll(entities);
 
         for (SessionSummary summary : summaries) {
@@ -107,38 +107,38 @@ public class SessionSummaryRepositoryImpl implements SessionSummaryRepository {
     @Override
     public List<SessionSummary> findTopKByImportance(String userId, int k) {
         return jpaRepository.findTopKByImportance(userId, k)
-            .stream()
-            .map(SessionSummaryJpaEntity::toDomain)
-            .toList();
+                .stream()
+                .map(SessionSummaryJpaEntity::toDomain)
+                .toList();
     }
 
     @Override
     public List<SessionSummary> findMarkedForDeletion(String userId) {
         return jpaRepository.findMarkedForDeletion(userId)
-            .stream()
-            .map(SessionSummaryJpaEntity::toDomain)
-            .toList();
+                .stream()
+                .map(SessionSummaryJpaEntity::toDomain)
+                .toList();
     }
 
     @Override
     public List<SessionSummary> searchByVector(String userId, float[] queryVector, int limit) {
         List<com.zju.offercatcher.infrastructure.persistence.qdrant.VectorSearchHit> hits =
-            vectorStore.searchSessionSummaries(userId, queryVector, limit);
+                vectorStore.searchSessionSummaries(userId, queryVector, limit);
 
         if (hits.isEmpty()) {
             return Collections.emptyList();
         }
 
         List<Long> ids = hits.stream()
-            .map(hit -> Long.parseLong(hit.id()))
-            .toList();
+                .map(hit -> Long.parseLong(hit.id()))
+                .toList();
 
         if (ids.isEmpty()) {
             return Collections.emptyList();
         }
         return jpaRepository.findAllById(ids).stream()
-            .map(SessionSummaryJpaEntity::toDomain)
-            .toList();
+                .map(SessionSummaryJpaEntity::toDomain)
+                .toList();
     }
 
     @Override

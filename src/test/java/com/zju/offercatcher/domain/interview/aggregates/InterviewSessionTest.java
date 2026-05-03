@@ -2,8 +2,8 @@ package com.zju.offercatcher.domain.interview.aggregates;
 
 import com.zju.offercatcher.domain.interview.entities.InterviewQuestion;
 import com.zju.offercatcher.domain.shared.enums.DifficultyLevel;
-import com.zju.offercatcher.domain.shared.enums.SessionStatus;
 import com.zju.offercatcher.domain.shared.enums.QuestionStatus;
+import com.zju.offercatcher.domain.shared.enums.SessionStatus;
 import com.zju.offercatcher.domain.shared.exception.DomainException;
 import com.zju.offercatcher.domain.shared.exception.InvalidStateException;
 import org.junit.jupiter.api.DisplayName;
@@ -12,7 +12,8 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * InterviewSession 聚合根测试
@@ -48,16 +49,16 @@ class InterviewSessionTest {
         @DisplayName("userId 为空应抛出异常")
         void shouldThrowExceptionWhenUserIdIsNull() {
             assertThatThrownBy(() -> InterviewSession.create(null, COMPANY, POSITION, DifficultyLevel.MEDIUM, 10))
-                .isInstanceOf(DomainException.class)
-                .hasMessageContaining("userId");
+                    .isInstanceOf(DomainException.class)
+                    .hasMessageContaining("userId");
         }
 
         @Test
         @DisplayName("题目总数为 0 应抛出异常")
         void shouldThrowExceptionWhenTotalQuestionsIsZero() {
             assertThatThrownBy(() -> InterviewSession.create(USER_ID, COMPANY, POSITION, DifficultyLevel.MEDIUM, 0))
-                .isInstanceOf(DomainException.class)
-                .hasMessageContaining("题目总数");
+                    .isInstanceOf(DomainException.class)
+                    .hasMessageContaining("题目总数");
         }
     }
 
@@ -86,8 +87,8 @@ class InterviewSessionTest {
             session.addQuestion(q1);
 
             assertThatThrownBy(() -> session.addQuestion(q2))
-                .isInstanceOf(DomainException.class)
-                .hasMessageContaining("题目总数上限");
+                    .isInstanceOf(DomainException.class)
+                    .hasMessageContaining("题目总数上限");
         }
 
         @Test
@@ -193,7 +194,7 @@ class InterviewSessionTest {
             session.complete();
 
             assertThatThrownBy(() -> session.answerCurrentQuestion("答案", 80, "反馈"))
-                .isInstanceOf(InvalidStateException.class);
+                    .isInstanceOf(InvalidStateException.class);
         }
 
         @Test

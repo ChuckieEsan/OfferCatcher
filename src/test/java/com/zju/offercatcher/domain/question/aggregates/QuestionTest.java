@@ -11,7 +11,8 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Question 聚合根测试
@@ -26,12 +27,12 @@ class QuestionTest {
         @DisplayName("创建私有题目：visibility 应为 PRIVATE")
         void createPrivate_shouldHavePrivateVisibility() {
             Question question = Question.createPrivate(
-                "user-001",
-                "Java 中 HashMap 的实现原理是什么？",
-                "阿里巴巴",
-                "Java 后端开发",
-                QuestionType.KNOWLEDGE,
-                List.of("HashMap", "数据结构")
+                    "user-001",
+                    "Java 中 HashMap 的实现原理是什么？",
+                    "阿里巴巴",
+                    "Java 后端开发",
+                    QuestionType.KNOWLEDGE,
+                    List.of("HashMap", "数据结构")
             );
 
             assertThat(question.getVisibility()).isEqualTo(Visibility.PRIVATE);
@@ -43,12 +44,12 @@ class QuestionTest {
         @DisplayName("创建公共题目：visibility 应为 PUBLIC")
         void createPublic_shouldHavePublicVisibility() {
             Question question = Question.createPublic(
-                "user-001",
-                "如何设计一个高并发系统？",
-                "字节跳动",
-                "架构师",
-                QuestionType.SCENARIO,
-                List.of("高并发", "系统设计")
+                    "user-001",
+                    "如何设计一个高并发系统？",
+                    "字节跳动",
+                    "架构师",
+                    QuestionType.SCENARIO,
+                    List.of("高并发", "系统设计")
             );
 
             assertThat(question.getVisibility()).isEqualTo(Visibility.PUBLIC);
@@ -59,11 +60,11 @@ class QuestionTest {
         @DisplayName("创建系统导入题目：userId 应为 system")
         void createSystemImport_shouldHaveSystemUserId() {
             Question question = Question.createSystemImport(
-                "什么是微服务架构？",
-                "腾讯",
-                "后端开发",
-                QuestionType.KNOWLEDGE,
-                List.of("微服务", "架构")
+                    "什么是微服务架构？",
+                    "腾讯",
+                    "后端开发",
+                    QuestionType.KNOWLEDGE,
+                    List.of("微服务", "架构")
             );
 
             assertThat(question.getUserId()).isEqualTo("system");
@@ -78,9 +79,9 @@ class QuestionTest {
             String company = "阿里巴巴";
 
             Question q1 = Question.createPrivate("user-001", questionText, company,
-                "开发", QuestionType.KNOWLEDGE, List.of());
+                    "开发", QuestionType.KNOWLEDGE, List.of());
             Question q2 = Question.createPrivate("user-002", questionText, company,
-                "开发", QuestionType.KNOWLEDGE, List.of());
+                    "开发", QuestionType.KNOWLEDGE, List.of());
 
             assertThat(q1.getQuestionHash()).isNotEqualTo(q2.getQuestionHash());
         }
@@ -93,9 +94,9 @@ class QuestionTest {
             String company = "阿里巴巴";
 
             Question q1 = Question.createPrivate(userId, questionText, company,
-                "开发", QuestionType.KNOWLEDGE, List.of());
+                    "开发", QuestionType.KNOWLEDGE, List.of());
             Question q2 = Question.createPrivate(userId, questionText, company,
-                "开发", QuestionType.KNOWLEDGE, List.of());
+                    "开发", QuestionType.KNOWLEDGE, List.of());
 
             assertThat(q1.getQuestionHash()).isEqualTo(q2.getQuestionHash());
         }
@@ -109,12 +110,12 @@ class QuestionTest {
         @DisplayName("公共题目：对所有用户可见")
         void publicQuestion_shouldBeVisibleToAllUsers() {
             Question question = Question.createPublic(
-                "owner-001",
-                "题目内容",
-                "公司",
-                "岗位",
-                QuestionType.KNOWLEDGE,
-                List.of()
+                    "owner-001",
+                    "题目内容",
+                    "公司",
+                    "岗位",
+                    QuestionType.KNOWLEDGE,
+                    List.of()
             );
 
             assertThat(question.isVisibleTo("owner-001")).isTrue();
@@ -126,12 +127,12 @@ class QuestionTest {
         @DisplayName("私有题目：仅对所有者可见")
         void privateQuestion_shouldBeVisibleOnlyToOwner() {
             Question question = Question.createPrivate(
-                "owner-001",
-                "题目内容",
-                "公司",
-                "岗位",
-                QuestionType.KNOWLEDGE,
-                List.of()
+                    "owner-001",
+                    "题目内容",
+                    "公司",
+                    "岗位",
+                    QuestionType.KNOWLEDGE,
+                    List.of()
             );
 
             assertThat(question.isVisibleTo("owner-001")).isTrue();
@@ -142,12 +143,12 @@ class QuestionTest {
         @DisplayName("所有权判断：仅所有者拥有")
         void isOwnedBy_shouldReturnCorrectResult() {
             Question question = Question.createPrivate(
-                "owner-001",
-                "题目内容",
-                "公司",
-                "岗位",
-                QuestionType.KNOWLEDGE,
-                List.of()
+                    "owner-001",
+                    "题目内容",
+                    "公司",
+                    "岗位",
+                    QuestionType.KNOWLEDGE,
+                    List.of()
             );
 
             assertThat(question.isOwnedBy("owner-001")).isTrue();
@@ -163,12 +164,12 @@ class QuestionTest {
         @DisplayName("发布私有题目到公共题库")
         void publishToPublic_shouldChangeVisibility() {
             Question question = Question.createPrivate(
-                "user-001",
-                "题目内容",
-                "公司",
-                "岗位",
-                QuestionType.KNOWLEDGE,
-                List.of()
+                    "user-001",
+                    "题目内容",
+                    "公司",
+                    "岗位",
+                    QuestionType.KNOWLEDGE,
+                    List.of()
             );
 
             assertThat(question.getVisibility()).isEqualTo(Visibility.PRIVATE);
@@ -182,29 +183,29 @@ class QuestionTest {
         @DisplayName("公共题目发布应抛出异常")
         void publishPublicQuestion_shouldThrowException() {
             Question question = Question.createPublic(
-                "user-001",
-                "题目内容",
-                "公司",
-                "岗位",
-                QuestionType.KNOWLEDGE,
-                List.of()
+                    "user-001",
+                    "题目内容",
+                    "公司",
+                    "岗位",
+                    QuestionType.KNOWLEDGE,
+                    List.of()
             );
 
             assertThatThrownBy(question::publishToPublic)
-                .isInstanceOf(DomainException.class)
-                .hasMessageContaining("只有私有题目才能发布到公共题库");
+                    .isInstanceOf(DomainException.class)
+                    .hasMessageContaining("只有私有题目才能发布到公共题库");
         }
 
         @Test
         @DisplayName("更新答案")
         void updateAnswer_shouldUpdateAnswerAndTimestamp() {
             Question question = Question.createPrivate(
-                "user-001",
-                "题目内容",
-                "公司",
-                "岗位",
-                QuestionType.KNOWLEDGE,
-                List.of()
+                    "user-001",
+                    "题目内容",
+                    "公司",
+                    "岗位",
+                    QuestionType.KNOWLEDGE,
+                    List.of()
             );
 
             assertThat(question.getAnswer()).isNull();
@@ -219,12 +220,12 @@ class QuestionTest {
         @DisplayName("添加考点簇")
         void addCluster_shouldAddClusterId() {
             Question question = Question.createPrivate(
-                "user-001",
-                "题目内容",
-                "公司",
-                "岗位",
-                QuestionType.KNOWLEDGE,
-                List.of()
+                    "user-001",
+                    "题目内容",
+                    "公司",
+                    "岗位",
+                    QuestionType.KNOWLEDGE,
+                    List.of()
             );
 
             assertThat(question.getClusterIds()).isEmpty();
@@ -240,12 +241,12 @@ class QuestionTest {
         @DisplayName("更新熟练度")
         void updateMastery_shouldUpdateLevel() {
             Question question = Question.createPrivate(
-                "user-001",
-                "题目内容",
-                "公司",
-                "岗位",
-                QuestionType.KNOWLEDGE,
-                List.of()
+                    "user-001",
+                    "题目内容",
+                    "公司",
+                    "岗位",
+                    QuestionType.KNOWLEDGE,
+                    List.of()
             );
 
             assertThat(question.getMasteryLevel()).isEqualTo(MasteryLevel.LEVEL_0);
@@ -264,12 +265,12 @@ class QuestionTest {
         @DisplayName("知识型题目不需要异步生成答案")
         void knowledgeType_shouldNotRequireAsyncAnswer() {
             Question question = Question.createPrivate(
-                "user-001",
-                "题目",
-                "公司",
-                "岗位",
-                QuestionType.KNOWLEDGE,
-                List.of()
+                    "user-001",
+                    "题目",
+                    "公司",
+                    "岗位",
+                    QuestionType.KNOWLEDGE,
+                    List.of()
             );
 
             assertThat(question.requiresAsyncAnswer()).isFalse();
@@ -279,12 +280,12 @@ class QuestionTest {
         @DisplayName("项目型题目需要异步生成答案")
         void projectType_shouldRequireAsyncAnswer() {
             Question question = Question.createPrivate(
-                "user-001",
-                "题目",
-                "公司",
-                "岗位",
-                QuestionType.PROJECT,
-                List.of()
+                    "user-001",
+                    "题目",
+                    "公司",
+                    "岗位",
+                    QuestionType.PROJECT,
+                    List.of()
             );
 
             assertThat(question.requiresAsyncAnswer()).isTrue();
@@ -294,12 +295,12 @@ class QuestionTest {
         @DisplayName("算法型题目需要异步生成答案")
         void algorithmType_shouldRequireAsyncAnswer() {
             Question question = Question.createPrivate(
-                "user-001",
-                "题目",
-                "公司",
-                "岗位",
-                QuestionType.ALGORITHM,
-                List.of()
+                    "user-001",
+                    "题目",
+                    "公司",
+                    "岗位",
+                    QuestionType.ALGORITHM,
+                    List.of()
             );
 
             assertThat(question.requiresAsyncAnswer()).isTrue();
@@ -314,12 +315,12 @@ class QuestionTest {
         @DisplayName("生成 Embedding 上下文")
         void toContext_shouldGenerateCorrectFormat() {
             Question question = Question.createPrivate(
-                "user-001",
-                "Java 中 HashMap 的实现原理是什么？",
-                "阿里巴巴",
-                "Java 后端开发",
-                QuestionType.KNOWLEDGE,
-                List.of("HashMap", "数据结构")
+                    "user-001",
+                    "Java 中 HashMap 的实现原理是什么？",
+                    "阿里巴巴",
+                    "Java 后端开发",
+                    QuestionType.KNOWLEDGE,
+                    List.of("HashMap", "数据结构")
             );
 
             String context = question.toContext();
@@ -335,12 +336,12 @@ class QuestionTest {
         @DisplayName("无考点时上下文显示综合")
         void toContext_withEmptyEntities_shouldShow综合() {
             Question question = Question.createPrivate(
-                "user-001",
-                "题目内容",
-                "公司",
-                "岗位",
-                QuestionType.KNOWLEDGE,
-                List.of()
+                    "user-001",
+                    "题目内容",
+                    "公司",
+                    "岗位",
+                    QuestionType.KNOWLEDGE,
+                    List.of()
             );
 
             String context = question.toContext();
@@ -357,49 +358,49 @@ class QuestionTest {
         @DisplayName("核心考点列表不可修改")
         void getCoreEntities_shouldBeUnmodifiable() {
             Question question = Question.createPrivate(
-                "user-001",
-                "题目",
-                "公司",
-                "岗位",
-                QuestionType.KNOWLEDGE,
-                List.of("考点1", "考点2")
+                    "user-001",
+                    "题目",
+                    "公司",
+                    "岗位",
+                    QuestionType.KNOWLEDGE,
+                    List.of("考点1", "考点2")
             );
 
             assertThatThrownBy(() -> question.getCoreEntities().add("考点3"))
-                .isInstanceOf(UnsupportedOperationException.class);
+                    .isInstanceOf(UnsupportedOperationException.class);
         }
 
         @Test
         @DisplayName("考点簇列表不可修改")
         void getClusterIds_shouldBeUnmodifiable() {
             Question question = Question.createPrivate(
-                "user-001",
-                "题目",
-                "公司",
-                "岗位",
-                QuestionType.KNOWLEDGE,
-                List.of()
+                    "user-001",
+                    "题目",
+                    "公司",
+                    "岗位",
+                    QuestionType.KNOWLEDGE,
+                    List.of()
             );
             question.addCluster("cluster-001");
 
             assertThatThrownBy(() -> question.getClusterIds().add("cluster-002"))
-                .isInstanceOf(UnsupportedOperationException.class);
+                    .isInstanceOf(UnsupportedOperationException.class);
         }
 
         @Test
         @DisplayName("元数据不可修改")
         void getMetadata_shouldBeUnmodifiable() {
             Question question = Question.createPrivate(
-                "user-001",
-                "题目",
-                "公司",
-                "岗位",
-                QuestionType.KNOWLEDGE,
-                List.of()
+                    "user-001",
+                    "题目",
+                    "公司",
+                    "岗位",
+                    QuestionType.KNOWLEDGE,
+                    List.of()
             );
 
             assertThatThrownBy(() -> question.getMetadata().put("key", "value"))
-                .isInstanceOf(UnsupportedOperationException.class);
+                    .isInstanceOf(UnsupportedOperationException.class);
         }
     }
 }

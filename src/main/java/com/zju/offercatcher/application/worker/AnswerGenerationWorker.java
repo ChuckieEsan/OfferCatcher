@@ -16,7 +16,7 @@ import java.util.Optional;
 
 /**
  * 答案生成 Worker。
- *
+ * <p>
  * 轮询 PostgreSQL 查找尚未生成答案的题目，调用 AnswerSpecialistAgent 生成标准答案。
  * 对应 Python: app/application/workers/answer_worker.py
  */
@@ -54,7 +54,7 @@ public class AnswerGenerationWorker {
                 Question question = entity.toDomain();
                 Optional<Question> existing = questionRepository.findById(question.getId());
                 if (existing.isPresent() && existing.get().getAnswer() != null
-                    && !existing.get().getAnswer().isBlank()) {
+                        && !existing.get().getAnswer().isBlank()) {
                     continue; // 幂等性：答案已生成
                 }
 

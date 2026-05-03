@@ -1,24 +1,20 @@
 package com.zju.offercatcher.domain.question.aggregates;
 
 import com.zju.offercatcher.domain.question.services.QuestionHashGenerator;
+import com.zju.offercatcher.domain.shared.SnowflakeIdGenerator;
 import com.zju.offercatcher.domain.shared.enums.MasteryLevel;
 import com.zju.offercatcher.domain.shared.enums.QuestionType;
 import com.zju.offercatcher.domain.shared.enums.SourceType;
 import com.zju.offercatcher.domain.shared.enums.Visibility;
 import com.zju.offercatcher.domain.shared.exception.DomainException;
-import com.zju.offercatcher.domain.shared.SnowflakeIdGenerator;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * 题目聚合根
- *
+ * <p>
  * 设计原则：
  * - 包含用户隔离字段（userId, visibility, sourceType）
  * - 通过工厂方法创建，确保 ID 生成一致性
@@ -55,78 +51,82 @@ public class Question {
 
     /**
      * 创建用户私有题目
-     * @param userId 用户 ID
+     *
+     * @param userId       用户 ID
      * @param questionText 题目文本
-     * @param company 公司名称
-     * @param position 岗位名称
+     * @param company      公司名称
+     * @param position     岗位名称
      * @param questionType 题目类型
      * @param coreEntities 核心考点列表
      * @return 新创建的私有题目
      */
     public static Question createPrivate(String userId, String questionText,
-                                          String company, String position,
-                                          QuestionType questionType, List<String> coreEntities) {
+                                         String company, String position,
+                                         QuestionType questionType, List<String> coreEntities) {
         Long id = SnowflakeIdGenerator.generate();
         String hash = QuestionHashGenerator.generate(userId, company, questionText);
         return new Question(id, hash, userId, questionText, questionType, company, position,
-                            coreEntities, Visibility.PRIVATE, SourceType.USER_UPLOAD);
+                coreEntities, Visibility.PRIVATE, SourceType.USER_UPLOAD);
     }
 
     /**
      * 创建用户公共题目
-     * @param userId 用户 ID
+     *
+     * @param userId       用户 ID
      * @param questionText 题目文本
-     * @param company 公司名称
-     * @param position 岗位名称
+     * @param company      公司名称
+     * @param position     岗位名称
      * @param questionType 题目类型
      * @param coreEntities 核心考点列表
      * @return 新创建的公共题目
      */
     public static Question createPublic(String userId, String questionText,
-                                          String company, String position,
-                                          QuestionType questionType, List<String> coreEntities) {
+                                        String company, String position,
+                                        QuestionType questionType, List<String> coreEntities) {
         Long id = SnowflakeIdGenerator.generate();
         String hash = QuestionHashGenerator.generate(userId, company, questionText);
         return new Question(id, hash, userId, questionText, questionType, company, position,
-                            coreEntities, Visibility.PUBLIC, SourceType.USER_UPLOAD);
+                coreEntities, Visibility.PUBLIC, SourceType.USER_UPLOAD);
     }
 
     /**
      * 创建系统导入的公共题目（初始题库）
+     *
      * @param questionText 题目文本
-     * @param company 公司名称
-     * @param position 岗位名称
+     * @param company      公司名称
+     * @param position     岗位名称
      * @param questionType 题目类型
      * @param coreEntities 核心考点列表
      * @return 新创建的系统题目
      */
     public static Question createSystemImport(String questionText,
-                                               String company, String position,
-                                               QuestionType questionType, List<String> coreEntities) {
+                                              String company, String position,
+                                              QuestionType questionType, List<String> coreEntities) {
         Long id = SnowflakeIdGenerator.generate();
         String hash = QuestionHashGenerator.generateSystemQuestionHash(company, questionText);
         return new Question(id, hash, "system", questionText, questionType, company, position,
-                            coreEntities, Visibility.PUBLIC, SourceType.SYSTEM_IMPORT);
+                coreEntities, Visibility.PUBLIC, SourceType.SYSTEM_IMPORT);
     }
 
     /**
      * 从持久化存储重建题目（用于 Repository 实现）
      */
     public static Question rebuild(Long id, String questionHash, String userId, String questionText,
-                                    QuestionType questionType, String company, String position,
-                                    List<String> coreEntities, String answer, MasteryLevel masteryLevel,
-                                    List<String> clusterIds, Map<String, Object> metadata,
-                                    Visibility visibility, SourceType sourceType,
-                                    LocalDateTime createdAt, LocalDateTime updatedAt) {
+                                   QuestionType questionType, String company, String position,
+                                   List<String> coreEntities, String answer, MasteryLevel masteryLevel,
+                                   List<String> clusterIds, Map<String, Object> metadata,
+                                   Visibility visibility, SourceType sourceType,
+                                   LocalDateTime createdAt, LocalDateTime updatedAt) {
         return new Question(id, questionHash, userId, questionText, questionType, company, position,
-                            coreEntities, answer, masteryLevel, clusterIds, metadata,
-                            visibility, sourceType, createdAt, updatedAt);
+                coreEntities, answer, masteryLevel, clusterIds, metadata,
+                visibility, sourceType, createdAt, updatedAt);
     }
 
     // ==================== 业务方法 ====================
 
     /**
      * 更新答案
+     *
      * @param newAnswer 新答案内容
      */
     public void updateAnswer(String newAnswer) {
@@ -136,6 +136,7 @@ public class Question {
 
     /**
      * 更新题目内容和知识点
+     *
      * @param newQuestionText 新题目文本
      * @param newCoreEntities 新知识点列表
      */
@@ -151,6 +152,7 @@ public class Question {
 
     /**
      * 添加考点簇
+     *
      * @param clusterId 考点簇 ID
      */
     public void addCluster(String clusterId) {
@@ -162,6 +164,7 @@ public class Question {
 
     /**
      * 更新熟练度
+     *
      * @param level 新熟练度等级
      */
     public void updateMastery(MasteryLevel level) {
@@ -183,16 +186,18 @@ public class Question {
 
     /**
      * 判断是否对用户可见
+     *
      * @param requestingUserId 请求用户 ID
      * @return true 如果用户可见
      */
     public boolean isVisibleTo(String requestingUserId) {
         return this.visibility == Visibility.PUBLIC
-            || this.userId.equals(requestingUserId);
+                || this.userId.equals(requestingUserId);
     }
 
     /**
      * 判断是否为用户所有
+     *
      * @param requestingUserId 请求用户 ID
      * @return true 如果是所有者
      */
@@ -213,9 +218,9 @@ public class Question {
      */
     public String toContext() {
         String entities = coreEntities.isEmpty() ? "综合"
-            : String.join(",", coreEntities);
+                : String.join(",", coreEntities);
         return String.format("公司：%s | 岗位：%s | 类型：%s | 考点：%s | 题目：%s",
-            company, position, questionType.getValue(), entities, questionText);
+                company, position, questionType.getValue(), entities, questionText);
     }
 
     // ==================== Getter 方法 ====================
@@ -234,8 +239,8 @@ public class Question {
     // ==================== 构造函数 ====================
 
     private Question(Long id, String questionHash, String userId, String questionText,
-                      QuestionType questionType, String company, String position,
-                      List<String> coreEntities, Visibility visibility, SourceType sourceType) {
+                     QuestionType questionType, String company, String position,
+                     List<String> coreEntities, Visibility visibility, SourceType sourceType) {
         this.id = id;
         this.questionHash = questionHash;
         this.userId = userId;
@@ -255,11 +260,11 @@ public class Question {
     }
 
     private Question(Long id, String questionHash, String userId, String questionText,
-                      QuestionType questionType, String company, String position,
-                      List<String> coreEntities, String answer, MasteryLevel masteryLevel,
-                      List<String> clusterIds, Map<String, Object> metadata,
-                      Visibility visibility, SourceType sourceType,
-                      LocalDateTime createdAt, LocalDateTime updatedAt) {
+                     QuestionType questionType, String company, String position,
+                     List<String> coreEntities, String answer, MasteryLevel masteryLevel,
+                     List<String> clusterIds, Map<String, Object> metadata,
+                     Visibility visibility, SourceType sourceType,
+                     LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.id = id;
         this.questionHash = questionHash;
         this.userId = userId;

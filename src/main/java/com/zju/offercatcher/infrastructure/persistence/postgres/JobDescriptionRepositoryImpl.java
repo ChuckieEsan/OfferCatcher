@@ -27,9 +27,9 @@ public class JobDescriptionRepositoryImpl implements JobDescriptionRepository {
     @Override
     public List<JobDescription> findByUserId(String userId) {
         return jpaRepository.findByUserIdOrderByCreatedAtDesc(userId)
-            .stream()
-            .map(JobDescriptionJpaEntity::toDomain)
-            .toList();
+                .stream()
+                .map(JobDescriptionJpaEntity::toDomain)
+                .toList();
     }
 
     @Override
@@ -42,7 +42,7 @@ public class JobDescriptionRepositoryImpl implements JobDescriptionRepository {
     @Transactional
     public void deleteById(Long id, String userId) {
         JobDescriptionJpaEntity entity = jpaRepository.findById(id)
-            .orElseThrow(() -> new DomainException("JD not found: " + id, "JD_NOT_FOUND"));
+                .orElseThrow(() -> new DomainException("JD not found: " + id, "JD_NOT_FOUND"));
         if (!entity.getUserId().equals(userId)) {
             throw new UnauthorizedOperationException(userId, id.toString(), "delete JD");
         }

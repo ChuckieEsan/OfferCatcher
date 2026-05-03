@@ -31,41 +31,41 @@ public class ChatController {
     @PostMapping(value = "/api/v1/chat/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<String> chatStream(@UserId String userId, @Valid @RequestBody ChatRequest req) {
         return chatAgent.chatStream(req.message(), req.conversationId(), userId)
-            .concatWithValues("[DONE]\n\n");
+                .concatWithValues("[DONE]\n\n");
     }
 
     @GetMapping("/api/v1/conversations")
     public ResponseEntity<ConversationListResponse> listConversations(
-        @UserId String userId,
-        @RequestParam(defaultValue = "1") int page,
-        @RequestParam(defaultValue = "20") int pageSize) {
+            @UserId String userId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int pageSize) {
         List<Conversation> conversations = chatService.listConversations(userId, page, pageSize);
         List<ConversationResponse> items = conversations.stream()
-            .map(ChatController::toConversationResponse)
-            .toList();
+                .map(ChatController::toConversationResponse)
+                .toList();
         int total = (int) chatService.countConversations(userId);
         return ResponseEntity.ok(new ConversationListResponse(items, total, page, pageSize));
     }
 
     @PostMapping("/api/v1/conversations")
     public ResponseEntity<ConversationResponse> createConversation(
-        @UserId String userId,
-        @Valid @RequestBody ConversationCreateRequest req) {
+            @UserId String userId,
+            @Valid @RequestBody ConversationCreateRequest req) {
         Conversation c = chatService.createConversation(userId, req.title());
         return ResponseEntity.ok(toConversationResponse(c));
     }
 
     @GetMapping("/api/v1/conversations/{id}")
     public ResponseEntity<ConversationResponse> getConversation(
-        @UserId String userId, @PathVariable Long id) {
+            @UserId String userId, @PathVariable Long id) {
         return chatService.getConversation(userId, id)
-            .map(c -> ResponseEntity.ok(toConversationResponse(c)))
-            .orElse(ResponseEntity.notFound().build());
+                .map(c -> ResponseEntity.ok(toConversationResponse(c)))
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @PutMapping("/api/v1/conversations/{id}/title")
     public ResponseEntity<Void> updateTitle(
-        @UserId String userId, @PathVariable Long id, @RequestBody java.util.Map<String, String> body) {
+            @UserId String userId, @PathVariable Long id, @RequestBody java.util.Map<String, String> body) {
         String title = body.get("title");
         if (title == null || title.isBlank()) {
             return ResponseEntity.badRequest().build();
@@ -76,11 +76,11 @@ public class ChatController {
 
     @PostMapping("/api/v1/conversations/{id}/generate-title")
     public ResponseEntity<ConversationResponse> generateTitle(
-        @UserId String userId, @PathVariable Long id) {
+            @UserId String userId, @PathVariable Long id) {
         log.info("Generate title for conversation: {}", id);
         return chatService.generateTitle(userId, id)
-            .map(c -> ResponseEntity.ok(toConversationResponse(c)))
-            .orElse(ResponseEntity.notFound().build());
+                .map(c -> ResponseEntity.ok(toConversationResponse(c)))
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/api/v1/conversations/{id}")
@@ -93,15 +93,15 @@ public class ChatController {
 
     static ConversationResponse toConversationResponse(Conversation c) {
         List<MessageResponse> msgs = c.getMessages().stream()
-            .map(m -> new MessageResponse(
-                m.getMessageId(), m.getRole().name().toLowerCase(),
-                m.getContent(), m.getReasoning(), m.getToolCalls(),
-                m.getCreatedAt().toString()))
-            .toList();
+                .map(m -> new MessageResponse(
+                        m.getMessageId(), m.getRole().name().toLowerCase(),
+                        m.getContent(), m.getReasoning(), m.getToolCalls(),
+                        m.getCreatedAt().toString()))
+                .toList();
         return new ConversationResponse(
-            c.getConversationId(), c.getTitle(),
-            c.getStatus().name().toLowerCase(), c.messageCount(),
-            c.getCreatedAt().toString(), c.getUpdatedAt().toString(), msgs
+                c.getConversationId(), c.getTitle(),
+                c.getStatus().name().toLowerCase(), c.messageCount(),
+                c.getCreatedAt().toString(), c.getUpdatedAt().toString(), msgs
         );
     }
 

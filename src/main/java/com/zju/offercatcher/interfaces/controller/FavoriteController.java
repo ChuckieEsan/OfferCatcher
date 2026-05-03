@@ -46,16 +46,16 @@ public class FavoriteController {
 
     @GetMapping
     public ResponseEntity<ListResponse> listFavorites(
-        @UserId String userId,
-        @RequestParam(defaultValue = "1") int page,
-        @RequestParam(defaultValue = "50") int pageSize) {
+            @UserId String userId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "50") int pageSize) {
         List<Favorite> favorites = favoriteService.listFavorites(userId, page, pageSize);
         return ResponseEntity.ok(new ListResponse(favorites.stream().map(FavoriteController::toResponse).toList()));
     }
 
     @PostMapping("/check")
     public ResponseEntity<CheckResponse> checkFavorited(
-        @UserId String userId, @Valid @RequestBody CheckRequest req) {
+            @UserId String userId, @Valid @RequestBody CheckRequest req) {
         Map<Long, Boolean> result = favoriteService.checkFavorited(userId, req.questionIds());
         return ResponseEntity.ok(new CheckResponse(result));
     }
@@ -64,6 +64,6 @@ public class FavoriteController {
 
     static Response toResponse(Favorite f) {
         return new Response(f.getFavoriteId(), f.getUserId(), f.getQuestionId(),
-            f.getCreatedAt().toString());
+                f.getCreatedAt().toString());
     }
 }

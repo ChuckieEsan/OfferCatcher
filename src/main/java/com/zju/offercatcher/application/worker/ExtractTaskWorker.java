@@ -1,9 +1,9 @@
 package com.zju.offercatcher.application.worker;
 
 import com.zju.offercatcher.application.agent.VisionExtractorAgent;
-import com.zju.offercatcher.domain.question.valueobjects.ExtractedQuestionItem;
 import com.zju.offercatcher.domain.question.aggregates.ExtractTask;
 import com.zju.offercatcher.domain.question.aggregates.ExtractTaskStatus;
+import com.zju.offercatcher.domain.question.valueobjects.ExtractedQuestionItem;
 import com.zju.offercatcher.infrastructure.persistence.postgres.ExtractTaskJpaEntity;
 import com.zju.offercatcher.infrastructure.persistence.postgres.ExtractTaskJpaRepository;
 import org.slf4j.Logger;
@@ -17,7 +17,7 @@ import java.util.List;
 
 /**
  * 面经提取 Worker。
- *
+ * <p>
  * 轮询 PostgreSQL 查找 PENDING 状态的提取任务，调用 VisionExtractorAgent 异步处理。
  * 对应 Python: app/application/workers/extract_worker.py
  */
@@ -33,7 +33,7 @@ public class ExtractTaskWorker {
     private final VisionExtractorAgent visionExtractor;
 
     public ExtractTaskWorker(ExtractTaskJpaRepository taskJpaRepo,
-                              VisionExtractorAgent visionExtractor) {
+                             VisionExtractorAgent visionExtractor) {
         this.taskJpaRepo = taskJpaRepo;
         this.visionExtractor = visionExtractor;
     }
@@ -80,7 +80,7 @@ public class ExtractTaskWorker {
             taskJpaRepo.save(entity);
 
             log.info("Extract task {} completed: company={}, {} questions",
-                taskId, extracted.company(), extracted.questions().size());
+                    taskId, extracted.company(), extracted.questions().size());
 
         } catch (Exception e) {
             log.error("Extract task {} failed: {}", taskId, e.getMessage());

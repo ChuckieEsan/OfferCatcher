@@ -13,17 +13,22 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Map;
 
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(MemoryController.class)
 class MemoryControllerTest {
 
-    @Autowired MockMvc mvc;
-    @Autowired ObjectMapper mapper;
-    @MockitoBean MemoryApplicationService memoryService;
+    @Autowired
+    MockMvc mvc;
+    @Autowired
+    ObjectMapper mapper;
+    @MockitoBean
+    MemoryApplicationService memoryService;
 
     @Nested
     @DisplayName("GET /api/v1/memory/me")
@@ -37,12 +42,12 @@ class MemoryControllerTest {
             when(memoryService.getBehaviors(anyString())).thenReturn("喜欢详细解释");
 
             mvc.perform(get("/api/v1/memory/me")
-                    .header("X-User-Id", "user-1"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.userId").value("user-1"))
-                .andExpect(jsonPath("$.content").exists())
-                .andExpect(jsonPath("$.preferences").exists())
-                .andExpect(jsonPath("$.behaviors").exists());
+                            .header("X-User-Id", "user-1"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.userId").value("user-1"))
+                    .andExpect(jsonPath("$.content").exists())
+                    .andExpect(jsonPath("$.preferences").exists())
+                    .andExpect(jsonPath("$.behaviors").exists());
         }
     }
 
@@ -56,8 +61,8 @@ class MemoryControllerTest {
             when(memoryService.getPreferences("user-1")).thenReturn("语言：中文\n解释深度：详细");
 
             mvc.perform(get("/api/v1/memory/me/preferences")
-                    .header("X-User-Id", "user-1"))
-                .andExpect(status().isOk());
+                            .header("X-User-Id", "user-1"))
+                    .andExpect(status().isOk());
         }
     }
 
@@ -71,10 +76,10 @@ class MemoryControllerTest {
             String body = mapper.writeValueAsString(Map.of("content", "语言：中文\n解释深度：适中"));
 
             mvc.perform(put("/api/v1/memory/me/preferences")
-                    .header("X-User-Id", "user-1")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(body))
-                .andExpect(status().isOk());
+                            .header("X-User-Id", "user-1")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(body))
+                    .andExpect(status().isOk());
         }
     }
 
@@ -88,8 +93,8 @@ class MemoryControllerTest {
             when(memoryService.getBehaviors("user-1")).thenReturn("频繁提问系统设计");
 
             mvc.perform(get("/api/v1/memory/me/behaviors")
-                    .header("X-User-Id", "user-1"))
-                .andExpect(status().isOk());
+                            .header("X-User-Id", "user-1"))
+                    .andExpect(status().isOk());
         }
     }
 
@@ -103,10 +108,10 @@ class MemoryControllerTest {
             String body = mapper.writeValueAsString(Map.of("content", "偏好系统设计题型"));
 
             mvc.perform(put("/api/v1/memory/me/behaviors")
-                    .header("X-User-Id", "user-1")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(body))
-                .andExpect(status().isOk());
+                            .header("X-User-Id", "user-1")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(body))
+                    .andExpect(status().isOk());
         }
     }
 }

@@ -1,11 +1,11 @@
 package com.zju.offercatcher.domain.chat.aggregates;
 
 import com.zju.offercatcher.domain.chat.entities.Message;
+import com.zju.offercatcher.domain.shared.SnowflakeIdGenerator;
 import com.zju.offercatcher.domain.shared.enums.ConversationStatus;
 import com.zju.offercatcher.domain.shared.enums.MessageRole;
 import com.zju.offercatcher.domain.shared.exception.DomainException;
 import com.zju.offercatcher.domain.shared.exception.InvalidStateException;
-import com.zju.offercatcher.domain.shared.SnowflakeIdGenerator;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -15,11 +15,11 @@ import java.util.Optional;
 
 /**
  * 对话聚合根
- *
+ * <p>
  * Conversation 是对话领域的聚合根，管理：
  * - 对话元数据（标题、状态）
  * - 聚合内的消息列表
- *
+ * <p>
  * 聚合边界规则：
  * - 所有消息操作必须通过 Conversation 方法
  * - 消息创建后不可修改/删除
@@ -44,7 +44,7 @@ public class Conversation {
         Long conversationId = SnowflakeIdGenerator.generate();
         LocalDateTime now = LocalDateTime.now();
         return new Conversation(conversationId, userId, title, ConversationStatus.ACTIVE,
-            new ArrayList<>(), now, now);
+                new ArrayList<>(), now, now);
     }
 
     /**
@@ -55,17 +55,17 @@ public class Conversation {
         validateConversationId(conversationId);
         LocalDateTime now = LocalDateTime.now();
         return new Conversation(conversationId, userId, title, ConversationStatus.ACTIVE,
-            new ArrayList<>(), now, now);
+                new ArrayList<>(), now, now);
     }
 
     /**
      * 从持久化存储重建对话（用于 Repository 实现）
      */
     public static Conversation rebuild(Long conversationId, String userId, String title,
-                                        ConversationStatus status, List<Message> messages,
-                                        LocalDateTime createdAt, LocalDateTime updatedAt) {
+                                       ConversationStatus status, List<Message> messages,
+                                       LocalDateTime createdAt, LocalDateTime updatedAt) {
         return new Conversation(conversationId, userId, title, status,
-            new ArrayList<>(messages), createdAt, updatedAt);
+                new ArrayList<>(messages), createdAt, updatedAt);
     }
 
     // ==================== 业务方法 ====================
@@ -150,14 +150,14 @@ public class Conversation {
 
     public List<Message> getUserMessages() {
         return messages.stream()
-            .filter(Message::isUserMessage)
-            .toList();
+                .filter(Message::isUserMessage)
+                .toList();
     }
 
     public List<Message> getAssistantMessages() {
         return messages.stream()
-            .filter(Message::isAssistantMessage)
-            .toList();
+                .filter(Message::isAssistantMessage)
+                .toList();
     }
 
     public int messageCount() {

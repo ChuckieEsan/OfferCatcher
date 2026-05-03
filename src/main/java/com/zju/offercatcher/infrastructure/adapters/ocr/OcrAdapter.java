@@ -14,7 +14,7 @@ import java.util.Map;
 
 /**
  * OCR 适配器 — 调用 EasyOCR 微服务的 HTTP API
- *
+ * <p>
  * 对应 Python: app/infrastructure/adapters/ocr_adapter.py OCRAdapter
  */
 @Service
@@ -47,8 +47,8 @@ public class OcrAdapter {
     public String recognizeBatch(List<String> imageSources) {
         try {
             List<Map<String, String>> images = imageSources.stream()
-                .map(src -> Map.of("source", src))
-                .toList();
+                    .map(src -> Map.of("source", src))
+                    .toList();
             Map<String, Object> body = Map.of("images", images);
             String json = objectMapper.writeValueAsString(body);
 

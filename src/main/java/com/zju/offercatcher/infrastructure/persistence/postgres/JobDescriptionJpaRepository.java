@@ -7,5 +7,6 @@ import java.util.Optional;
 
 public interface JobDescriptionJpaRepository extends JpaRepository<JobDescriptionJpaEntity, Long> {
     Optional<JobDescriptionJpaEntity> findByIdAndUserId(Long id, String userId);
+
     List<JobDescriptionJpaEntity> findByUserIdOrderByCreatedAtDesc(String userId);
 }

@@ -2,7 +2,7 @@ package com.zju.offercatcher.infrastructure.persistence.qdrant;
 
 /**
  * 向量搜索结果值对象
- *
+ * <p>
  * 表示从 Qdrant 返回的单个搜索结果，可用于题目和会话摘要。
  */
 public record VectorSearchHit(String id, float score) {

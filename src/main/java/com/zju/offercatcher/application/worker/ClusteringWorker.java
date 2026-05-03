@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 
 /**
  * 聚类 Worker — 定时执行 KMeans 聚类任务（Cron 调度，默认每天 18:00）。
- *
+ * <p>
  * 对应 Python: app/application/workers/clustering_worker.py
  */
 @Component
@@ -30,7 +30,7 @@ public class ClusteringWorker {
         try {
             ClusteringApplicationService.ClusteringResult result = clusteringService.runClustering(null);
             log.info("ClusteringWorker completed: {} questions → {} clusters, silhouette={:.4f}",
-                result.totalQuestions(), result.clusterCount(), result.silhouetteScore());
+                    result.totalQuestions(), result.clusterCount(), result.silhouetteScore());
         } catch (Exception e) {
             log.error("ClusteringWorker failed: {}", e.getMessage(), e);
         }

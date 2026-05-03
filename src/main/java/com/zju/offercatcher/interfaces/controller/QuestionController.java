@@ -34,15 +34,15 @@ public class QuestionController {
         QuestionType questionType = QuestionType.fromValue(req.questionType());
         List<String> entities = req.coreEntities() != null ? req.coreEntities() : List.of();
         Question q = questionService.createQuestion(userId, req.questionText(), req.company(),
-            req.position(), questionType, entities);
+                req.position(), questionType, entities);
         return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(q));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Response> get(@PathVariable Long id) {
         return questionService.getQuestion(id)
-            .map(q -> ResponseEntity.ok(toResponse(q)))
-            .orElse(ResponseEntity.notFound().build());
+                .map(q -> ResponseEntity.ok(toResponse(q)))
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @PutMapping("/{id}")
@@ -50,9 +50,9 @@ public class QuestionController {
                                            @Valid @RequestBody UpdateRequest req) {
         MasteryLevel ml = req.masteryLevel() != null ? MasteryLevel.fromLevel(req.masteryLevel()) : null;
         return questionService.updateQuestion(id, req.answer(), ml,
-                req.questionText(), req.coreEntities())
-            .map(q -> ResponseEntity.ok(toResponse(q)))
-            .orElse(ResponseEntity.notFound().build());
+                        req.questionText(), req.coreEntities())
+                .map(q -> ResponseEntity.ok(toResponse(q)))
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")
@@ -63,21 +63,21 @@ public class QuestionController {
 
     @GetMapping
     public ResponseEntity<ListResponse> list(
-        @UserId String userId,
-        @RequestParam(required = false) String company,
-        @RequestParam(required = false) String position,
-        @RequestParam(required = false) String questionType,
-        @RequestParam(required = false) Integer masteryLevel,
-        @RequestParam(required = false) String keyword,
-        @RequestParam(required = false) String clusterId,
-        @RequestParam(defaultValue = "1") int page,
-        @RequestParam(defaultValue = "20") int pageSize) {
+            @UserId String userId,
+            @RequestParam(required = false) String company,
+            @RequestParam(required = false) String position,
+            @RequestParam(required = false) String questionType,
+            @RequestParam(required = false) Integer masteryLevel,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String clusterId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int pageSize) {
 
         QuestionType qt = questionType != null ? QuestionType.fromValue(questionType) : null;
         MasteryLevel ml = masteryLevel != null ? MasteryLevel.fromLevel(masteryLevel) : null;
 
         List<Question> questions = questionService.listQuestions(userId, company, position,
-            qt, ml, keyword, clusterId, page, pageSize);
+                qt, ml, keyword, clusterId, page, pageSize);
         List<Response> items = questions.stream().map(QuestionController::toResponse).toList();
         int total = (int) questionService.countQuestions(userId);
         return ResponseEntity.ok(new ListResponse(items, total, page, pageSize));
@@ -87,16 +87,16 @@ public class QuestionController {
     public ResponseEntity<Response> regenerate(@PathVariable Long id) {
         log.info("Regenerate answer: {}", id);
         return questionService.regenerateAnswer(id)
-            .map(q -> ResponseEntity.ok(toResponse(q)))
-            .orElse(ResponseEntity.notFound().build());
+                .map(q -> ResponseEntity.ok(toResponse(q)))
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping("/{id}/publish")
     public ResponseEntity<Response> publish(@UserId String userId, @PathVariable Long id) {
         log.info("Publish question to public: {}", id);
         return questionService.publishQuestion(id, userId)
-            .map(q -> ResponseEntity.ok(toResponse(q)))
-            .orElse(ResponseEntity.notFound().build());
+                .map(q -> ResponseEntity.ok(toResponse(q)))
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping("/batch/answers")
@@ -109,12 +109,12 @@ public class QuestionController {
 
     static Response toResponse(Question q) {
         return new Response(
-            q.getId(), q.getQuestionHash(), q.getQuestionText(), q.getCompany(), q.getPosition(),
-            q.getQuestionType().getValue(), q.getMasteryLevel().getLevel(),
-            new ArrayList<>(q.getCoreEntities()), q.getAnswer(),
-            new ArrayList<>(q.getClusterIds()), q.getMetadata(),
-            q.getVisibility().name(), q.getSourceType().name(),
-            q.getCreatedAt().toString(), q.getUpdatedAt().toString()
+                q.getId(), q.getQuestionHash(), q.getQuestionText(), q.getCompany(), q.getPosition(),
+                q.getQuestionType().getValue(), q.getMasteryLevel().getLevel(),
+                new ArrayList<>(q.getCoreEntities()), q.getAnswer(),
+                new ArrayList<>(q.getClusterIds()), q.getMetadata(),
+                q.getVisibility().name(), q.getSourceType().name(),
+                q.getCreatedAt().toString(), q.getUpdatedAt().toString()
         );
     }
 }

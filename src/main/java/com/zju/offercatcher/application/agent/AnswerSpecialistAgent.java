@@ -17,7 +17,7 @@ import java.util.List;
 
 /**
  * 答案生成 Agent
- *
+ * <p>
  * 使用 Web Search 获取上下文，调用 LLM 生成标准答案。
  * 对应 Python: app/application/agents/answer_specialist/agent.py
  */
@@ -31,8 +31,8 @@ public class AnswerSpecialistAgent {
     private final PromptLoader promptLoader;
 
     public AnswerSpecialistAgent(LLMModelFactory modelFactory,
-                                  TavilySearchAdapter webSearchAdapter,
-                                  PromptLoader promptLoader) {
+                                 TavilySearchAdapter webSearchAdapter,
+                                 PromptLoader promptLoader) {
         this.webSearchAdapter = webSearchAdapter;
         this.promptLoader = promptLoader;
         this.llm = modelFactory.createSimple("deepseek", false);
@@ -40,25 +40,14 @@ public class AnswerSpecialistAgent {
 
     public String generateAnswer(Question question) {
         log.info("Generating answer for: {}",
-            question.getQuestionText().substring(0, Math.min(50, question.getQuestionText().length())));
+                question.getQuestionText().substring(0, Math.min(50, question.getQuestionText().length())));
 
         String context = fetchContext(question.getQuestionText(), question.getCompany(), question.getPosition());
         String coreEntities = question.getCoreEntities().isEmpty()
-            ? "无" : String.join(", ", question.getCoreEntities());
+                ? "无" : String.join(", ", question.getCoreEntities());
 
         return doGenerate(question.getQuestionText(), question.getCompany(), question.getPosition(),
-            coreEntities, context);
-    }
-
-    public String generateAnswer(String questionText, String company, String position, List<String> coreEntities) {
-        log.info("Generating answer for: {}", questionText.substring(0, Math.min(50, questionText.length())));
-
-        String context = fetchContext(questionText, company, position);
-        String entities = (coreEntities == null || coreEntities.isEmpty())
-            ? "无" : String.join(", ", coreEntities);
-
-        return doGenerate(questionText, company != null ? company : "综合",
-            position != null ? position : "综合", entities, context);
+                coreEntities, context);
     }
 
     private String fetchContext(String questionText, String company, String position) {
@@ -73,28 +62,28 @@ public class AnswerSpecialistAgent {
     }
 
     private String doGenerate(String questionText, String company, String position,
-                               String coreEntities, String context) {
+                              String coreEntities, String context) {
         String prompt = promptLoader.render("answer_specialist.md",
-            "company", company,
-            "position", position,
-            "question", questionText,
-            "core_entities", coreEntities,
-            "context", context
+                "company", company,
+                "position", position,
+                "question", questionText,
+                "core_entities", coreEntities,
+                "context", context
         );
 
         ReActAgent agent = ReActAgent.builder()
-            .name("answer-specialist")
-            .model(llm)
-            .maxIters(0)
-            .generateOptions(GenerateOptions.builder()
-                .temperature(0.3)
-                .maxTokens(2048)
-                .build())
-            .build();
+                .name("answer-specialist")
+                .model(llm)
+                .maxIters(0)
+                .generateOptions(GenerateOptions.builder()
+                        .temperature(0.3)
+                        .maxTokens(2048)
+                        .build())
+                .build();
 
         try {
             Msg response = agent.call(List.of(
-                Msg.builder().role(MsgRole.USER).textContent(prompt).build()
+                    Msg.builder().role(MsgRole.USER).textContent(prompt).build()
             )).block();
 
             String answer = response != null ? response.getTextContent() : "";

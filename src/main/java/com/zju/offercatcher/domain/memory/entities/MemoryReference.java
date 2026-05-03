@@ -8,10 +8,10 @@ import java.time.LocalDateTime;
 
 /**
  * 记忆引用实体
- *
+ * <p>
  * MemoryReference 是 Memory 聚合内的实体，表示一个引用文件。
  * 包括 preferences.md、behaviors.md 和自定义 Skill。
- *
+ * <p>
  * 设计原则：
  * - 通过 Memory.addReference() 创建
  * - 引用名称唯一（在同一 Memory 内）
@@ -27,7 +27,7 @@ public class MemoryReference {
      * 创建引用（工厂方法）
      *
      * @param referenceName 引用名称
-     * @param content 文件内容（Markdown 格式）
+     * @param content       文件内容（Markdown 格式）
      * @return 新创建的 MemoryReference 实体
      */
     public static MemoryReference create(String referenceName, String content) {
@@ -40,8 +40,8 @@ public class MemoryReference {
      * 从持久化存储重建（用于 Repository 实现）
      *
      * @param referenceName 引用名称
-     * @param content 文件内容
-     * @param updatedAt 最后更新时间
+     * @param content       文件内容
+     * @param updatedAt     最后更新时间
      * @return 重建的 MemoryReference 实体
      */
     public static MemoryReference rebuild(String referenceName, String content, LocalDateTime updatedAt) {

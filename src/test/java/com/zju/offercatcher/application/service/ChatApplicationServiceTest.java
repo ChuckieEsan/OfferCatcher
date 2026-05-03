@@ -12,19 +12,21 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class ChatApplicationServiceTest {
 
-    @Mock ConversationRepository conversationRepository;
-    @InjectMocks ChatApplicationService service;
+    @Mock
+    ConversationRepository conversationRepository;
+    @InjectMocks
+    ChatApplicationService service;
 
     Conversation sample = Conversation.create("user-1", "测试对话");
 
@@ -78,7 +80,7 @@ class ChatApplicationServiceTest {
         void conversationNotFound() {
             when(conversationRepository.findById(999L)).thenReturn(Optional.empty());
             assertThatThrownBy(() -> service.addMessage("user-1", 999L, MessageRole.USER, "hi"))
-                .isInstanceOf(ConversationNotFoundException.class);
+                    .isInstanceOf(ConversationNotFoundException.class);
         }
     }
 

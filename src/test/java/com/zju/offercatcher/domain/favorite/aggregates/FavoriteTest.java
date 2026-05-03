@@ -7,11 +7,12 @@ import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Favorite 聚合根测试
- *
+ * <p>
  * 测试收藏的核心业务逻辑：
  * - 工厂方法创建
  * - 用户隔离验证
@@ -55,32 +56,32 @@ class FavoriteTest {
         @DisplayName("userId 为空应抛出异常")
         void shouldThrowExceptionWhenUserIdIsNull() {
             assertThatThrownBy(() -> Favorite.create(null, QUESTION_ID))
-                .isInstanceOf(DomainException.class)
-                .hasMessageContaining("userId");
+                    .isInstanceOf(DomainException.class)
+                    .hasMessageContaining("userId");
         }
 
         @Test
         @DisplayName("userId 为空白应抛出异常")
         void shouldThrowExceptionWhenUserIdIsBlank() {
             assertThatThrownBy(() -> Favorite.create("", QUESTION_ID))
-                .isInstanceOf(DomainException.class)
-                .hasMessageContaining("userId");
+                    .isInstanceOf(DomainException.class)
+                    .hasMessageContaining("userId");
         }
 
         @Test
         @DisplayName("questionId 为空应抛出异常")
         void shouldThrowExceptionWhenQuestionIdIsNull() {
             assertThatThrownBy(() -> Favorite.create(USER_ID, null))
-                .isInstanceOf(DomainException.class)
-                .hasMessageContaining("questionId");
+                    .isInstanceOf(DomainException.class)
+                    .hasMessageContaining("questionId");
         }
 
         @Test
         @DisplayName("questionId 为空白应抛出异常")
         void shouldThrowExceptionWhenQuestionIdIsBlank() {
             assertThatThrownBy(() -> Favorite.create(USER_ID, (Long) null))
-                .isInstanceOf(DomainException.class)
-                .hasMessageContaining("questionId");
+                    .isInstanceOf(DomainException.class)
+                    .hasMessageContaining("questionId");
         }
     }
 
@@ -103,8 +104,8 @@ class FavoriteTest {
         @DisplayName("favoriteId 为空应抛出异常")
         void shouldThrowExceptionWhenFavoriteIdIsNull() {
             assertThatThrownBy(() -> Favorite.createWithId(null, USER_ID, QUESTION_ID))
-                .isInstanceOf(DomainException.class)
-                .hasMessageContaining("favoriteId");
+                    .isInstanceOf(DomainException.class)
+                    .hasMessageContaining("favoriteId");
         }
 
     }

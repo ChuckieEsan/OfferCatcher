@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 
 /**
  * 消息实体
- *
+ * <p>
  * Message 是 Conversation 聚合内的实体，不可独立存在。
  * 消息创建后不可修改，对话是历史记录。
  */

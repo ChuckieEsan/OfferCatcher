@@ -12,7 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Prompt 模板加载器
- *
+ * <p>
  * 从 classpath:prompts/ 加载 Markdown 提示词模板。
  * 支持 Jinja2 {{ variable }} 风格的变量替换。
  * 对应 Python: app/infrastructure/common/prompt.py

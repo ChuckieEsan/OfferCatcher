@@ -4,11 +4,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zju.offercatcher.domain.memory.entities.MemoryReference;
+import jakarta.persistence.AttributeConverter;
+import jakarta.persistence.Converter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import jakarta.persistence.AttributeConverter;
-import jakarta.persistence.Converter;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,8 +30,8 @@ public class MemoryReferenceConverter implements AttributeConverter<List<MemoryR
         }
         try {
             List<Map<String, Object>> referenceData = references.stream()
-                .map(this::referenceToMap)
-                .toList();
+                    .map(this::referenceToMap)
+                    .toList();
             return objectMapper.writeValueAsString(referenceData);
         } catch (JsonProcessingException e) {
             log.error("Failed to convert MemoryReference to JSON", e);
@@ -46,10 +46,11 @@ public class MemoryReferenceConverter implements AttributeConverter<List<MemoryR
         }
         try {
             List<Map<String, Object>> referenceData = objectMapper.readValue(json,
-                new TypeReference<List<Map<String, Object>>>() {});
+                    new TypeReference<List<Map<String, Object>>>() {
+                    });
             return referenceData.stream()
-                .map(this::mapToReference)
-                .toList();
+                    .map(this::mapToReference)
+                    .toList();
         } catch (JsonProcessingException e) {
             log.error("Failed to convert JSON to MemoryReference", e);
             throw new RuntimeException("Failed to convert JSON to MemoryReference", e);
@@ -68,9 +69,9 @@ public class MemoryReferenceConverter implements AttributeConverter<List<MemoryR
         String updatedAtStr = (String) map.get("updatedAt");
         LocalDateTime updatedAt = updatedAtStr != null ? LocalDateTime.parse(updatedAtStr) : LocalDateTime.now();
         return MemoryReference.rebuild(
-            (String) map.get("referenceName"),
-            (String) map.get("content"),
-            updatedAt
+                (String) map.get("referenceName"),
+                (String) map.get("content"),
+                updatedAt
         );
     }
 }

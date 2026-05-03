@@ -1,8 +1,6 @@
 package com.zju.offercatcher.infrastructure.persistence.postgres;
 
 import com.zju.offercatcher.domain.chat.aggregates.Conversation;
-import com.zju.offercatcher.domain.chat.entities.Message;
-import com.zju.offercatcher.domain.shared.enums.ConversationStatus;
 import com.zju.offercatcher.domain.shared.enums.MessageRole;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -21,8 +19,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Import({ConversationRepositoryImpl.class})
 class ConversationRepositoryImplTest {
 
-    @Autowired ConversationRepositoryImpl repo;
-    @Autowired ConversationJpaRepository jpaRepo;
+    @Autowired
+    ConversationRepositoryImpl repo;
+    @Autowired
+    ConversationJpaRepository jpaRepo;
 
     @Test
     @DisplayName("save 应持久化对话及其消息")

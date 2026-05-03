@@ -3,10 +3,8 @@ package com.zju.offercatcher.application.service;
 import com.zju.offercatcher.application.agent.AnswerSpecialistAgent;
 import com.zju.offercatcher.domain.question.aggregates.Question;
 import com.zju.offercatcher.domain.question.repositories.QuestionRepository;
-import com.zju.offercatcher.domain.shared.enums.MasteryLevel;
 import com.zju.offercatcher.domain.shared.enums.QuestionType;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,20 +16,24 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class QuestionApplicationServiceTest {
 
-    @Mock QuestionRepository questionRepository;
-    @Mock CacheApplicationService cacheService;
-    @Mock AnswerSpecialistAgent answerAgent;
-    @InjectMocks QuestionApplicationService service;
+    @Mock
+    QuestionRepository questionRepository;
+    @Mock
+    CacheApplicationService cacheService;
+    @Mock
+    AnswerSpecialistAgent answerAgent;
+    @InjectMocks
+    QuestionApplicationService service;
 
     Question sample = Question.createPrivate("user-1", "HashMap 原理？", "阿里", "Java",
-        QuestionType.KNOWLEDGE, List.of("HashMap"));
+            QuestionType.KNOWLEDGE, List.of("HashMap"));
 
     @Nested
     @DisplayName("createQuestion")
@@ -41,7 +43,7 @@ class QuestionApplicationServiceTest {
         @DisplayName("创建题目并保存到 Repository")
         void createAndSave() {
             Question result = service.createQuestion("user-1", "HashMap 原理？", "阿里", "Java",
-                QuestionType.KNOWLEDGE, List.of("HashMap"));
+                    QuestionType.KNOWLEDGE, List.of("HashMap"));
             assertThat(result).isNotNull();
             assertThat(result.getUserId()).isEqualTo("user-1");
             verify(questionRepository).save(any(Question.class));

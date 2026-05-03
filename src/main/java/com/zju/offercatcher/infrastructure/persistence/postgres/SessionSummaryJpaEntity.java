@@ -17,9 +17,9 @@ import java.util.List;
  */
 @Entity
 @Table(name = "session_summaries", indexes = {
-    @Index(name = "idx_summaries_user_created", columnList = "user_id, created_at"),
-    @Index(name = "idx_summaries_user_layer", columnList = "user_id, memory_layer"),
-    @Index(name = "idx_summaries_conversation", columnList = "conversation_id")
+        @Index(name = "idx_summaries_user_created", columnList = "user_id, created_at"),
+        @Index(name = "idx_summaries_user_layer", columnList = "user_id, memory_layer"),
+        @Index(name = "idx_summaries_conversation", columnList = "conversation_id")
 })
 @Getter
 @Setter
@@ -97,9 +97,9 @@ public class SessionSummaryJpaEntity {
 
     public SessionSummary toDomain() {
         return SessionSummary.rebuild(
-            id, conversationId, userId, summary, embedding, importanceScore,
-            topics, memoryLayer, accessCount, feedbackScore, lastAccessed,
-            decayFactor, markedForDeletion, messageCursor, createdAt
+                id, conversationId, userId, summary, embedding, importanceScore,
+                topics, memoryLayer, accessCount, feedbackScore, lastAccessed,
+                decayFactor, markedForDeletion, messageCursor, createdAt
         );
     }
 }

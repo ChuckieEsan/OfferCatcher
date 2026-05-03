@@ -10,11 +10,12 @@ import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Conversation 聚合根测试
- *
+ * <p>
  * 测试对话的核心业务逻辑：
  * - 工厂方法创建
  * - 消息追加
@@ -65,16 +66,16 @@ class ConversationTest {
         @DisplayName("userId 为空应抛出异常")
         void shouldThrowExceptionWhenUserIdIsNull() {
             assertThatThrownBy(() -> Conversation.create(null, TITLE))
-                .isInstanceOf(DomainException.class)
-                .hasMessageContaining("userId");
+                    .isInstanceOf(DomainException.class)
+                    .hasMessageContaining("userId");
         }
 
         @Test
         @DisplayName("userId 为空白应抛出异常")
         void shouldThrowExceptionWhenUserIdIsBlank() {
             assertThatThrownBy(() -> Conversation.create("", TITLE))
-                .isInstanceOf(DomainException.class)
-                .hasMessageContaining("userId");
+                    .isInstanceOf(DomainException.class)
+                    .hasMessageContaining("userId");
         }
     }
 
@@ -111,8 +112,8 @@ class ConversationTest {
             conversation.end();
 
             assertThatThrownBy(() -> conversation.addMessage(MessageRole.USER, "你好"))
-                .isInstanceOf(InvalidStateException.class)
-                .hasMessageContaining("对话已结束");
+                    .isInstanceOf(InvalidStateException.class)
+                    .hasMessageContaining("对话已结束");
         }
 
         @Test
@@ -147,8 +148,8 @@ class ConversationTest {
             Conversation conversation = Conversation.create(USER_ID, TITLE);
 
             assertThatThrownBy(() -> conversation.updateTitle(null))
-                .isInstanceOf(DomainException.class)
-                .hasMessageContaining("标题");
+                    .isInstanceOf(DomainException.class)
+                    .hasMessageContaining("标题");
         }
     }
 
@@ -175,8 +176,8 @@ class ConversationTest {
             conversation.end();
 
             assertThatThrownBy(() -> conversation.end())
-                .isInstanceOf(InvalidStateException.class)
-                .hasMessageContaining("已经结束");
+                    .isInstanceOf(InvalidStateException.class)
+                    .hasMessageContaining("已经结束");
         }
     }
 

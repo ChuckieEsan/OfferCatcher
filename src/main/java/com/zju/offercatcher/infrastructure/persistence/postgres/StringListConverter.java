@@ -28,7 +28,8 @@ public class StringListConverter implements AttributeConverter<List<String>, Str
     public List<String> convertToEntityAttribute(String dbData) {
         if (dbData == null || dbData.isBlank()) return Collections.emptyList();
         try {
-            return objectMapper.readValue(dbData, new TypeReference<>() {});
+            return objectMapper.readValue(dbData, new TypeReference<>() {
+            });
         } catch (Exception e) {
             return Collections.emptyList();
         }

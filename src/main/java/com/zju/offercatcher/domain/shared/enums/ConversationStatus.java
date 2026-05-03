@@ -2,7 +2,7 @@ package com.zju.offercatcher.domain.shared.enums;
 
 /**
  * 对话会话状态枚举
- *
+ * <p>
  * 用于管理对话会话的生命周期状态。
  */
 public enum ConversationStatus {

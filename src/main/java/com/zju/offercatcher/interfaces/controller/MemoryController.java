@@ -2,7 +2,9 @@ package com.zju.offercatcher.interfaces.controller;
 
 import com.zju.offercatcher.application.service.MemoryApplicationService;
 import com.zju.offercatcher.interfaces.config.UserId;
-import com.zju.offercatcher.interfaces.dto.MemoryDto.*;
+import com.zju.offercatcher.interfaces.dto.MemoryDto.Response;
+import com.zju.offercatcher.interfaces.dto.MemoryDto.UpdateBehaviorsRequest;
+import com.zju.offercatcher.interfaces.dto.MemoryDto.UpdatePreferencesRequest;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,7 +40,7 @@ public class MemoryController {
 
     @PutMapping("/me/preferences")
     public ResponseEntity<Void> updatePreferences(
-        @UserId String userId, @Valid @RequestBody UpdatePreferencesRequest req) {
+            @UserId String userId, @Valid @RequestBody UpdatePreferencesRequest req) {
         memoryService.updatePreferences(userId, req.content());
         return ResponseEntity.ok().build();
     }
@@ -50,7 +52,7 @@ public class MemoryController {
 
     @PutMapping("/me/behaviors")
     public ResponseEntity<Void> updateBehaviors(
-        @UserId String userId, @Valid @RequestBody UpdateBehaviorsRequest req) {
+            @UserId String userId, @Valid @RequestBody UpdateBehaviorsRequest req) {
         memoryService.updateBehaviors(userId, req.content());
         return ResponseEntity.ok().build();
     }
@@ -59,8 +61,8 @@ public class MemoryController {
 
     private Response toResponse(String userId) {
         return new Response(userId,
-            memoryService.getMemoryContent(userId),
-            memoryService.getPreferences(userId),
-            memoryService.getBehaviors(userId));
+                memoryService.getMemoryContent(userId),
+                memoryService.getPreferences(userId),
+                memoryService.getBehaviors(userId));
     }
 }

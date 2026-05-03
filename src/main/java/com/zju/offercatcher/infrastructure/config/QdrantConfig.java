@@ -15,7 +15,7 @@ public class QdrantConfig {
     @Bean
     public QdrantGrpcClient qdrantGrpcClient(QdrantProperties qdrant) {
         QdrantGrpcClient client = QdrantGrpcClient.newBuilder(qdrant.getHost(), qdrant.getGrpcPort(), false)
-            .build();
+                .build();
         log.info("Qdrant gRPC client initialized: host={}, port={}", qdrant.getHost(), qdrant.getGrpcPort());
         return client;
     }

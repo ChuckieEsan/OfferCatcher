@@ -4,9 +4,9 @@ import com.zju.offercatcher.application.agent.TitleGeneratorAgent;
 import com.zju.offercatcher.domain.chat.aggregates.Conversation;
 import com.zju.offercatcher.domain.chat.entities.Message;
 import com.zju.offercatcher.domain.chat.repositories.ConversationRepository;
+import com.zju.offercatcher.domain.shared.SnowflakeIdGenerator;
 import com.zju.offercatcher.domain.shared.enums.MessageRole;
 import com.zju.offercatcher.domain.shared.exception.ConversationNotFoundException;
-import com.zju.offercatcher.domain.shared.SnowflakeIdGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -18,7 +18,7 @@ import java.util.function.Function;
 
 /**
  * 对话应用服务
- *
+ * <p>
  * 编排对话管理的用例：创建、查询、更新、删除对话，管理消息。
  * 对应 Python: app/application/services/chat_service.py
  */
@@ -31,7 +31,7 @@ public class ChatApplicationService {
     private final TitleGeneratorAgent titleGenerator;
 
     public ChatApplicationService(ConversationRepository conversationRepository,
-                                   TitleGeneratorAgent titleGenerator) {
+                                  TitleGeneratorAgent titleGenerator) {
         this.conversationRepository = conversationRepository;
         this.titleGenerator = titleGenerator;
     }
@@ -54,14 +54,14 @@ public class ChatApplicationService {
 
     public Optional<Conversation> getConversation(String userId, Long conversationId) {
         return conversationRepository.findById(conversationId)
-            .filter(c -> c.isOwnedBy(userId));
+                .filter(c -> c.isOwnedBy(userId));
     }
 
     @Transactional
     public boolean updateTitle(String userId, Long conversationId, String title) {
         Conversation conversation = conversationRepository.findById(conversationId)
-            .filter(c -> c.isOwnedBy(userId))
-            .orElse(null);
+                .filter(c -> c.isOwnedBy(userId))
+                .orElse(null);
         if (conversation == null) {
             log.warn("Conversation not found: {}", conversationId);
             return false;
@@ -95,21 +95,21 @@ public class ChatApplicationService {
     @Transactional
     public Long addMessage(String userId, Long conversationId, MessageRole role, String content, String reasoning, String toolCalls) {
         Conversation conversation = conversationRepository.findById(conversationId)
-            .filter(c -> c.isOwnedBy(userId))
-            .orElseThrow(() -> new ConversationNotFoundException(conversationId));
+                .filter(c -> c.isOwnedBy(userId))
+                .orElseThrow(() -> new ConversationNotFoundException(conversationId));
 
         Message message = conversation.addMessage(
-            SnowflakeIdGenerator.generate(), role, content, reasoning, toolCalls);
+                SnowflakeIdGenerator.generate(), role, content, reasoning, toolCalls);
         conversationRepository.save(conversation);
         log.info("Added message {} to conversation: {}", message.getMessageId(), conversationId);
         return message.getMessageId();
     }
 
     public Optional<String> generateTitle(String userId, Long conversationId,
-                                           Function<List<Message>, String> titleGenerator) {
+                                          Function<List<Message>, String> titleGenerator) {
         Conversation conversation = conversationRepository.findById(conversationId)
-            .filter(c -> c.isOwnedBy(userId))
-            .orElse(null);
+                .filter(c -> c.isOwnedBy(userId))
+                .orElse(null);
 
         if (conversation == null) {
             return Optional.empty();
@@ -131,8 +131,8 @@ public class ChatApplicationService {
     @Transactional
     public Optional<Conversation> generateTitle(String userId, Long conversationId) {
         Conversation conversation = conversationRepository.findById(conversationId)
-            .filter(c -> c.isOwnedBy(userId))
-            .orElse(null);
+                .filter(c -> c.isOwnedBy(userId))
+                .orElse(null);
 
         if (conversation == null) {
             log.warn("Conversation not found: {}", conversationId);

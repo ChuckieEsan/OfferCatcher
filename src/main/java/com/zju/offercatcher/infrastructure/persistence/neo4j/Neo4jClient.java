@@ -6,14 +6,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 /**
  * Neo4j 图数据库客户端适配器
- *
+ * <p>
  * 从 Python app/infrastructure/persistence/neo4j/client.py 移植。
- *
+ * <p>
  * 核心功能：
  * - 连接管理（懒加载，首次使用时自动连接）
  * - Company / Entity / Cluster / Question 节点 MERGE
@@ -83,7 +84,7 @@ public class Neo4jClient {
     public boolean createCompanyNode(String company) {
         try (var s = session()) {
             s.run("MERGE (c:Company {name: $company}) RETURN c",
-                  Map.of("company", company));
+                    Map.of("company", company));
             return true;
         } catch (Exception e) {
             log.error("Failed to create company node: {}", e.getMessage());
@@ -94,7 +95,7 @@ public class Neo4jClient {
     public boolean createEntityNode(String entity) {
         try (var s = session()) {
             s.run("MERGE (e:Entity {name: $entity}) RETURN e",
-                  Map.of("entity", entity));
+                    Map.of("entity", entity));
             return true;
         } catch (Exception e) {
             log.error("Failed to create entity node: {}", e.getMessage());
@@ -110,13 +111,13 @@ public class Neo4jClient {
 
         try (var s = session()) {
             s.run("""
-                  MATCH (c:Company {name: $company})
-                  MATCH (e:Entity {name: $entity})
-                  MERGE (c)-[r:考频 {entity: $entity}]->(e)
-                  SET r.count = coalesce(r.count, 0) + $count
-                  RETURN r
-                  """,
-                  Map.of("company", company, "entity", entity, "count", questionCount));
+                            MATCH (c:Company {name: $company})
+                            MATCH (e:Entity {name: $entity})
+                            MERGE (c)-[r:考频 {entity: $entity}]->(e)
+                            SET r.count = coalesce(r.count, 0) + $count
+                            RETURN r
+                            """,
+                    Map.of("company", company, "entity", entity, "count", questionCount));
             return true;
         } catch (Exception e) {
             log.error("Failed to create 考频 relationship: {}", e.getMessage());
@@ -153,24 +154,24 @@ public class Neo4jClient {
         try (var s = session()) {
             if (company != null && !company.isEmpty()) {
                 var result = s.run("""
-                    MATCH (c:Company {name: $company})-[r:考频]->(e:Entity)
-                    RETURN e.name as entity, r.count as count
-                    ORDER BY r.count DESC
-                    LIMIT $limit
-                    """, Map.of("company", company, "limit", limit));
+                        MATCH (c:Company {name: $company})-[r:考频]->(e:Entity)
+                        RETURN e.name as entity, r.count as count
+                        ORDER BY r.count DESC
+                        LIMIT $limit
+                        """, Map.of("company", company, "limit", limit));
                 return result.stream()
-                    .map(r -> Map.<String, Object>of("entity", toJavaValue(r.get("entity")), "count", toJavaValue(r.get("count"))))
-                    .toList();
+                        .map(r -> Map.<String, Object>of("entity", toJavaValue(r.get("entity")), "count", toJavaValue(r.get("count"))))
+                        .toList();
             } else {
                 var result = s.run("""
-                    MATCH ()-[r:考频]->(e:Entity)
-                    RETURN e.name as entity, sum(r.count) as count
-                    ORDER BY count DESC
-                    LIMIT $limit
-                    """, Map.of("limit", limit));
+                        MATCH ()-[r:考频]->(e:Entity)
+                        RETURN e.name as entity, sum(r.count) as count
+                        ORDER BY count DESC
+                        LIMIT $limit
+                        """, Map.of("limit", limit));
                 return result.stream()
-                    .map(r -> Map.<String, Object>of("entity", toJavaValue(r.get("entity")), "count", toJavaValue(r.get("count"))))
-                    .toList();
+                        .map(r -> Map.<String, Object>of("entity", toJavaValue(r.get("entity")), "count", toJavaValue(r.get("count"))))
+                        .toList();
             }
         } catch (Exception e) {
             log.error("Failed to get top entities: {}", e.getMessage());
@@ -184,14 +185,14 @@ public class Neo4jClient {
     public Map<String, Object> getCompanyStats(String company) {
         try (var s = session()) {
             var result = s.run("""
-                MATCH (c:Company {name: $company})
-                OPTIONAL MATCH (c)-[r:考频]->(e:Entity)
-                RETURN count(DISTINCT e) as entity_count, coalesce(sum(r.count), 0) as total_questions
-                """, Map.of("company", company));
+                    MATCH (c:Company {name: $company})
+                    OPTIONAL MATCH (c)-[r:考频]->(e:Entity)
+                    RETURN count(DISTINCT e) as entity_count, coalesce(sum(r.count), 0) as total_questions
+                    """, Map.of("company", company));
             var record = result.single();
             return Map.of(
-                "entity_count", toJavaValue(record.get("entity_count")),
-                "total_questions", toJavaValue(record.get("total_questions"))
+                    "entity_count", toJavaValue(record.get("entity_count")),
+                    "total_questions", toJavaValue(record.get("total_questions"))
             );
         } catch (Exception e) {
             log.error("Failed to get company stats: {}", e.getMessage());
@@ -207,18 +208,18 @@ public class Neo4jClient {
 
         try (var s = session()) {
             var result = s.run("""
-                MATCH (c:Company)-[r1:考频]->(e1:Entity {name: $entity})
-                MATCH (c)-[r2:考频]->(e2:Entity)
-                WHERE e1 <> e2
-                RETURN e2.name as related_entity, sum(r2.count) as co_occurrence_count
-                ORDER BY co_occurrence_count DESC
-                LIMIT $limit
-                """, Map.of("entity", entity, "limit", limit));
+                    MATCH (c:Company)-[r1:考频]->(e1:Entity {name: $entity})
+                    MATCH (c)-[r2:考频]->(e2:Entity)
+                    WHERE e1 <> e2
+                    RETURN e2.name as related_entity, sum(r2.count) as co_occurrence_count
+                    ORDER BY co_occurrence_count DESC
+                    LIMIT $limit
+                    """, Map.of("entity", entity, "limit", limit));
             return result.stream()
-                .map(r -> Map.<String, Object>of(
-                    "related_entity", toJavaValue(r.get("related_entity")),
-                    "co_occurrence_count", toJavaValue(r.get("co_occurrence_count"))))
-                .toList();
+                    .map(r -> Map.<String, Object>of(
+                            "related_entity", toJavaValue(r.get("related_entity")),
+                            "co_occurrence_count", toJavaValue(r.get("co_occurrence_count"))))
+                    .toList();
         } catch (Exception e) {
             log.error("Failed to get related entities: {}", e.getMessage());
             return List.of();
@@ -233,19 +234,19 @@ public class Neo4jClient {
 
         try (var s = session()) {
             var result = s.run("""
-                MATCH (c:Company)-[r:考频]->(e:Entity)
-                WITH e.name as entity, collect(c.name) as companies, sum(r.count) as total_count
-                WHERE size(companies) >= $minCompanies
-                RETURN entity, companies, total_count, size(companies) as company_count
-                ORDER BY total_count DESC
-                """, Map.of("minCompanies", minCompanies));
+                    MATCH (c:Company)-[r:考频]->(e:Entity)
+                    WITH e.name as entity, collect(c.name) as companies, sum(r.count) as total_count
+                    WHERE size(companies) >= $minCompanies
+                    RETURN entity, companies, total_count, size(companies) as company_count
+                    ORDER BY total_count DESC
+                    """, Map.of("minCompanies", minCompanies));
             return result.stream()
-                .map(r -> Map.<String, Object>of(
-                    "entity", toJavaValue(r.get("entity")),
-                    "companies", toJavaValue(r.get("companies")),
-                    "total_count", toJavaValue(r.get("total_count")),
-                    "company_count", toJavaValue(r.get("company_count"))))
-                .toList();
+                    .map(r -> Map.<String, Object>of(
+                            "entity", toJavaValue(r.get("entity")),
+                            "companies", toJavaValue(r.get("companies")),
+                            "total_count", toJavaValue(r.get("total_count")),
+                            "company_count", toJavaValue(r.get("company_count"))))
+                    .toList();
         } catch (Exception e) {
             log.error("Failed to get cross-company entities: {}", e.getMessage());
             return List.of();
@@ -259,13 +260,13 @@ public class Neo4jClient {
 
         try (var s = session()) {
             s.run("""
-                MERGE (c:Cluster {cluster_id: $cluster_id})
-                SET c.cluster_name = $cluster_name,
-                    c.summary = $summary,
-                    c.updated_at = timestamp()
-                RETURN c
-                """,
-                Map.of("cluster_id", clusterId, "cluster_name", clusterName, "summary", summary));
+                            MERGE (c:Cluster {cluster_id: $cluster_id})
+                            SET c.cluster_name = $cluster_name,
+                                c.summary = $summary,
+                                c.updated_at = timestamp()
+                            RETURN c
+                            """,
+                    Map.of("cluster_id", clusterId, "cluster_name", clusterName, "summary", summary));
             return true;
         } catch (Exception e) {
             log.error("Failed to create cluster node: {}", e.getMessage());
@@ -280,12 +281,12 @@ public class Neo4jClient {
 
         try (var s = session()) {
             s.run("""
-                MATCH (c:Cluster {cluster_id: $cluster_id})
-                MATCH (e:Entity {name: $knowledge_point})
-                MERGE (c)-[r:RELATED_TO]->(e)
-                RETURN r
-                """,
-                Map.of("cluster_id", clusterId, "knowledge_point", knowledgePoint));
+                            MATCH (c:Cluster {cluster_id: $cluster_id})
+                            MATCH (e:Entity {name: $knowledge_point})
+                            MERGE (c)-[r:RELATED_TO]->(e)
+                            RETURN r
+                            """,
+                    Map.of("cluster_id", clusterId, "knowledge_point", knowledgePoint));
             return true;
         } catch (Exception e) {
             log.error("Failed to create RELATED_TO relationship: {}", e.getMessage());
@@ -300,12 +301,12 @@ public class Neo4jClient {
 
         try (var s = session()) {
             s.run("""
-                MATCH (q:Question {question_hash: $question_hash})
-                MATCH (c:Cluster {cluster_id: $cluster_id})
-                MERGE (q)-[r:BELONGS_TO]->(c)
-                RETURN r
-                """,
-                Map.of("question_hash", questionHash, "cluster_id", clusterId));
+                            MATCH (q:Question {question_hash: $question_hash})
+                            MATCH (c:Cluster {cluster_id: $cluster_id})
+                            MERGE (q)-[r:BELONGS_TO]->(c)
+                            RETURN r
+                            """,
+                    Map.of("question_hash", questionHash, "cluster_id", clusterId));
             return true;
         } catch (Exception e) {
             log.error("Failed to create BELONGS_TO relationship: {}", e.getMessage());
@@ -316,7 +317,7 @@ public class Neo4jClient {
     private boolean createQuestionNodeIfNotExists(String questionHash) {
         try (var s = session()) {
             s.run("MERGE (q:Question {question_hash: $question_hash}) RETURN q",
-                  Map.of("question_hash", questionHash));
+                    Map.of("question_hash", questionHash));
             return true;
         } catch (Exception e) {
             log.error("Failed to create question node: {}", e.getMessage());
@@ -329,25 +330,25 @@ public class Neo4jClient {
 
         try (var s = session()) {
             var result = s.run("""
-                MATCH (c:Cluster {cluster_id: $cluster_id})
-                OPTIONAL MATCH (q:Question)-[:BELONGS_TO]->(c)
-                OPTIONAL MATCH (c)-[:RELATED_TO]->(e:Entity)
-                RETURN c.cluster_id as cluster_id,
-                       c.cluster_name as cluster_name,
-                       c.summary as summary,
-                       collect(DISTINCT q.question_hash) as question_ids,
-                       collect(DISTINCT e.name) as knowledge_points,
-                       count(DISTINCT q) as frequency
-                """, Map.of("cluster_id", clusterId));
+                    MATCH (c:Cluster {cluster_id: $cluster_id})
+                    OPTIONAL MATCH (q:Question)-[:BELONGS_TO]->(c)
+                    OPTIONAL MATCH (c)-[:RELATED_TO]->(e:Entity)
+                    RETURN c.cluster_id as cluster_id,
+                           c.cluster_name as cluster_name,
+                           c.summary as summary,
+                           collect(DISTINCT q.question_hash) as question_ids,
+                           collect(DISTINCT e.name) as knowledge_points,
+                           count(DISTINCT q) as frequency
+                    """, Map.of("cluster_id", clusterId));
             var record = result.single();
             if (record != null) {
                 return Optional.of(Map.of(
-                    "cluster_id", toJavaValue(record.get("cluster_id")),
-                    "cluster_name", toJavaValue(record.get("cluster_name")),
-                    "summary", toJavaValue(record.get("summary")),
-                    "question_ids", toJavaValue(record.get("question_ids")),
-                    "knowledge_points", toJavaValue(record.get("knowledge_points")),
-                    "frequency", toJavaValue(record.get("frequency"))
+                        "cluster_id", toJavaValue(record.get("cluster_id")),
+                        "cluster_name", toJavaValue(record.get("cluster_name")),
+                        "summary", toJavaValue(record.get("summary")),
+                        "question_ids", toJavaValue(record.get("question_ids")),
+                        "knowledge_points", toJavaValue(record.get("knowledge_points")),
+                        "frequency", toJavaValue(record.get("frequency"))
                 ));
             }
         } catch (Exception e) {
@@ -361,22 +362,22 @@ public class Neo4jClient {
 
         try (var s = session()) {
             var result = s.run("""
-                MATCH (c:Cluster)
-                OPTIONAL MATCH (q:Question)-[:BELONGS_TO]->(c)
-                RETURN c.cluster_id as cluster_id,
-                       c.cluster_name as cluster_name,
-                       c.summary as summary,
-                       count(DISTINCT q) as frequency
-                ORDER BY frequency DESC
-                LIMIT $limit
-                """, Map.of("limit", limit));
+                    MATCH (c:Cluster)
+                    OPTIONAL MATCH (q:Question)-[:BELONGS_TO]->(c)
+                    RETURN c.cluster_id as cluster_id,
+                           c.cluster_name as cluster_name,
+                           c.summary as summary,
+                           count(DISTINCT q) as frequency
+                    ORDER BY frequency DESC
+                    LIMIT $limit
+                    """, Map.of("limit", limit));
             return result.stream()
-                .map(r -> Map.<String, Object>of(
-                    "cluster_id", toJavaValue(r.get("cluster_id")),
-                    "cluster_name", toJavaValue(r.get("cluster_name")),
-                    "summary", toJavaValue(r.get("summary")),
-                    "frequency", toJavaValue(r.get("frequency"))))
-                .toList();
+                    .map(r -> Map.<String, Object>of(
+                            "cluster_id", toJavaValue(r.get("cluster_id")),
+                            "cluster_name", toJavaValue(r.get("cluster_name")),
+                            "summary", toJavaValue(r.get("summary")),
+                            "frequency", toJavaValue(r.get("frequency"))))
+                    .toList();
         } catch (Exception e) {
             log.error("Failed to get all clusters: {}", e.getMessage());
             return List.of();
@@ -391,7 +392,7 @@ public class Neo4jClient {
         try (var s = session()) {
             for (String company : companies) {
                 s.run("MATCH (c:Company {name: $company}) DETACH DELETE c",
-                      Map.of("company", company));
+                        Map.of("company", company));
             }
             log.debug("Cleaned up companies: {}", companies);
             return true;

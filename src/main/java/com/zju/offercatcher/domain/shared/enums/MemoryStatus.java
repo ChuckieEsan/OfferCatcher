@@ -2,7 +2,7 @@ package com.zju.offercatcher.domain.shared.enums;
 
 /**
  * 记忆状态枚举
- *
+ * <p>
  * 用于标识记忆文档的状态。
  */
 public enum MemoryStatus {

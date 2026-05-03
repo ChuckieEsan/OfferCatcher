@@ -41,7 +41,7 @@ class AnswerTaskMQConsumerTest {
     static void checkRabbitMQ() {
         String host = System.getenv().getOrDefault("RABBITMQ_HOST", "localhost");
         assumeTrue(isRabbitMQAvailable(host),
-            "跳过：RabbitMQ 不可用，请确保本地 Docker RabbitMQ 已启动");
+                "跳过：RabbitMQ 不可用，请确保本地 Docker RabbitMQ 已启动");
     }
 
     private static boolean isRabbitMQAvailable(String host) {
@@ -65,17 +65,17 @@ class AnswerTaskMQConsumerTest {
     @DisplayName("消息发送到 QA 队列后被 Consumer 消费，生成答案并写入数据库")
     void consumeAndSaveAnswer() throws Exception {
         when(answerAgent.generateAnswer(any()))
-            .thenReturn("这是模拟生成的答案");
+                .thenReturn("这是模拟生成的答案");
 
         Question question = Question.createPrivate(USER_ID,
-            "HashMap 的实现原理？", "阿里巴巴", "Java",
-            QuestionType.KNOWLEDGE, List.of("HashMap"));
+                "HashMap 的实现原理？", "阿里巴巴", "Java",
+                QuestionType.KNOWLEDGE, List.of("HashMap"));
         Long qId = question.getId();
         assertThat(qId).isNotNull();
         questionRepository.save(question);
 
         MQTaskMessage task = new MQTaskMessage(qId, question.getQuestionText(),
-            question.getCompany(), question.getPosition(), question.getCoreEntities());
+                question.getCompany(), question.getPosition(), question.getCoreEntities());
         boolean published = producer.publishTask(task);
         assertThat(published).isTrue();
 
@@ -89,17 +89,17 @@ class AnswerTaskMQConsumerTest {
     @DisplayName("已有答案的消息不重复处理（幂等性）")
     void idempotentSkipWhenAnswerExists() throws Exception {
         when(answerAgent.generateAnswer(any()))
-            .thenReturn("不应该被调用");
+                .thenReturn("不应该被调用");
 
         Question question = Question.createPrivate(USER_ID,
-            "JVM 垃圾回收机制？", "阿里巴巴", "Java",
-            QuestionType.KNOWLEDGE, List.of("JVM"));
+                "JVM 垃圾回收机制？", "阿里巴巴", "Java",
+                QuestionType.KNOWLEDGE, List.of("JVM"));
         question.updateAnswer("已存在的答案");
         Long qId = question.getId();
         questionRepository.save(question);
 
         MQTaskMessage task = new MQTaskMessage(qId, question.getQuestionText(),
-            question.getCompany(), question.getPosition(), question.getCoreEntities());
+                question.getCompany(), question.getPosition(), question.getCoreEntities());
         boolean published = producer.publishTask(task);
         assertThat(published).isTrue();
 
@@ -115,7 +115,7 @@ class AnswerTaskMQConsumerTest {
     @DisplayName("不存在的 Question 消息被丢弃，不抛异常")
     void discardWhenQuestionNotFound() {
         MQTaskMessage task = new MQTaskMessage(99999L, "不存在的题目",
-            "某公司", "某岗位", List.of());
+                "某公司", "某岗位", List.of());
 
         boolean published = producer.publishTask(task);
         assertThat(published).isTrue();
@@ -125,7 +125,7 @@ class AnswerTaskMQConsumerTest {
         for (int i = 0; i < maxRetries; i++) {
             Optional<Question> reloaded = questionRepository.findById(qId);
             if (reloaded.isPresent() && reloaded.get().getAnswer() != null
-                && !reloaded.get().getAnswer().isBlank()) {
+                    && !reloaded.get().getAnswer().isBlank()) {
                 return reloaded.get().getAnswer();
             }
             Thread.sleep(intervalMs);

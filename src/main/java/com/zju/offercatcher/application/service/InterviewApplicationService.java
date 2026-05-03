@@ -1,7 +1,6 @@
 package com.zju.offercatcher.application.service;
 
 import com.zju.offercatcher.domain.interview.aggregates.InterviewSession;
-import com.zju.offercatcher.domain.interview.entities.InterviewQuestion;
 import com.zju.offercatcher.domain.interview.repositories.InterviewSessionRepository;
 import com.zju.offercatcher.domain.shared.enums.DifficultyLevel;
 import com.zju.offercatcher.domain.shared.enums.SessionStatus;
@@ -16,7 +15,7 @@ import java.util.Optional;
 
 /**
  * 面试应用服务
- *
+ * <p>
  * 编排面试会话的创建、进行、结束等用例。
  * 对应 Python: app/application/services/interview_service.py
  */
@@ -33,19 +32,19 @@ public class InterviewApplicationService {
 
     @Transactional
     public InterviewSession createSession(String userId, String company, String position,
-                                           DifficultyLevel difficulty, int totalQuestions) {
+                                          DifficultyLevel difficulty, int totalQuestions) {
         return createSession(userId, company, position, difficulty, totalQuestions, null);
     }
 
     @Transactional
     public InterviewSession createSession(String userId, String company, String position,
-                                           DifficultyLevel difficulty, int totalQuestions,
-                                           String jdContext) {
+                                          DifficultyLevel difficulty, int totalQuestions,
+                                          String jdContext) {
         InterviewSession session = InterviewSession.create(
-            userId, company, position, difficulty, totalQuestions, jdContext);
+                userId, company, position, difficulty, totalQuestions, jdContext);
         sessionRepository.save(session);
         log.info("Created interview session: {}, user={}, company={}, position={}, hasJd={}",
-            session.getSessionId(), userId, company, position, jdContext != null);
+                session.getSessionId(), userId, company, position, jdContext != null);
         return session;
     }
 
@@ -57,7 +56,7 @@ public class InterviewApplicationService {
 
     public Optional<InterviewSession> getSession(Long sessionId, String userId) {
         return sessionRepository.findById(sessionId)
-            .filter(s -> s.isOwnedBy(userId));
+                .filter(s -> s.isOwnedBy(userId));
     }
 
     public List<InterviewSession> listSessions(String userId, int limit, SessionStatus status) {
@@ -69,7 +68,7 @@ public class InterviewApplicationService {
 
     @Transactional
     public InterviewSession answerQuestion(Long sessionId, String userId, String answer,
-                                            int score, String feedback) {
+                                           int score, String feedback) {
         InterviewSession session = getSessionOrThrow(sessionId, userId);
         session.answerCurrentQuestion(answer, score, feedback);
         sessionRepository.save(session);
@@ -126,7 +125,7 @@ public class InterviewApplicationService {
 
     private InterviewSession getSessionOrThrow(Long sessionId, String userId) {
         return sessionRepository.findById(sessionId)
-            .filter(s -> s.isOwnedBy(userId))
-            .orElseThrow(() -> new InterviewSessionNotFoundException(sessionId));
+                .filter(s -> s.isOwnedBy(userId))
+                .orElseThrow(() -> new InterviewSessionNotFoundException(sessionId));
     }
 }

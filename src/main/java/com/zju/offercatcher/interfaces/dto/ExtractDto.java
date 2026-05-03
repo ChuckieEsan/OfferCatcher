@@ -12,77 +12,88 @@ import java.util.Map;
 public interface ExtractDto {
 
     record SubmitRequest(
-        @NotBlank String sourceType,
-        String sourceContent,
-        List<String> sourceImages
-    ) {}
+            @NotBlank String sourceType,
+            String sourceContent,
+            List<String> sourceImages
+    ) {
+    }
 
     record SubmitResponse(
-        Long taskId,
-        String message
-    ) {}
+            Long taskId,
+            String message
+    ) {
+    }
 
     record TaskResponse(
-        Long taskId,
-        String userId,
-        String sourceType,
-        String sourceContent,
-        List<String> sourceImages,
-        String status,
-        ExtractedQuestionItem result,
-        String createdAt,
-        String updatedAt
-    ) {}
+            Long taskId,
+            String userId,
+            String sourceType,
+            String sourceContent,
+            List<String> sourceImages,
+            String status,
+            ExtractedQuestionItem result,
+            String createdAt,
+            String updatedAt
+    ) {
+    }
 
     record TaskListItem(
-        Long taskId,
-        String status,
-        String sourceType,
-        String company,
-        String position,
-        int questionCount,
-        String createdAt,
-        String updatedAt
-    ) {}
+            Long taskId,
+            String status,
+            String sourceType,
+            String company,
+            String position,
+            int questionCount,
+            String createdAt,
+            String updatedAt
+    ) {
+    }
 
     record TaskListResponse(
-        List<TaskListItem> items,
-        int total,
-        int page,
-        int pageSize
-    ) {}
+            List<TaskListItem> items,
+            int total,
+            int page,
+            int pageSize
+    ) {
+    }
 
     record UpdateRequest(
-        String company,
-        String position,
-        List<ExtractedQuestionItem.QuestionItem> questions
-    ) {}
+            String company,
+            String position,
+            List<ExtractedQuestionItem.QuestionItem> questions
+    ) {
+    }
 
     record ConfirmResponse(
-        int processed,
-        int failed,
-        List<String> questionIds
-    ) {}
+            int processed,
+            int failed,
+            List<String> questionIds
+    ) {
+    }
 
     record ExtractTextRequest(
-        @NotBlank String text
-    ) {}
+            @NotBlank String text
+    ) {
+    }
 
     record ExtractResponse(
-        String company,
-        String position,
-        List<ExtractedQuestionDto> questions
-    ) {}
+            String company,
+            String position,
+            List<ExtractedQuestionDto> questions
+    ) {
+    }
 
     record ExtractedQuestionDto(
-        String questionId,
-        String questionText,
-        String questionType,
-        List<String> coreEntities,
-        Map<String, Object> metadata
-    ) {}
+            String questionId,
+            String questionText,
+            String questionType,
+            List<String> coreEntities,
+            Map<String, Object> metadata
+    ) {
+    }
 
     record ImageExtractRequest(
-        List<String> images
-    ) {}
+            List<String> images
+    ) {
+    }
 }

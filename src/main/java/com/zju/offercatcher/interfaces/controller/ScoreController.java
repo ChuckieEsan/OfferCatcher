@@ -2,13 +2,16 @@ package com.zju.offercatcher.interfaces.controller;
 
 import com.zju.offercatcher.application.agent.ScorerAgent;
 import com.zju.offercatcher.application.agent.dto.ScoreResult;
-import com.zju.offercatcher.interfaces.dto.ScoreDto.*;
+import com.zju.offercatcher.interfaces.dto.ScoreDto.ScoreRequest;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.NoSuchElementException;
@@ -36,7 +39,7 @@ public class ScoreController {
         } catch (Exception e) {
             log.error("Scoring failed: {}", e.getMessage(), e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                "评分失败: " + e.getMessage());
+                    "评分失败: " + e.getMessage());
         }
     }
 }

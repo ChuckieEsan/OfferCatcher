@@ -27,8 +27,8 @@ public class CacheAdapter {
 
     static {
         UNLOCK_SCRIPT = new DefaultRedisScript<>(
-            "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end",
-            Long.class
+                "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end",
+                Long.class
         );
     }
 
@@ -69,7 +69,7 @@ public class CacheAdapter {
         String lockKey = LOCK_PREFIX + key;
         String lockValue = UUID.randomUUID().toString();
         Boolean acquired = redisTemplate.opsForValue()
-            .setIfAbsent(lockKey, lockValue, Duration.ofSeconds(timeoutSeconds));
+                .setIfAbsent(lockKey, lockValue, Duration.ofSeconds(timeoutSeconds));
         return Boolean.TRUE.equals(acquired) ? lockValue : null;
     }
 

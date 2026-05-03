@@ -1,11 +1,11 @@
 package com.zju.offercatcher.domain.interview.aggregates;
 
 import com.zju.offercatcher.domain.interview.entities.InterviewQuestion;
+import com.zju.offercatcher.domain.shared.SnowflakeIdGenerator;
 import com.zju.offercatcher.domain.shared.enums.DifficultyLevel;
 import com.zju.offercatcher.domain.shared.enums.SessionStatus;
 import com.zju.offercatcher.domain.shared.exception.DomainException;
 import com.zju.offercatcher.domain.shared.exception.InvalidStateException;
-import com.zju.offercatcher.domain.shared.SnowflakeIdGenerator;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -17,13 +17,13 @@ import java.util.Optional;
 
 /**
  * 面试会话聚合根
- *
+ * <p>
  * InterviewSession 是面试领域的聚合根，管理：
  * - 面试配置（公司、岗位、难度）
  * - 面试题目列表
  * - 答题进度和评分统计
  * - 会话状态
- *
+ * <p>
  * 聚合边界规则：
  * - 所有题目操作必须通过 InterviewSession 方法
  * - 支持用户隔离（userId 字段）
@@ -59,20 +59,20 @@ public class InterviewSession {
      * 创建面试会话（工厂方法）
      */
     public static InterviewSession create(String userId, String company, String position,
-                                           DifficultyLevel difficulty, int totalQuestions) {
+                                          DifficultyLevel difficulty, int totalQuestions) {
         return create(userId, company, position, difficulty, totalQuestions, null);
     }
 
     public static InterviewSession create(String userId, String company, String position,
-                                           DifficultyLevel difficulty, int totalQuestions,
-                                           String jdContext) {
+                                          DifficultyLevel difficulty, int totalQuestions,
+                                          String jdContext) {
         validateUserId(userId);
         validateTotalQuestions(totalQuestions);
         Long sessionId = SnowflakeIdGenerator.generate();
         LocalDateTime now = LocalDateTime.now();
         InterviewSession session = new InterviewSession(sessionId, userId, company, position,
-            difficulty, totalQuestions,
-            SessionStatus.ACTIVE, new ArrayList<>(), 0, 0, 0, now, null, now, now);
+                difficulty, totalQuestions,
+                SessionStatus.ACTIVE, new ArrayList<>(), 0, 0, 0, now, null, now, now);
         session.jdContext = jdContext;
         return session;
     }
@@ -81,27 +81,27 @@ public class InterviewSession {
      * 从持久化存储重建（用于 Repository 实现）
      */
     public static InterviewSession rebuild(Long sessionId, String userId, String company,
-                                            String position, DifficultyLevel difficulty, int totalQuestions,
-                                            SessionStatus status, List<InterviewQuestion> questions,
-                                            int currentQuestionIdx, int correctCount, int totalScore,
-                                            LocalDateTime startedAt, LocalDateTime endedAt,
-                                            LocalDateTime createdAt, LocalDateTime updatedAt) {
+                                           String position, DifficultyLevel difficulty, int totalQuestions,
+                                           SessionStatus status, List<InterviewQuestion> questions,
+                                           int currentQuestionIdx, int correctCount, int totalScore,
+                                           LocalDateTime startedAt, LocalDateTime endedAt,
+                                           LocalDateTime createdAt, LocalDateTime updatedAt) {
         return rebuild(sessionId, userId, company, position, difficulty, totalQuestions,
-            status, questions, currentQuestionIdx, correctCount, totalScore,
-            startedAt, endedAt, createdAt, updatedAt, null);
+                status, questions, currentQuestionIdx, correctCount, totalScore,
+                startedAt, endedAt, createdAt, updatedAt, null);
     }
 
     public static InterviewSession rebuild(Long sessionId, String userId, String company,
-                                            String position, DifficultyLevel difficulty, int totalQuestions,
-                                            SessionStatus status, List<InterviewQuestion> questions,
-                                            int currentQuestionIdx, int correctCount, int totalScore,
-                                            LocalDateTime startedAt, LocalDateTime endedAt,
-                                            LocalDateTime createdAt, LocalDateTime updatedAt,
-                                            String jdContext) {
+                                           String position, DifficultyLevel difficulty, int totalQuestions,
+                                           SessionStatus status, List<InterviewQuestion> questions,
+                                           int currentQuestionIdx, int correctCount, int totalScore,
+                                           LocalDateTime startedAt, LocalDateTime endedAt,
+                                           LocalDateTime createdAt, LocalDateTime updatedAt,
+                                           String jdContext) {
         InterviewSession session = new InterviewSession(sessionId, userId, company, position,
-            difficulty, totalQuestions,
-            status, questions, currentQuestionIdx, correctCount, totalScore,
-            startedAt, endedAt, createdAt, updatedAt);
+                difficulty, totalQuestions,
+                status, questions, currentQuestionIdx, correctCount, totalScore,
+                startedAt, endedAt, createdAt, updatedAt);
         session.jdContext = jdContext;
         return session;
     }
@@ -132,7 +132,7 @@ public class InterviewSession {
             throw new InvalidStateException("面试已结束", "SESSION_COMPLETED");
         }
         InterviewQuestion current = getCurrentQuestion()
-            .orElseThrow(() -> new InvalidStateException("没有当前题目", "NO_CURRENT_QUESTION"));
+                .orElseThrow(() -> new InvalidStateException("没有当前题目", "NO_CURRENT_QUESTION"));
 
         current.answer(userAnswer, score, feedback);
         this.totalScore += score;
@@ -147,7 +147,7 @@ public class InterviewSession {
             throw new InvalidStateException("面试已结束", "SESSION_COMPLETED");
         }
         InterviewQuestion current = getCurrentQuestion()
-            .orElseThrow(() -> new InvalidStateException("没有当前题目", "NO_CURRENT_QUESTION"));
+                .orElseThrow(() -> new InvalidStateException("没有当前题目", "NO_CURRENT_QUESTION"));
 
         current.skip();
 
@@ -206,15 +206,15 @@ public class InterviewSession {
 
     public double calculateAverageScore() {
         List<InterviewQuestion> scoredQuestions = questions.stream()
-            .filter(q -> q.getScore() != null)
-            .toList();
+                .filter(q -> q.getScore() != null)
+                .toList();
         if (scoredQuestions.isEmpty()) {
             return 0.0;
         }
         return scoredQuestions.stream()
-            .mapToInt(InterviewQuestion::getScore)
-            .average()
-            .orElse(0.0);
+                .mapToInt(InterviewQuestion::getScore)
+                .average()
+                .orElse(0.0);
     }
 
     public double calculateDurationMinutes() {
@@ -236,11 +236,11 @@ public class InterviewSession {
     // ==================== 构造函数 ====================
 
     private InterviewSession(Long sessionId, String userId, String company, String position,
-                              DifficultyLevel difficulty, int totalQuestions,
-                              SessionStatus status, List<InterviewQuestion> questions,
-                              int currentQuestionIdx, int correctCount, int totalScore,
-                              LocalDateTime startedAt, LocalDateTime endedAt,
-                              LocalDateTime createdAt, LocalDateTime updatedAt) {
+                             DifficultyLevel difficulty, int totalQuestions,
+                             SessionStatus status, List<InterviewQuestion> questions,
+                             int currentQuestionIdx, int correctCount, int totalScore,
+                             LocalDateTime startedAt, LocalDateTime endedAt,
+                             LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.sessionId = sessionId;
         this.userId = userId;
         this.company = company;

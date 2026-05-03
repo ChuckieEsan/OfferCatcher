@@ -4,7 +4,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * QuestionHashGenerator 测试
@@ -118,30 +119,30 @@ class QuestionHashGeneratorTest {
         @DisplayName("userId 为 null 应抛出异常")
         void nullUserId_shouldThrowException() {
             assertThatThrownBy(() -> QuestionHashGenerator.generate(null, "公司", "题目"))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("userId cannot be null or blank");
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("userId cannot be null or blank");
         }
 
         @Test
         @DisplayName("userId 为空字符串应抛出异常")
         void blankUserId_shouldThrowException() {
             assertThatThrownBy(() -> QuestionHashGenerator.generate("", "公司", "题目"))
-                .isInstanceOf(IllegalArgumentException.class);
+                    .isInstanceOf(IllegalArgumentException.class);
         }
 
         @Test
         @DisplayName("questionText 为 null 应抛出异常")
         void nullQuestionText_shouldThrowException() {
             assertThatThrownBy(() -> QuestionHashGenerator.generate("user-001", "公司", null))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("questionText cannot be null or blank");
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("questionText cannot be null or blank");
         }
 
         @Test
         @DisplayName("questionText 为空字符串应抛出异常")
         void blankQuestionText_shouldThrowException() {
             assertThatThrownBy(() -> QuestionHashGenerator.generate("user-001", "公司", "   "))
-                .isInstanceOf(IllegalArgumentException.class);
+                    .isInstanceOf(IllegalArgumentException.class);
         }
     }
 }

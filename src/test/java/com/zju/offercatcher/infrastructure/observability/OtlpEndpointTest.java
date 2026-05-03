@@ -12,7 +12,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * 验证 Jaeger OTLP HTTP 端点的信号类型支持情况。
- *
+ * <p>
  * Jaeger 是 tracing 系统，只接收 /v1/traces（trace signal），
  * 不支持 /v1/metrics（metrics signal）。所以 Micrometer 的
  * OtlpMeterRegistry 往 Jaeger 发 metrics 会收到 404。
@@ -51,7 +51,7 @@ class OtlpEndpointTest {
 
         assertThat(resp.statusCode())
                 .as("Jaeger does NOT support OTLP metrics — returns 404. "
-                    + "Micrometer OtlpMeterRegistry should not target Jaeger.")
+                        + "Micrometer OtlpMeterRegistry should not target Jaeger.")
                 .isEqualTo(404);
     }
 

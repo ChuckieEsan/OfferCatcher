@@ -2,6 +2,7 @@ package com.zju.offercatcher.application.agent;
 
 import com.zju.offercatcher.domain.interview.aggregates.JobDescription;
 import com.zju.offercatcher.domain.interview.valueobjects.SkillRequirement;
+import io.github.cdimascio.dotenv.Dotenv;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -12,15 +13,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
-import io.github.cdimascio.dotenv.Dotenv;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @SpringBootTest
@@ -48,7 +47,7 @@ class JobDescriptionParserAgentTest {
             key = System.getProperty("DEEPSEEK_API_KEY");
         }
         assumeTrue(key != null && !key.isBlank(),
-            "跳过：缺少 DEEPSEEK_API_KEY（既无环境变量，.env 文件中也未找到）");
+                "跳过：缺少 DEEPSEEK_API_KEY（既无环境变量，.env 文件中也未找到）");
     }
 
     @Test
@@ -77,17 +76,17 @@ class JobDescriptionParserAgentTest {
         }
 
         assertThat(required)
-            .as("必须技能不应为 null")
-            .isNotNull();
+                .as("必须技能不应为 null")
+                .isNotNull();
         assertThat(required)
-            .as("必须技能应在 3-7 个之间")
-            .hasSizeBetween(3, 7);
+                .as("必须技能应在 3-7 个之间")
+                .hasSizeBetween(3, 7);
         assertThat(required)
-            .as("必须技能应包含 Agent/大模型/AI 相关")
-            .anyMatch(s -> containsAny(s.name(), "Agent", "大模型", "LLM", "AI", "Prompt", "RAG", "工具"));
+                .as("必须技能应包含 Agent/大模型/AI 相关")
+                .anyMatch(s -> containsAny(s.name(), "Agent", "大模型", "LLM", "AI", "Prompt", "RAG", "工具"));
         assertThat(required)
-            .as("每个必须技能应有原文证据")
-            .allMatch(s -> s.evidence() != null && !s.evidence().isBlank());
+                .as("每个必须技能应有原文证据")
+                .allMatch(s -> s.evidence() != null && !s.evidence().isBlank());
 
         // ---- 加分技能 ----
         List<SkillRequirement> preferred = jd.getPreferredSkills();
@@ -97,22 +96,22 @@ class JobDescriptionParserAgentTest {
         }
 
         assertThat(preferred)
-            .as("加分技能不应为 null")
-            .isNotNull();
+                .as("加分技能不应为 null")
+                .isNotNull();
         assertThat(preferred)
-            .as("加分技能应在 0-5 个之间")
-            .hasSizeBetween(0, 5);
+                .as("加分技能应在 0-5 个之间")
+                .hasSizeBetween(0, 5);
 
         // ---- 软技能 ----
         List<String> soft = jd.getSoftSkills();
         log.info("软技能 ({} 个): {}", Optional.of(soft.size()), soft);
 
         assertThat(soft)
-            .as("软技能不应为 null")
-            .isNotNull();
+                .as("软技能不应为 null")
+                .isNotNull();
         assertThat(soft)
-            .as("软技能应在 1-4 个之间")
-            .hasSizeBetween(1, 4);
+                .as("软技能应在 1-4 个之间")
+                .hasSizeBetween(1, 4);
 
         // ---- 面试上下文 ----
         String ctx = jd.toInterviewContext();

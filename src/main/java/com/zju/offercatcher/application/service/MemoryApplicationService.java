@@ -11,11 +11,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
  * 记忆应用服务
- *
+ * <p>
  * 编排用户记忆的获取、更新等用例。
  * 对应 Python: app/application/services/memory_service.py
  */
@@ -28,14 +27,14 @@ public class MemoryApplicationService {
     private final SessionSummaryRepository sessionSummaryRepository;
 
     public MemoryApplicationService(MemoryRepository memoryRepository,
-                                     SessionSummaryRepository sessionSummaryRepository) {
+                                    SessionSummaryRepository sessionSummaryRepository) {
         this.memoryRepository = memoryRepository;
         this.sessionSummaryRepository = sessionSummaryRepository;
     }
 
     public Memory getMemory(String userId) {
         return memoryRepository.findByUserId(userId)
-            .orElseGet(() -> initializeMemory(userId));
+                .orElseGet(() -> initializeMemory(userId));
     }
 
     public String getMemoryContent(String userId) {
@@ -44,12 +43,12 @@ public class MemoryApplicationService {
 
     public String getPreferences(String userId) {
         return getMemory(userId).getReference("preferences")
-            .map(MemoryReference::getContent).orElse("");
+                .map(MemoryReference::getContent).orElse("");
     }
 
     public String getBehaviors(String userId) {
         return getMemory(userId).getReference("behaviors")
-            .map(MemoryReference::getContent).orElse("");
+                .map(MemoryReference::getContent).orElse("");
     }
 
     @Transactional
@@ -74,12 +73,12 @@ public class MemoryApplicationService {
     public void syncMemoryIndex(String userId) {
         Memory memory = getMemory(userId);
         String preferences = memory.getReference("preferences")
-            .map(MemoryReference::getContent).orElse("");
+                .map(MemoryReference::getContent).orElse("");
         String behaviors = memory.getReference("behaviors")
-            .map(MemoryReference::getContent).orElse("");
+                .map(MemoryReference::getContent).orElse("");
 
         List<SessionSummary> recentSessions = sessionSummaryRepository
-            .findTopKByImportance(userId, 5);
+                .findTopKByImportance(userId, 5);
 
         String content = buildMemoryContent(userId, preferences, behaviors, recentSessions);
         memory.updateContent(content);
@@ -98,39 +97,39 @@ public class MemoryApplicationService {
     }
 
     private String buildMemoryContent(String userId, String preferences, String behaviors,
-                                       List<SessionSummary> recentSessions) {
+                                      List<SessionSummary> recentSessions) {
         String prefsSummary = extractPrefsSummary(preferences);
         String behaviorsSummary = extractBehaviorsSummary(behaviors);
         String sessionsSummary = buildSessionsSummary(recentSessions);
 
         return """
-            ---
-            name: user-memory-%s
-            description: 用户特定的偏好和行为规则。始终加载此文档。
-            ---
-
-            # 用户记忆
-
-            ## 偏好概要
-            %s
-
-            ## 行为模式概要
-            %s
-
-            ## 会话历史概要
-            %s
-
-            ## 可用 References
-            | Reference | 描述 |
-            |-----------|------|
-            | `preferences` | 完整的用户偏好设置 |
-            | `behaviors` | 观察到的行为模式详情 |
-
-            ## 使用指南
-            1. 本文档始终加载，提供概要信息
-            2. 概要不够详细时，调用 load_memory_reference 加载详情
-            3. 需要语义检索历史时，调用 search_session_history 搜索
-            """.formatted(userId, prefsSummary, behaviorsSummary, sessionsSummary);
+                ---
+                name: user-memory-%s
+                description: 用户特定的偏好和行为规则。始终加载此文档。
+                ---
+                
+                # 用户记忆
+                
+                ## 偏好概要
+                %s
+                
+                ## 行为模式概要
+                %s
+                
+                ## 会话历史概要
+                %s
+                
+                ## 可用 References
+                | Reference | 描述 |
+                |-----------|------|
+                | `preferences` | 完整的用户偏好设置 |
+                | `behaviors` | 观察到的行为模式详情 |
+                
+                ## 使用指南
+                1. 本文档始终加载，提供概要信息
+                2. 概要不够详细时，调用 load_memory_reference 加载详情
+                3. 需要语义检索历史时，调用 search_session_history 搜索
+                """.formatted(userId, prefsSummary, behaviorsSummary, sessionsSummary);
     }
 
     private static String extractPrefsSummary(String preferences) {
@@ -145,7 +144,7 @@ public class MemoryApplicationService {
             return "（暂无观察到的行为模式）";
         }
         return behaviors.lines().limit(4).reduce((a, b) -> a + "\n" + b)
-            .orElse("（暂无观察到的行为模式）");
+                .orElse("（暂无观察到的行为模式）");
     }
 
     private static String buildSessionsSummary(List<SessionSummary> sessions) {

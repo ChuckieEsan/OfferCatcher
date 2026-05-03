@@ -2,11 +2,11 @@ package com.zju.offercatcher.application.agent;
 
 import com.zju.offercatcher.application.agent.dto.ScoreResult;
 import com.zju.offercatcher.application.agent.dto.ScorerOutput;
-import com.zju.offercatcher.infrastructure.common.PromptLoader;
-import com.zju.offercatcher.infrastructure.common.StructuredOutputUtil;
 import com.zju.offercatcher.domain.question.aggregates.Question;
 import com.zju.offercatcher.domain.question.repositories.QuestionRepository;
 import com.zju.offercatcher.domain.shared.enums.MasteryLevel;
+import com.zju.offercatcher.infrastructure.common.PromptLoader;
+import com.zju.offercatcher.infrastructure.common.StructuredOutputUtil;
 import com.zju.offercatcher.infrastructure.config.LLMModelFactory;
 import io.agentscope.core.message.Msg;
 import io.agentscope.core.message.MsgRole;
@@ -16,11 +16,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.List;
+import java.util.NoSuchElementException;
 
 /**
  * 答题评分 Agent
- *
+ * <p>
  * 对用户提交的答案进行评分，生成反馈，更新熟练度等级。
  * 对应 Python: app/application/agents/scorer/agent.py
  */
@@ -32,17 +33,17 @@ public class ScorerAgent {
     private static final ScorerOutput DEFAULT_OUTPUT = ScorerOutput.DEFAULT;
 
     private static final GenerateOptions OPTIONS = GenerateOptions.builder()
-        .temperature(0.1)
-        .maxTokens(1024)
-        .build();
+            .temperature(0.1)
+            .maxTokens(1024)
+            .build();
 
     private final OpenAIChatModel llm;
     private final QuestionRepository questionRepository;
     private final PromptLoader promptLoader;
 
     public ScorerAgent(LLMModelFactory modelFactory,
-                        QuestionRepository questionRepository,
-                        PromptLoader promptLoader) {
+                       QuestionRepository questionRepository,
+                       PromptLoader promptLoader) {
         this.questionRepository = questionRepository;
         this.promptLoader = promptLoader;
         this.llm = modelFactory.createSimple("deepseek", false);
@@ -50,24 +51,24 @@ public class ScorerAgent {
 
     public ScoreResult score(Long id, String userAnswer) {
         Question question = questionRepository.findById(id)
-            .orElseThrow(() -> new NoSuchElementException("Question not found: " + id));
+                .orElseThrow(() -> new NoSuchElementException("Question not found: " + id));
 
         log.info("Scoring answer for question: {}", id);
 
         String prompt = promptLoader.render("scorer.md",
-            "question_text", question.getQuestionText(),
-            "standard_answer", question.getAnswer() != null ? question.getAnswer() : "暂无标准答案",
-            "user_answer", userAnswer,
-            "current_level", question.getMasteryLevel().name(),
-            "company", question.getCompany(),
-            "position", question.getPosition()
+                "question_text", question.getQuestionText(),
+                "standard_answer", question.getAnswer() != null ? question.getAnswer() : "暂无标准答案",
+                "user_answer", userAnswer,
+                "current_level", question.getMasteryLevel().name(),
+                "company", question.getCompany(),
+                "position", question.getPosition()
         );
 
         Msg userMsg = Msg.builder().role(MsgRole.USER).textContent(prompt).build();
 
         ScorerOutput output = StructuredOutputUtil.callWithFallback(
-            llm, "scorer", null, OPTIONS,
-            List.of(userMsg), ScorerOutput.class, DEFAULT_OUTPUT, log);
+                llm, "scorer", null, OPTIONS,
+                List.of(userMsg), ScorerOutput.class, DEFAULT_OUTPUT, log);
 
         MasteryLevel currentLevel = question.getMasteryLevel();
         MasteryLevel newLevel = calculateNewLevel(currentLevel, output.score());
@@ -88,9 +89,9 @@ public class ScorerAgent {
 
         log.info("Scoring completed: score={}, level={}", output.score(), finalLevel);
         return new ScoreResult(id, question.getQuestionText(),
-            question.getAnswer(), userAnswer,
-            output.score(), finalLevel.name(),
-            output.strengths(), output.improvements(), output.feedback());
+                question.getAnswer(), userAnswer,
+                output.score(), finalLevel.name(),
+                output.strengths(), output.improvements(), output.feedback());
     }
 
     static MasteryLevel calculateNewLevel(MasteryLevel currentLevel, int score) {

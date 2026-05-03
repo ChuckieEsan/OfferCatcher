@@ -8,17 +8,18 @@ import java.util.List;
  * 简历分析 Agent 结构化输出。
  */
 public record ResumeAnalysisOutput(
-    @JsonProperty("projects") List<ProjectItem> projects,
-    @JsonProperty("techStack") List<String> techStack,
-    @JsonProperty("yearsOfExperience") String yearsOfExperience,
-    @JsonProperty("education") String education
+        @JsonProperty("projects") List<ProjectItem> projects,
+        @JsonProperty("techStack") List<String> techStack,
+        @JsonProperty("yearsOfExperience") String yearsOfExperience,
+        @JsonProperty("education") String education
 ) {
     public record ProjectItem(
-        @JsonProperty("name") String name,
-        @JsonProperty("role") String role,
-        @JsonProperty("techStack") List<String> techStack,
-        @JsonProperty("highlights") List<String> highlights
-    ) {}
+            @JsonProperty("name") String name,
+            @JsonProperty("role") String role,
+            @JsonProperty("techStack") List<String> techStack,
+            @JsonProperty("highlights") List<String> highlights
+    ) {
+    }
 
     public String toInterviewContext() {
         StringBuilder sb = new StringBuilder("<候选人简历>\n");
