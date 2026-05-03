@@ -6,6 +6,8 @@ import com.zju.offercatcher.domain.shared.enums.SessionStatus;
 import com.zju.offercatcher.domain.shared.exception.DomainException;
 import com.zju.offercatcher.domain.shared.exception.InvalidStateException;
 import com.zju.offercatcher.domain.shared.SnowflakeIdGenerator;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -26,6 +28,7 @@ import java.util.Optional;
  * - 所有题目操作必须通过 InterviewSession 方法
  * - 支持用户隔离（userId 字段）
  */
+@Getter
 public class InterviewSession {
 
     private final Long sessionId;
@@ -35,7 +38,9 @@ public class InterviewSession {
     private final DifficultyLevel difficulty;
     private final int totalQuestions;
     private String jdContext;
+    @Setter
     private Long jdId;
+    @Setter
     private String resumeContext;
 
     private SessionStatus status;
@@ -224,80 +229,9 @@ public class InterviewSession {
 
     // ==================== Getter 方法 ====================
 
-    public Long getSessionId() {
-        return sessionId;
-    }
-
-    public String getUserId() {
-        return userId;
-    }
-
-    public String getCompany() {
-        return company;
-    }
-
-    public String getPosition() {
-        return position;
-    }
-
-    public DifficultyLevel getDifficulty() {
-        return difficulty;
-    }
-
-    public int getTotalQuestions() {
-        return totalQuestions;
-    }
-
-    public SessionStatus getStatus() {
-        return status;
-    }
-
     public List<InterviewQuestion> getQuestions() {
         return Collections.unmodifiableList(questions);
     }
-
-    public int getCurrentQuestionIdx() {
-        return currentQuestionIdx;
-    }
-
-    public int getCorrectCount() {
-        return correctCount;
-    }
-
-    public int getTotalScore() {
-        return totalScore;
-    }
-
-    public LocalDateTime getStartedAt() {
-        return startedAt;
-    }
-
-    public LocalDateTime getEndedAt() {
-        return endedAt;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public String getJdContext() {
-        return jdContext;
-    }
-
-    public void setJdContext(String jdContext) {
-        this.jdContext = jdContext;
-    }
-
-    public Long getJdId() { return jdId; }
-
-    public void setJdId(Long jdId) { this.jdId = jdId; }
-
-    public String getResumeContext() { return resumeContext; }
-    public void setResumeContext(String resumeContext) { this.resumeContext = resumeContext; }
 
     // ==================== 构造函数 ====================
 

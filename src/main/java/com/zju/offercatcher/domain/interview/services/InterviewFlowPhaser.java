@@ -24,8 +24,7 @@ public class InterviewFlowPhaser {
 
     private static final List<String> OPENING_QUESTIONS = List.of(
         "请做个简单的自我介绍",
-        "能介绍一下你最近做过的一个项目吗？",
-        "你对这个岗位的理解是什么？"
+        "能介绍一下你最近做过的一个项目吗？"
     );
 
     /** 技术题类型：KNOWLEDGE / SCENARIO / ALGORITHM */
@@ -57,9 +56,9 @@ public class InterviewFlowPhaser {
         List<InterviewQuestion> behavioralPool = new ArrayList<>(candidates.stream()
             .filter(InterviewFlowPhaser::isBehavioral).toList());
 
-        // 2. Opening 至少 2 题，3 题更合理（自我介绍+项目+岗位理解）
-        int openingCount = totalQuestions >= 5 ? Math.min(3, totalQuestions / 8 + 2) : Math.max(2, totalQuestions * 10 / 100);
-        int behavioralCount = Math.max(2, totalQuestions * 20 / 100);
+        // 2. Opening 固定 2 题（自我介绍 + 项目介绍），行为面控制在 1 题
+        int openingCount = 2;
+        int behavioralCount = totalQuestions >= 5 ? 1 : 0;
         int technicalCount = totalQuestions - openingCount - behavioralCount;
 
         // 3. 自适应：某池不够时从另一池补充
@@ -103,7 +102,7 @@ public class InterviewFlowPhaser {
 
     /**
      * 构建 Opening 阶段。
-     * 前 3 道题固定（自我介绍、项目介绍、岗位理解），不足时用 behavioral 补充。
+     * 前 2 道题固定（自我介绍、项目介绍），不足时用 behavioral 补充。
      */
     private List<InterviewQuestion> buildOpening(int count, List<InterviewQuestion> behavioralPool) {
         List<InterviewQuestion> opening = new ArrayList<>();
