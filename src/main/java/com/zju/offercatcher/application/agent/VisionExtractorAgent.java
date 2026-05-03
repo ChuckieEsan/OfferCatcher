@@ -7,7 +7,7 @@ import com.zju.offercatcher.infrastructure.common.StructuredOutputUtil;
 import com.zju.offercatcher.domain.question.services.QuestionHashGenerator;
 import com.zju.offercatcher.domain.shared.enums.QuestionType;
 import com.zju.offercatcher.infrastructure.adapters.ocr.OcrAdapter;
-import com.zju.offercatcher.infrastructure.config.LLMProperties;
+import com.zju.offercatcher.infrastructure.config.LLMModelFactory;
 import io.agentscope.core.message.Msg;
 import io.agentscope.core.message.MsgRole;
 import io.agentscope.core.model.GenerateOptions;
@@ -40,17 +40,11 @@ public class VisionExtractorAgent {
     private final PromptLoader promptLoader;
     private final OcrAdapter ocrAdapter;
 
-    public VisionExtractorAgent(LLMProperties llmProperties, PromptLoader promptLoader,
+    public VisionExtractorAgent(LLMModelFactory modelFactory, PromptLoader promptLoader,
                                 OcrAdapter ocrAdapter) {
         this.promptLoader = promptLoader;
         this.ocrAdapter = ocrAdapter;
-        LLMProperties.DeepSeek cfg = llmProperties.getDeepseek();
-        this.llm = OpenAIChatModel.builder()
-            .apiKey(cfg.getApiKey())
-            .modelName(cfg.getModel())
-            .baseUrl(cfg.getBaseUrl())
-            .stream(false)
-            .build();
+        this.llm = modelFactory.createComplex("deepseek", false);
     }
 
     public ExtractedQuestionItem extract(String text) {

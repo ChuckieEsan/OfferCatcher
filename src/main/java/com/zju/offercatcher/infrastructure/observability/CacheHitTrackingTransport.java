@@ -10,13 +10,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * HttpTransport 装饰器，拦截 DeepSeek API 响应提取缓存命中数据。
+ * HttpTransport 装饰器，拦截 OpenAI 兼容 API 响应提取 LLM 调用指标。
  *
- * 非流式调用在 execute() 的 response body 中直接解析，
- * 流式调用在 stream() 的最后一个 SSE data chunk 中解析。
+ * 多 Provider 兼容：所有提供商（DeepSeek/OpenAI/SiliconFlow）遵循 OpenAI 协议，
+ * model 名从请求 JSON 动态提取，无需硬编码。
+ *
  * 解析失败不抛异常，不影响 Agent 主流程。
  */
 public class CacheHitTrackingTransport implements HttpTransport {
@@ -26,28 +29,49 @@ public class CacheHitTrackingTransport implements HttpTransport {
 
     private final HttpTransport delegate;
     private final CacheHitMetrics metrics;
-    private final String modelName;
 
-    public CacheHitTrackingTransport(HttpTransport delegate, CacheHitMetrics metrics, String modelName) {
+    public CacheHitTrackingTransport(HttpTransport delegate, CacheHitMetrics metrics) {
         this.delegate = delegate;
         this.metrics = metrics;
-        this.modelName = modelName;
     }
+
+    // ---- 非流式 ----
 
     @Override
     public HttpResponse execute(HttpRequest request) throws HttpTransportException {
-        HttpResponse response = delegate.execute(request);
-        if (response.isSuccessful() && response.getBody() != null) {
-            parseAndRecord(response.getBody());
+        long start = System.nanoTime();
+        String model = extractModelName(request.getBody());
+        HttpResponse response;
+        try {
+            response = delegate.execute(request);
+        } catch (HttpTransportException e) {
+            metrics.record(model, 0, 0, 0, System.nanoTime() - start, false);
+            throw e;
         }
+        boolean success = response.isSuccessful();
+        String body = response.getBody();
+        int promptTokens = parsePromptTokens(body);
+        int cachedTokens = parseCachedTokens(body);
+        int completionTokens = parseCompletionTokens(body);
+        long duration = System.nanoTime() - start;
+        metrics.record(model, promptTokens, cachedTokens, completionTokens, duration, success);
+        log.debug("LLM call: model={}, prompt={}, cached={}, completion={}, success={}, {}ms",
+            model, promptTokens, cachedTokens, completionTokens, success, duration / 1_000_000);
         return response;
     }
 
+    // ---- 流式 ----
+
     @Override
     public Flux<String> stream(HttpRequest request) {
+        // 从请求 JSON 提取 model 名（一次），耗时从 subscribe 开始计算
+        String model = extractModelName(request.getBody());
+        AtomicLong startNanos = new AtomicLong();
+        AtomicBoolean ok = new AtomicBoolean(true);
         AtomicReference<String> lastDataLine = new AtomicReference<>();
 
         return delegate.stream(request)
+            .doOnSubscribe(s -> startNanos.set(System.nanoTime()))
             .doOnNext(line -> {
                 if (line.startsWith("data: ")) {
                     String data = line.substring(6).trim();
@@ -57,11 +81,21 @@ public class CacheHitTrackingTransport implements HttpTransport {
                 }
             })
             .doOnComplete(() -> {
+                long duration = System.nanoTime() - startNanos.get();
                 String last = lastDataLine.get();
+                int promptTokens = 0;
+                int cachedTokens = 0;
+                int completionTokens = 0;
                 if (last != null) {
-                    parseAndRecord(last);
+                    promptTokens = parsePromptTokens(last);
+                    cachedTokens = parseCachedTokens(last);
+                    completionTokens = parseCompletionTokens(last);
                 }
-            });
+                metrics.record(model, promptTokens, cachedTokens, completionTokens, duration, ok.get());
+                log.debug("LLM stream done: model={}, prompt={}, cached={}, completion={}, {}ms",
+                    model, promptTokens, cachedTokens, completionTokens, duration / 1_000_000);
+            })
+            .doOnError(e -> ok.set(false));
     }
 
     @Override
@@ -69,25 +103,45 @@ public class CacheHitTrackingTransport implements HttpTransport {
         delegate.close();
     }
 
-    private void parseAndRecord(String responseBody) {
+    // ---- 内部解析 ----
+
+    /** 从请求 JSON 提取 model 字段，用于指标 tag。 */
+    static String extractModelName(String body) {
+        if (body == null || body.isBlank()) {
+            return "unknown";
+        }
         try {
-            JsonNode root = mapper.readTree(responseBody);
-            JsonNode usage = root.get("usage");
-            if (usage == null) {
-                return;
-            }
-
-            int promptTokens = usage.path("prompt_tokens").asInt(0);
-            int cachedTokens = usage.at("/prompt_tokens_details/cached_tokens").asInt(0);
-
-            if (promptTokens > 0) {
-                metrics.record(modelName, promptTokens, cachedTokens);
-                log.debug("LLM cache: model={}, prompt_tokens={}, cached_tokens={}, hit_rate={}%",
-                    modelName, promptTokens, cachedTokens,
-                    String.format("%.1f", 100.0 * cachedTokens / promptTokens));
-            }
+            JsonNode node = mapper.readTree(body);
+            JsonNode modelNode = node.get("model");
+            return modelNode != null ? modelNode.asText("unknown") : "unknown";
         } catch (Exception e) {
-            log.debug("Failed to extract cache hit data: {}", e.getMessage());
+            return "unknown";
+        }
+    }
+
+    static int parsePromptTokens(String body) {
+        return parseField(body, "usage", "prompt_tokens");
+    }
+
+    static int parseCachedTokens(String body) {
+        return parseField(body, "usage", "prompt_tokens_details", "cached_tokens");
+    }
+
+    static int parseCompletionTokens(String body) {
+        return parseField(body, "usage", "completion_tokens");
+    }
+
+    private static int parseField(String body, String... path) {
+        if (body == null || body.isBlank()) return 0;
+        try {
+            JsonNode node = mapper.readTree(body);
+            for (String key : path) {
+                node = node.get(key);
+                if (node == null) return 0;
+            }
+            return node.asInt(0);
+        } catch (Exception e) {
+            return 0;
         }
     }
 }

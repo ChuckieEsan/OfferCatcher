@@ -2,7 +2,7 @@ package com.zju.offercatcher.application.agent;
 
 import com.zju.offercatcher.application.agent.dto.ResumeAnalysisOutput;
 import com.zju.offercatcher.infrastructure.common.StructuredOutputUtil;
-import com.zju.offercatcher.infrastructure.config.LLMProperties;
+import com.zju.offercatcher.infrastructure.config.LLMModelFactory;
 import io.agentscope.core.message.Msg;
 import io.agentscope.core.message.MsgRole;
 import io.agentscope.core.model.GenerateOptions;
@@ -29,14 +29,8 @@ public class ResumeAnalysisAgent {
     private final OpenAIChatModel model;
     private final GenerateOptions options;
 
-    public ResumeAnalysisAgent(LLMProperties llmProperties) {
-        LLMProperties.DeepSeek cfg = llmProperties.getDeepseek();
-        this.model = OpenAIChatModel.builder()
-            .apiKey(cfg.getApiKey())
-            .modelName(cfg.getModel())
-            .baseUrl(cfg.getBaseUrl())
-            .stream(false)
-            .build();
+    public ResumeAnalysisAgent(LLMModelFactory modelFactory) {
+        this.model = modelFactory.createSimple("deepseek", false);
         this.options = GenerateOptions.builder()
             .temperature(0.1)
             .maxTokens(2048)

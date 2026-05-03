@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zju.offercatcher.application.agent.dto.PositionMappingOutput;
 import com.zju.offercatcher.infrastructure.common.StructuredOutputUtil;
-import com.zju.offercatcher.infrastructure.config.LLMProperties;
+import com.zju.offercatcher.infrastructure.config.LLMModelFactory;
 import com.zju.offercatcher.domain.question.aggregates.Question;
 import com.zju.offercatcher.domain.question.repositories.QuestionRepository;
 import com.zju.offercatcher.infrastructure.persistence.postgres.QuestionJpaEntity;
@@ -72,16 +72,10 @@ public class PositionNormalizationAgent {
 
     public PositionNormalizationAgent(QuestionJpaRepository questionJpaRepo,
                                          QuestionRepository questionRepository,
-                                         LLMProperties llmProperties) {
+                                         LLMModelFactory modelFactory) {
         this.questionJpaRepo = questionJpaRepo;
         this.questionRepository = questionRepository;
-        LLMProperties.DeepSeek cfg = llmProperties.getDeepseek();
-        this.llm = OpenAIChatModel.builder()
-            .apiKey(cfg.getApiKey())
-            .modelName(cfg.getModel())
-            .baseUrl(cfg.getBaseUrl())
-            .stream(false)
-            .build();
+        this.llm = modelFactory.createSimple("deepseek", false);
         loadMappings();
     }
 

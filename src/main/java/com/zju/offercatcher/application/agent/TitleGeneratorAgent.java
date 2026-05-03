@@ -2,7 +2,7 @@ package com.zju.offercatcher.application.agent;
 
 import com.zju.offercatcher.domain.chat.entities.Message;
 import com.zju.offercatcher.infrastructure.common.PromptLoader;
-import com.zju.offercatcher.infrastructure.config.LLMProperties;
+import com.zju.offercatcher.infrastructure.config.LLMModelFactory;
 import io.agentscope.core.ReActAgent;
 import io.agentscope.core.message.Msg;
 import io.agentscope.core.message.MsgRole;
@@ -28,15 +28,9 @@ public class TitleGeneratorAgent {
     private final OpenAIChatModel llm;
     private final PromptLoader promptLoader;
 
-    public TitleGeneratorAgent(LLMProperties llmProperties, PromptLoader promptLoader) {
+    public TitleGeneratorAgent(LLMModelFactory modelFactory, PromptLoader promptLoader) {
         this.promptLoader = promptLoader;
-        LLMProperties.DeepSeek cfg = llmProperties.getDeepseek();
-        this.llm = OpenAIChatModel.builder()
-            .apiKey(cfg.getApiKey())
-            .modelName(cfg.getModel())
-            .baseUrl(cfg.getBaseUrl())
-            .stream(false)
-            .build();
+        this.llm = modelFactory.createSimple("deepseek", false);
     }
 
     public String generateTitle(List<Message> messages) {

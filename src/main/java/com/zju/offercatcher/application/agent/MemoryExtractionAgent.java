@@ -9,7 +9,7 @@ import com.zju.offercatcher.domain.shared.enums.MessageRole;
 import com.zju.offercatcher.infrastructure.adapters.embedding.OnnxEmbeddingAdapter;
 import com.zju.offercatcher.infrastructure.common.CacheKeys;
 import com.zju.offercatcher.infrastructure.common.PromptLoader;
-import com.zju.offercatcher.infrastructure.config.LLMProperties;
+import com.zju.offercatcher.infrastructure.config.LLMModelFactory;
 import com.zju.offercatcher.infrastructure.tools.MemoryTools;
 import com.zju.offercatcher.infrastructure.tools.UserToolContext;
 import io.agentscope.core.ReActAgent;
@@ -46,7 +46,6 @@ public class MemoryExtractionAgent {
     private final OnnxEmbeddingAdapter embeddingAdapter;
     private final MemoryTools memoryTools;
     private final PromptLoader promptLoader;
-    private final LLMProperties llmProperties;
     private final RedisTemplate<String, String> redisTemplate;
 
     // Cached stateless resources
@@ -59,7 +58,7 @@ public class MemoryExtractionAgent {
                                  OnnxEmbeddingAdapter embeddingAdapter,
                                  MemoryTools memoryTools,
                                  PromptLoader promptLoader,
-                                 LLMProperties llmProperties,
+                                 LLMModelFactory modelFactory,
                                  RedisTemplate<String, String> redisTemplate) {
         this.memoryService = memoryService;
         this.memoryRepository = memoryRepository;
@@ -67,16 +66,9 @@ public class MemoryExtractionAgent {
         this.embeddingAdapter = embeddingAdapter;
         this.memoryTools = memoryTools;
         this.promptLoader = promptLoader;
-        this.llmProperties = llmProperties;
         this.redisTemplate = redisTemplate;
 
-        LLMProperties.DeepSeek cfg = llmProperties.getDeepseek();
-        this.cachedModel = OpenAIChatModel.builder()
-            .apiKey(cfg.getApiKey())
-            .modelName(cfg.getModel())
-            .baseUrl(cfg.getBaseUrl())
-            .stream(false)
-            .build();
+        this.cachedModel = modelFactory.createSimple("deepseek", false);
 
         this.cachedToolkit = new Toolkit(ToolkitConfig.defaultConfig());
         this.cachedToolkit.registerTool(memoryTools);

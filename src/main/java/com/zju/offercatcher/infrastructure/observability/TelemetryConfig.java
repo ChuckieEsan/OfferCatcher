@@ -1,9 +1,6 @@
 package com.zju.offercatcher.infrastructure.observability;
 
-import com.zju.offercatcher.infrastructure.config.LLMProperties;
 import com.zju.offercatcher.infrastructure.config.TelemetryProperties;
-import io.agentscope.core.model.transport.HttpTransport;
-import io.agentscope.core.model.transport.HttpTransportFactory;
 import io.agentscope.core.tracing.TracerRegistry;
 import io.agentscope.core.tracing.telemetry.TelemetryTracer;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -31,11 +28,9 @@ public class TelemetryConfig {
     private static final Logger log = LoggerFactory.getLogger(TelemetryConfig.class);
 
     private final TelemetryProperties properties;
-    private final LLMProperties llmProperties;
 
-    public TelemetryConfig(TelemetryProperties properties, LLMProperties llmProperties) {
+    public TelemetryConfig(TelemetryProperties properties) {
         this.properties = properties;
-        this.llmProperties = llmProperties;
     }
 
     /**
@@ -112,13 +107,10 @@ public class TelemetryConfig {
     }
 
     /**
-     * 缓存命中追踪 Transport，全局替换 HttpTransportFactory 默认实现。
+     * 缓存命中追踪 Transport。
      *
-     * 所有 OpenAIChatModel 创建时通过 HttpTransportFactory.getDefault()
-     * 自动获取此装饰器，13 个 Agent 无需修改。
-     *
-     * {@code @Configuration} 的 Bean 方法在 {@code @Service} 之前执行，
-     * 确保 setDefault() 在 Agent 创建 OpenAIChatModel 之前生效。
+     * 通过 LLMModelFactory 注入到每个 OpenAIChatModel，拦截所有 LLM 调用。
+     * model 名从请求 JSON 动态提取，与具体 Provider 解耦。
      */
     @Bean
     @ConditionalOnProperty(name = "offercatcher.telemetry.cache-hit-tracking.enabled",
@@ -126,16 +118,15 @@ public class TelemetryConfig {
     public CacheHitTrackingTransport cacheHitTrackingTransport(
             CacheHitMetrics cacheHitMetrics) {
 
-        HttpTransport defaultTransport = HttpTransportFactory.getDefault();
-        String modelName = llmProperties.getDeepseek().getModel();
+        // 获取 AgentScope 内部默认 Transport，包装为可观测版本
+        io.agentscope.core.model.transport.HttpTransport defaultTransport =
+            io.agentscope.core.model.transport.HttpTransportFactory.getDefault();
 
-        CacheHitTrackingTransport wrapped =
-            new CacheHitTrackingTransport(defaultTransport, cacheHitMetrics, modelName);
+        CacheHitTrackingTransport transport =
+            new CacheHitTrackingTransport(defaultTransport, cacheHitMetrics);
 
-        HttpTransportFactory.setDefault(wrapped);
-
-        log.info("CacheHitTrackingTransport registered for model: {} (wrapping {})",
-            modelName, defaultTransport.getClass().getSimpleName());
-        return wrapped;
+        log.info("CacheHitTrackingTransport created (wrapping {})",
+            defaultTransport.getClass().getSimpleName());
+        return transport;
     }
 }

@@ -3,7 +3,7 @@ package com.zju.offercatcher.application.agent;
 import com.zju.offercatcher.domain.question.aggregates.Question;
 import com.zju.offercatcher.infrastructure.adapters.websearch.TavilySearchAdapter;
 import com.zju.offercatcher.infrastructure.common.PromptLoader;
-import com.zju.offercatcher.infrastructure.config.LLMProperties;
+import com.zju.offercatcher.infrastructure.config.LLMModelFactory;
 import io.agentscope.core.ReActAgent;
 import io.agentscope.core.message.Msg;
 import io.agentscope.core.message.MsgRole;
@@ -30,18 +30,12 @@ public class AnswerSpecialistAgent {
     private final TavilySearchAdapter webSearchAdapter;
     private final PromptLoader promptLoader;
 
-    public AnswerSpecialistAgent(LLMProperties llmProperties,
+    public AnswerSpecialistAgent(LLMModelFactory modelFactory,
                                   TavilySearchAdapter webSearchAdapter,
                                   PromptLoader promptLoader) {
         this.webSearchAdapter = webSearchAdapter;
         this.promptLoader = promptLoader;
-        LLMProperties.DeepSeek cfg = llmProperties.getDeepseek();
-        this.llm = OpenAIChatModel.builder()
-            .apiKey(cfg.getApiKey())
-            .modelName(cfg.getModel())
-            .baseUrl(cfg.getBaseUrl())
-            .stream(false)
-            .build();
+        this.llm = modelFactory.createSimple("deepseek", false);
     }
 
     public String generateAnswer(Question question) {

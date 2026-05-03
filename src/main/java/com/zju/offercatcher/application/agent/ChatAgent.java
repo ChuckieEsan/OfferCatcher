@@ -8,7 +8,7 @@ import com.zju.offercatcher.domain.chat.aggregates.Conversation;
 import com.zju.offercatcher.domain.chat.entities.Message;
 import com.zju.offercatcher.domain.memory.repositories.SessionSummaryRepository;
 import com.zju.offercatcher.domain.shared.enums.MessageRole;
-import com.zju.offercatcher.infrastructure.config.LLMProperties;
+import com.zju.offercatcher.infrastructure.config.LLMModelFactory;
 import com.zju.offercatcher.infrastructure.tools.*;
 import com.zju.offercatcher.infrastructure.adapters.memory.UserLongTermMemory;
 import com.zju.offercatcher.infrastructure.common.PromptLoader;
@@ -67,7 +67,7 @@ public class ChatAgent {
     private final SessionSummaryRepository sessionSummaryRepository;
     private final MemoryExtractionAgent memoryAgent;
     private final PromptLoader promptLoader;
-    private final LLMProperties llmProperties;
+    private final LLMModelFactory modelFactory;
     private final Executor workerExecutor;
     private final ObjectMapper objectMapper;
 
@@ -81,7 +81,7 @@ public class ChatAgent {
                              SessionSummaryRepository sessionSummaryRepository,
                              MemoryExtractionAgent memoryAgent,
                              PromptLoader promptLoader,
-                             LLMProperties llmProperties,
+                             LLMModelFactory modelFactory,
                              SearchQuestionsTool searchQuestionsTool,
                              WebSearchTool webSearchTool,
                              KnowledgeGraphTools knowledgeGraphTools,
@@ -94,18 +94,12 @@ public class ChatAgent {
         this.sessionSummaryRepository = sessionSummaryRepository;
         this.memoryAgent = memoryAgent;
         this.promptLoader = promptLoader;
-        this.llmProperties = llmProperties;
+        this.modelFactory = modelFactory;
         this.workerExecutor = workerExecutor;
         this.objectMapper = objectMapper;
 
         // Pre-create shared model and toolkit (stateless, thread-safe config)
-        LLMProperties.DeepSeek cfg = llmProperties.getDeepseek();
-        this.cachedModel = OpenAIChatModel.builder()
-            .apiKey(cfg.getApiKey())
-            .modelName(cfg.getModel())
-            .baseUrl(cfg.getBaseUrl())
-            .stream(true)
-            .build();
+        this.cachedModel = modelFactory.createSimple("deepseek", true);
 
         this.cachedToolkit = new Toolkit(ToolkitConfig.defaultConfig());
         this.cachedToolkit.registerTool(searchQuestionsTool);
@@ -113,7 +107,7 @@ public class ChatAgent {
         this.cachedToolkit.registerTool(knowledgeGraphTools);
         this.cachedToolkit.registerTool(memoryTools);
 
-        log.info("ChatAgent initialized with cached model={}, tools=4", cfg.getModel());
+        log.info("ChatAgent initialized with cached model, tools=4");
     }
 
     /**
@@ -345,7 +339,7 @@ public class ChatAgent {
             // Auto-generate title
             if ("新对话".equals(conv.getTitle()) && conv.getMessages().size() >= 4) {
                 try {
-                    TitleGeneratorAgent titleGen = new TitleGeneratorAgent(llmProperties, promptLoader);
+                    TitleGeneratorAgent titleGen = new TitleGeneratorAgent(modelFactory, promptLoader);
                     chatService.generateTitle(userId, conversationId,
                         msgs -> titleGen.generateTitle(msgs));
                 } catch (Exception e) {

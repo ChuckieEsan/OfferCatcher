@@ -22,7 +22,7 @@ import com.zju.offercatcher.domain.shared.enums.*;
 import com.zju.offercatcher.domain.shared.exception.DomainException;
 import com.zju.offercatcher.infrastructure.adapters.embedding.OnnxEmbeddingAdapter;
 import com.zju.offercatcher.infrastructure.config.InterviewProperties;
-import com.zju.offercatcher.infrastructure.config.LLMProperties;
+import com.zju.offercatcher.infrastructure.config.LLMModelFactory;
 import io.agentscope.core.ReActAgent;
 import io.agentscope.core.agent.Event;
 import io.agentscope.core.agent.StreamOptions;
@@ -85,7 +85,7 @@ public class InterviewAgent {
                                   ScorerAgent scorerAgent,
                                   PromptLoader promptLoader,
                                   ObjectMapper objectMapper,
-                                  LLMProperties llmProperties,
+                                  LLMModelFactory modelFactory,
                                   InterviewProperties interviewProperties) {
         this.interviewService = interviewService;
         this.questionService = questionService;
@@ -98,13 +98,7 @@ public class InterviewAgent {
         this.objectMapper = objectMapper;
         this.maxFollowUps = interviewProperties.getMaxFollowUps();
 
-        LLMProperties.DeepSeek cfg = llmProperties.getDeepseek();
-        this.llm = OpenAIChatModel.builder()
-            .apiKey(cfg.getApiKey())
-            .modelName(cfg.getModel())
-            .baseUrl(cfg.getBaseUrl())
-            .stream(true)
-            .build();
+        this.llm = modelFactory.createSimple("deepseek", true);
     }
 
     public InterviewSession createSession(String userId, String company, String position,

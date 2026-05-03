@@ -6,7 +6,7 @@ import com.zju.offercatcher.infrastructure.common.StructuredOutputUtil;
 import com.zju.offercatcher.domain.interview.aggregates.JobDescription;
 import com.zju.offercatcher.domain.interview.repositories.JobDescriptionRepository;
 import com.zju.offercatcher.domain.interview.valueobjects.SkillRequirement;
-import com.zju.offercatcher.infrastructure.config.LLMProperties;
+import com.zju.offercatcher.infrastructure.config.LLMModelFactory;
 import io.agentscope.core.message.Msg;
 import io.agentscope.core.message.MsgRole;
 import io.agentscope.core.model.GenerateOptions;
@@ -42,18 +42,11 @@ public class JobDescriptionParserAgent {
     private final JobDescriptionRepository jdRepository;
 
     public JobDescriptionParserAgent(PromptLoader promptLoader,
-                                     LLMProperties llmProperties,
+                                     LLMModelFactory modelFactory,
                                      JobDescriptionRepository jdRepository) {
         this.promptLoader = promptLoader;
         this.jdRepository = jdRepository;
-
-        LLMProperties.DeepSeek cfg = llmProperties.getDeepseek();
-        this.model = OpenAIChatModel.builder()
-            .apiKey(cfg.getApiKey())
-            .modelName(cfg.getModel())
-            .baseUrl(cfg.getBaseUrl())
-            .stream(false)
-            .build();
+        this.model = modelFactory.createSimple("deepseek", false);
     }
 
     /**

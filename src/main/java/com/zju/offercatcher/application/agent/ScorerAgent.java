@@ -7,7 +7,7 @@ import com.zju.offercatcher.infrastructure.common.StructuredOutputUtil;
 import com.zju.offercatcher.domain.question.aggregates.Question;
 import com.zju.offercatcher.domain.question.repositories.QuestionRepository;
 import com.zju.offercatcher.domain.shared.enums.MasteryLevel;
-import com.zju.offercatcher.infrastructure.config.LLMProperties;
+import com.zju.offercatcher.infrastructure.config.LLMModelFactory;
 import io.agentscope.core.message.Msg;
 import io.agentscope.core.message.MsgRole;
 import io.agentscope.core.model.GenerateOptions;
@@ -40,18 +40,12 @@ public class ScorerAgent {
     private final QuestionRepository questionRepository;
     private final PromptLoader promptLoader;
 
-    public ScorerAgent(LLMProperties llmProperties,
+    public ScorerAgent(LLMModelFactory modelFactory,
                         QuestionRepository questionRepository,
                         PromptLoader promptLoader) {
         this.questionRepository = questionRepository;
         this.promptLoader = promptLoader;
-        LLMProperties.DeepSeek cfg = llmProperties.getDeepseek();
-        this.llm = OpenAIChatModel.builder()
-            .apiKey(cfg.getApiKey())
-            .modelName(cfg.getModel())
-            .baseUrl(cfg.getBaseUrl())
-            .stream(false)
-            .build();
+        this.llm = modelFactory.createSimple("deepseek", false);
     }
 
     public ScoreResult score(Long id, String userAnswer) {

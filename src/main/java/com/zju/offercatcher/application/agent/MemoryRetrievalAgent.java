@@ -2,7 +2,7 @@ package com.zju.offercatcher.application.agent;
 
 import com.zju.offercatcher.domain.chat.entities.Message;
 import com.zju.offercatcher.infrastructure.common.CacheKeys;
-import com.zju.offercatcher.infrastructure.config.LLMProperties;
+import com.zju.offercatcher.infrastructure.config.LLMModelFactory;
 import com.zju.offercatcher.infrastructure.tools.MemoryTools;
 import com.zju.offercatcher.infrastructure.tools.UserToolContext;
 import io.agentscope.core.ReActAgent;
@@ -48,22 +48,16 @@ public class MemoryRetrievalAgent {
 
     public MemoryRetrievalAgent(MemoryTools memoryTools,
                                 RedisTemplate<String, String> redisTemplate,
-                                LLMProperties llmProperties) {
+                                LLMModelFactory modelFactory) {
         this.memoryTools = memoryTools;
         this.redisTemplate = redisTemplate;
 
-        LLMProperties.DeepSeek cfg = llmProperties.getDeepseek();
-        this.retrievalModel = OpenAIChatModel.builder()
-            .apiKey(cfg.getApiKey())
-            .modelName(cfg.getModel())
-            .baseUrl(cfg.getBaseUrl())
-            .stream(false)
-            .build();
+        this.retrievalModel = modelFactory.createSimple("deepseek", false);
 
         this.cachedToolkit = new Toolkit(ToolkitConfig.defaultConfig());
         this.cachedToolkit.registerTool(memoryTools);
 
-        log.info("MemoryRetrievalAgent initialized with model={}", cfg.getModel());
+        log.info("MemoryRetrievalAgent initialized");
     }
 
     /**

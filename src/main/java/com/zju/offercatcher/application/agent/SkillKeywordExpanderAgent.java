@@ -1,7 +1,7 @@
 package com.zju.offercatcher.application.agent;
 
 import com.zju.offercatcher.domain.interview.valueobjects.SkillRequirement;
-import com.zju.offercatcher.infrastructure.config.LLMProperties;
+import com.zju.offercatcher.infrastructure.config.LLMModelFactory;
 import io.agentscope.core.ReActAgent;
 import io.agentscope.core.message.Msg;
 import io.agentscope.core.message.MsgRole;
@@ -29,14 +29,8 @@ public class SkillKeywordExpanderAgent {
 
     private final OpenAIChatModel model;
 
-    public SkillKeywordExpanderAgent(LLMProperties llmProperties) {
-        LLMProperties.DeepSeek cfg = llmProperties.getDeepseek();
-        this.model = OpenAIChatModel.builder()
-            .apiKey(cfg.getApiKey())
-            .modelName(cfg.getModel())
-            .baseUrl(cfg.getBaseUrl())
-            .stream(false)
-            .build();
+    public SkillKeywordExpanderAgent(LLMModelFactory modelFactory) {
+        this.model = modelFactory.createSimple("deepseek", false);
     }
 
     /**
